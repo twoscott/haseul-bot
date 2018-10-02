@@ -21,5 +21,8 @@ exports.handle = (message) => {
     roles.handle(message);
     lastfm.handle(message);
     youtube.handle(message);
+<<<<<<< HEAD
     
+=======
+>>>>>>> 7372f084e0f059fc0ec4c0089df9dffc3f688208
 }
