@@ -11,11 +11,14 @@ handle = (message) => {
 
     //Handle commands
 
-    switch (args[0]) {
+    if (args.length < 1) return;
+    switch (args[0].toLowerCase()) {
 
         case ".yt":
+            message.channel.startTyping();
             query(args.slice(1).join(" ")).then(response => {
                 message.channel.send(response);
+                message.channel.stopTyping(true);
             }).catch(error => {
                 console.error(error);
             })
