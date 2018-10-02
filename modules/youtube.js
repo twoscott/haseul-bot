@@ -11,7 +11,6 @@ handle = (message) => {
 
     //Handle commands
 
-<<<<<<< HEAD
     if (args.length < 1) return;
     switch (args[0].toLowerCase()) {
 
@@ -20,13 +19,6 @@ handle = (message) => {
             query(args.slice(1).join(" ")).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping(true);
-=======
-    switch (args[0]) {
-
-        case ".yt":
-            query(args.slice(1).join(" ")).then(response => {
-                message.channel.send(response);
->>>>>>> 7372f084e0f059fc0ec4c0089df9dffc3f688208
             }).catch(error => {
                 console.error(error);
             })
