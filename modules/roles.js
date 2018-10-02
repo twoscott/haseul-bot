@@ -7,8 +7,6 @@ const database = require("../modules/roles_database");
 //Functions
 
 handle = async (message) => {
-    let perms = ["ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG"];
-    if (!perms.some(p => message.member.hasPermission(p))) return;
 
     var args = message.content.trim().split(" ");
 
@@ -22,6 +20,9 @@ handle = async (message) => {
     }
 
     //Handle commands
+
+    let perms = ["ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG"];
+    if (!perms.some(p => message.member.hasPermission(p))) return;
 
     switch (args[0]) {
 

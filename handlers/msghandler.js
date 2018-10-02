@@ -18,9 +18,7 @@ exports.handle = (message) => {
 
     //Pass message to modules
 
-    message.channel.startTyping();
     roles.handle(message);
     lastfm.handle(message);
     youtube.handle(message);
-    message.channel.stopTyping(true);
 }
