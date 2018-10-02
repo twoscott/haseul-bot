@@ -1,0 +1,21 @@
+{
+  "name": "haseul-bot",
+  "version": "1.0.0",
+  "description": "Haseul Bot",
+  "main": "haseul.js",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "discord.js": "^11.4.2",
+    "sqlite3": "^4.0.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "haseul-bot"
+  },
+  "author": "Scotto",
+  "license": "ISC"
+}
