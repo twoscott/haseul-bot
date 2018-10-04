@@ -37,7 +37,7 @@ handle = async (message) => {
 
                 case "set":
                     message.channel.startTyping();
-                    set_lf_user(message, args).then(response => {
+                    set_lf_user(message, args.slice(2)).then(response => {
                         message.channel.send(response);
                         message.channel.stopTyping(true);
                     }).catch(error => {
@@ -62,7 +62,7 @@ handle = async (message) => {
                 case "nowplaying":
                 case "np":
                     message.channel.startTyping();
-                    lf_recents(message, args.slice(1)).then(response => {
+                    lf_recents(message, args.slice(2)).then(response => {
                         message.channel.send(response);
                         message.channel.stopTyping(true);
                     }).catch(error => {
@@ -72,7 +72,7 @@ handle = async (message) => {
                 
                 case "profile":
                     message.channel.startTyping();
-                    lf_profile(message, args).then(response => {
+                    lf_profile(message, args.slice(2)).then(response => {
                         message.channel.send(response);
                         message.channel.stopTyping(true);
                     }).catch(error => {
@@ -82,7 +82,7 @@ handle = async (message) => {
 
                 default:
                     message.channel.startTyping();
-                    lf_recents(message, args).then(response => {
+                    lf_recents(message, args.slice(1)).then(response => {
                         message.channel.send(response);
                         message.channel.stopTyping(true);
                     }).catch(error => {
@@ -94,24 +94,34 @@ handle = async (message) => {
         
         case ".fmyt":
             message.channel.startTyping();
-            lf_youtube(message, args).then(response => {
+            lf_youtube(message, args.slice(1)).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping(true);
             }).catch(error => {
                 console.error(error);
             })
-            break;            
+            break; 
+        
+        case ".chart":
+            message.channel.startTyping();
+            lf_chart(message, args.slice(1)).then(response => {
+                message.channel.send(response.content, response.messageOptions);
+                message.channel.stopTyping(true);
+            }).catch(error => {
+                console.error(error);
+            })
+            break;
 
     }
 }
 
 set_lf_user = async (message, args) => {
     return new Promise(async (resolve, reject) => {
-        if (args.length < 3) {
+        if (args.length < 1) {
             resolve("\\⚠ Please provide a Last.fm username: `.fm set <username>`.");
             return;
         }
-        var username = args.slice(2).join(" ").trim();
+        var username = args.join(" ").trim();
     
         axios.get(`https://www.last.fm/user/${username}`).then(response => {
             database.set_lf_user(message.author.id, username).then(response => {
@@ -139,8 +149,8 @@ remove_lf_user = async (message) => {
 lf_recents = async (message, args) => {
     return new Promise(async (resolve, reject) => {
         var username;
-        if (args.length > 1) {
-            username = args.slice(1).join(" ");
+        if (args.length > 0) {
+            username = args.join(" ");
         } else {
             username = await database.get_lf_user(message.author.id);
         }
@@ -216,8 +226,8 @@ lf_recents = async (message, args) => {
 lf_profile = async (message, args) => {
     return new Promise(async (resolve, reject) => {
         var username;
-        if (args.length > 2) {
-            username = args.slice(2).join(" ");
+        if (args.length > 0) {
+            username = args.join(" ");
         } else {
             username = await database.get_lf_user(message.author.id);
         }
@@ -269,8 +279,8 @@ lf_profile = async (message, args) => {
 lf_youtube = async (message, args) => {
     return new Promise(async (resolve, reject) => {
         var username;
-        if (args.length > 1) {
-            username = args.slice(1).join(" ");
+        if (args.length > 0) {
+            username = args.join(" ");
         } else {
             username = await database.get_lf_user(message.author.id);
         }
@@ -297,6 +307,85 @@ lf_youtube = async (message, args) => {
         }).catch(error => {
             resolve(`\\⚠ ${username} is not a valid Last.fm user.`);
         })
+    })
+}
+
+lf_chart = async (message, args) => {
+    return new Promise(async (resolve, reject) => {
+        let week = ["7", "7days", "weekly", "week", "1week"];
+        let month = ["30", "30day", "30days", "monthly", "month"];
+        let three_month = ["90", "90day", "90days", "3months", "3month"];
+        let six_month = ["180", "180day", "180days", "6months", "6month"];
+        let year = ["365", "365day", "365days", "1year", "year", "yr", "12months", "yearly"];
+        let overall = ["all", "alltime", "forever", "overall"];
+        let grids = ["3x3", "4x4", "5x5"];
+
+        var artist_only = false;
+        if (args[0] && ["artist", "artists"].includes(args[0].toLowerCase())) {
+            args = args.slice(1);
+            artist_only = true;
+        }
+        
+        var timeframe = args[0];
+        var grid_dimension = args[1];
+
+        switch (true) {
+            case week.includes(timeframe):
+                timeframe = "7day";
+                break;
+            case month.includes(timeframe):
+                timeframe = "1month";
+                break;
+            case three_month.includes(timeframe):
+                timeframe = "3month";
+                break;
+            case six_month.includes(timeframe):
+                timeframe = "6month";
+                break;
+            case year.includes(timeframe):
+                timeframe = "12month";
+                break;
+            case overall.includes(timeframe):
+                timeframe = "overall";
+                break;
+            default:
+                timeframe = "7day";
+                break;
+        }
+
+        if (!grids.includes(grid_dimension)) {
+            grid_dimension = "3x3";
+        }
+
+        let lf_user = await database.get_lf_user(message.author.id);
+        if (!lf_user) {
+            message.channel.send("\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`");
+            return;
+        }
+
+        var response;
+        if (artist_only) {
+            response = {
+                content: `**${lf_user}'s** ${timeframe} ${grid_dimension} artists chart:`, 
+                messageOptions: {
+                    file: {
+                        attachment: `http://www.tapmusic.net/collage.php?user=${lf_user}&type=${timeframe}&size=${grid_dimension}&caption=true&playcount=true&artistonly=true`, 
+                        name: "collage.jpg"
+                    }
+                }
+            }
+        } else {
+            response = {
+                content: `**${lf_user}'s** ${timeframe} ${grid_dimension} chart:`, 
+                messageOptions: {
+                    file: {
+                        attachment: `http://www.tapmusic.net/collage.php?user=${lf_user}&type=${timeframe}&size=${grid_dimension}&caption=true&playcount=true`, 
+                        name: "collage.jpg"
+                    }
+                }
+            }
+        }
+        resolve(response);
     })
 }
 

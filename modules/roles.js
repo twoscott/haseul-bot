@@ -33,7 +33,7 @@ handle = async (message) => {
 
                 case "add":
                     message.channel.startTyping();
-                    add_role(message, args).then(response => {
+                    add_role(message, args.slice(2)).then(response => {
                         message.channel.send(response);
                         message.channel.stopTyping(true);
                     })
@@ -43,7 +43,7 @@ handle = async (message) => {
                 case "delete":
                 case "del":
                     message.channel.startTyping();
-                    remove_role(message, args).then(response => {
+                    remove_role(message, args.slice(2)).then(response => {
                         message.channel.send(response);
                         message.channel.stopTyping(true);
                     })
@@ -51,7 +51,7 @@ handle = async (message) => {
 
                 case "list":
                     message.channel.startTyping();
-                    list_roles(message, args).then(response => {
+                    list_roles(message).then(response => {
                         message.channel.send(response);
                         message.channel.stopTyping(true);
                     })
@@ -64,7 +64,7 @@ handle = async (message) => {
 
                         case "set":
                             message.channel.startTyping();
-                            set_roles_channel(message, args).then(response => {
+                            set_roles_channel(message, args.slice(3)).then(response => {
                                 message.channel.send(response);
                                 message.channel.stopTyping(true);
                             })
@@ -74,7 +74,7 @@ handle = async (message) => {
                         case "delete":
                         case "del":
                             message.channel.startTyping();
-                            remove_roles_channel(message, args).then(response => {
+                            remove_roles_channel(message, args.slice(3)).then(response => {
                                 message.channel.send(response);
                                 message.channel.stopTyping(true);
                             })
@@ -82,7 +82,7 @@ handle = async (message) => {
 
                         case "update":
                             message.channel.startTyping();
-                            update_roles_channel(message, args).then(response => {
+                            update_roles_channel(message, args.slice(3)).then(response => {
                                 message.channel.send(response);
                                 message.channel.stopTyping(true);
                             })
@@ -95,7 +95,7 @@ handle = async (message) => {
                             switch (args[3]) {
                                 case "set":
                                     message.channel.startTyping();
-                                    set_roles_channel_msg(message, args).then(response => {
+                                    set_roles_channel_msg(message, args.slice(4)).then(response => {
                                         message.channel.send(response);
                                         message.channel.stopTyping(true);
                                     })
@@ -111,7 +111,7 @@ handle = async (message) => {
 
         case ".avarole":
             message.channel.startTyping();
-            toggle_available_role(message, args).then(response => {
+            toggle_available_role(message, args.slice(1)).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping(true);
             })    
@@ -253,16 +253,16 @@ assign_roles = async (message) => {
 
 add_role = async (message, args) => {
     return new Promise(async (resolve, reject) => {
-        if (args.length < 4) {
+        if (args.length < 2) {
             resolve("\\⚠ Missing arguments.\nUsage: .roles add [role type] [role command]: [role name]");
             return
         }
-        var type = args[2]
+        var type = args[0]
         if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
             resolve("\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
             return
         }
-        var roles_text = args.slice(3).join(" ");
+        var roles_text = args.slice(1).join(" ");
         var pairs = roles_text.split(",")
         var errors = [];
         var roles_added = [];
@@ -271,7 +271,7 @@ add_role = async (message, args) => {
         for (i = 0; i < pairs.length; i++) {
             let pair = pairs[i].trim();
             if (!pair.includes(":")) {
-                errors += 1;
+                errors.push(pair);
                 continue;
             }
             var roles = pair.split(":", 2);
@@ -300,16 +300,16 @@ add_role = async (message, args) => {
 
 remove_role = async (message, args) => {
     return new Promise(async (resolve, reject) => {
-        if (args.length < 4) {
+        if (args.length < 2) {
             resolve("\\⚠ Missing arguments.\nUsage: .roles remove [role type] [role command]");
             return
         }
-        var type = args[2];
+        var type = args[0];
         if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
             resolve("\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
             return
         }
-        var roles_text = args.slice(3).join(" ");
+        var roles_text = args.slice(1).join(" ");
         var role_commands = roles_text.split(",")
     
         var roles_removed = [];
@@ -335,7 +335,7 @@ remove_role = async (message, args) => {
     })
 }
 
-list_roles = async (message, args) => {
+list_roles = async (message) => {
     return new Promise(async (resolve, reject) => {
         var rows = await database.get_all_roles(message.guild.id);
         var guild = message.guild
@@ -363,10 +363,10 @@ list_roles = async (message, args) => {
 
 set_roles_channel = (message, args) => {
     return new Promise(async (resolve, reject) => {
-        if (args.length < 4) {
+        if (args.length < 1) {
             var channel_id = message.channel.id;
         } else {
-            var channel_id = args[3].match(/<?#?!?(\d+)>?/);
+            var channel_id = args[0].match(/<?#?!?(\d+)>?/);
             if (!channel_id) {
                 resolve("\\⚠ Invalid channel or channel ID.")
                 return
@@ -388,12 +388,12 @@ set_roles_channel = (message, args) => {
 remove_roles_channel = (message, args) => {
     return new Promise(async (resolve, reject) => {
         var guild_id;
-        if (args.length < 4) {
+        if (args.length < 1) {
             guild_id = message.guild.id;
         } else {
-            if (args[3].match(/^\d+$/)) {
-                if (client.guilds.has(args[3])) {
-                    guild_id = args[3];
+            if (args[0].match(/^\d+$/)) {
+                if (client.guilds.has(args[0])) {
+                    guild_id = args[0];
                 } else {
                     resolve("Invalid server ID.");
                 }
@@ -410,12 +410,12 @@ remove_roles_channel = (message, args) => {
 update_roles_channel = (message, args) => {
     return new Promise(async (resolve, reject) => {
         var guild_id;
-        if (args.length < 4) {
+        if (args.length < 1) {
             guild_id = message.guild.id;
         } else {
-            if (args[3].match(/^\d+$/)) {
-                if (client.guilds.has(args[3])) {
-                    guild_id = args[3];
+            if (args[0].match(/^\d+$/)) {
+                if (client.guilds.has(args[0])) {
+                    guild_id = args[0];
                 } else {
                     resolve("Invalid server ID.");
                 }
@@ -431,11 +431,11 @@ update_roles_channel = (message, args) => {
 
 set_roles_channel_msg = (message, args) => {
     return new Promise(async (resolve, reject) => {
-        if (args.length < 5) {
+        if (args.length < 1) {
             resolve("Please provide a message.");
             return;
         }
-        var channel_message = args.slice(4).join(" ");
+        var channel_message = args.join(" ");
         database.set_channel_msg(message.guild.id, channel_message).then(res => {
             resolve(res);
         })
@@ -444,16 +444,16 @@ set_roles_channel_msg = (message, args) => {
 
 toggle_available_role = async (message, args) => {
     return new Promise(async (resolve, reject) => {
-        if (args.length < 3) {
+        if (args.length < 2) {
             resolve("\\⚠ Missing arguments.\nUsage: .avarole [role type] [role name]");
             return
         }
-        var type = args[1]
+        var type = args[0]
         if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
             resolve("\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
             return
         }
-        var roles_text = args.slice(2).join(" ");
+        var roles_text = args.slice(1).join(" ");
         var role_names = roles_text.split(",");
     
         var roles_added = [];
