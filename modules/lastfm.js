@@ -105,8 +105,9 @@ handle = async (message) => {
         case ".chart":
             message.channel.startTyping();
             lf_chart(message, args.slice(1)).then(response => {
-                message.channel.send(response.content, response.messageOptions);
-                message.channel.stopTyping(true);
+                message.channel.send(response.content, response.messageOptions).then(reply => {
+                    message.channel.stopTyping(true);
+                })
             }).catch(error => {
                 console.error(error);
             })
