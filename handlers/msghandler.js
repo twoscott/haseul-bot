@@ -8,6 +8,7 @@ const roles = require("../modules/roles.js");
 const lastfm = require("../modules/lastfm.js");
 const youtube = require("../modules/youtube.js");
 const utility = require("../modules/utility.js");
+const moderation = require("../modules/moderation.js")
 
 //Handle message
 
@@ -23,5 +24,6 @@ exports.handle = (message) => {
     lastfm.handle(message);
     youtube.handle(message);
     utility.handle(message);
+    moderation.handle(message);
 
 }

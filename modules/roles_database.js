@@ -13,10 +13,10 @@ db.serialize(() => {
 
 exports.set_roles_channel = async (channel_id, guild_id) => {
     return new Promise(async (resolve, reject) => {
-        var channel = client.channels.get(channel_id);
-        var guild = client.guilds.get(guild_id);
-        var role_rows = await exports.get_available_roles(guild_id);
-        var sender = await guild.fetchMember(client.user.id);
+        let channel = client.channels.get(channel_id);
+        let guild = client.guilds.get(guild_id);
+        let role_rows = await exports.get_available_roles(guild_id);
+        let sender = await guild.fetchMember(client.user.id);
         db.get("SELECT * FROM rolesChannels WHERE guildID = ?", [guild_id], (err, row) => {
             if (err) {
                 reject(err);
@@ -31,11 +31,11 @@ exports.set_roles_channel = async (channel_id, guild_id) => {
                 return;
             }
 
-            var embed;
+            let embed;
             if (role_rows && role_rows.length > 0) {
-                var main_roles = [];
-                var sub_roles = [];
-                var other_roles = [];
+                let main_roles = [];
+                let sub_roles = [];
+                let other_roles = [];
                 for(i = 0; i < role_rows.length; i++) {
                     let row = role_rows[i];
                     switch (row.type) {
@@ -54,7 +54,7 @@ exports.set_roles_channel = async (channel_id, guild_id) => {
                 if (sub_roles.length > 1) embed.addField("Sub Roles", sub_roles, false);
                 if (other_roles.length > 1) embed.addField("Other Roles", other_roles, false);
                 embed.setTitle("__Available Roles__");
-                var colour = 0xFFFFFF;
+                let colour = 0xFFFFFF;
                 if (sender && sender.roles) {
                     colour = sender.colorRole.color;
                 }
@@ -76,9 +76,9 @@ exports.set_roles_channel = async (channel_id, guild_id) => {
 
 exports.update_roles_channel = async (guild_id) => {
     return new Promise(async (resolve, reject) => {
-        var role_rows = await exports.get_available_roles(guild_id);
-        var guild = client.guilds.get(guild_id);
-        var sender = await guild.fetchMember(client.user.id);
+        let role_rows = await exports.get_available_roles(guild_id);
+        let guild = client.guilds.get(guild_id);
+        let sender = await guild.fetchMember(client.user.id);
 
         db.get("SELECT * FROM rolesChannels WHERE guildID = ?", [guild_id], (err, row) => {
             if (err) {
@@ -90,11 +90,11 @@ exports.update_roles_channel = async (guild_id) => {
                 return;
             }
 
-            var embed;
+            let embed;
             if (role_rows && role_rows.length > 0) {
-                var main_roles = [];
-                var sub_roles = [];
-                var other_roles = [];
+                let main_roles = [];
+                let sub_roles = [];
+                let other_roles = [];
                 for(i = 0; i < role_rows.length; i++) {
                     let row = role_rows[i];
                     switch (row.type) {
@@ -113,16 +113,16 @@ exports.update_roles_channel = async (guild_id) => {
                 if (sub_roles.length > 1) embed.addField("Sub Roles", sub_roles, false);
                 if (other_roles.length > 1) embed.addField("Other Roles", other_roles, false);
                 embed.setTitle("__Available Roles__");
-                var colour = 0xFFFFFF;
+                let colour = 0xFFFFFF;
                 if (sender && sender.roles) {
                     colour = sender.colorRole.color;
                 }
                 embed.setColor(colour);
             }
 
-            var channel_id = row.channelID;
-            var message_id = row.messageID;
-            var channel = client.channels.get(channel_id);
+            let channel_id = row.channelID;
+            let message_id = row.messageID;
+            let channel = client.channels.get(channel_id);
             channel.fetchMessage(message_id).then(old_message => {
                 old_message.delete();
                 channel.send(row.msg, {embed: embed}).then(msg => {
@@ -150,9 +150,9 @@ exports.remove_roles_channel = (guild_id) => {
                 resolve("Error: No roles assignment channel exists on this server.");
                 return;
             }
-            var message_id = row.messageID;
-            var channel_id = row.channelID;
-            var channel = client.channels.get(channel_id);
+            let message_id = row.messageID;
+            let channel_id = row.channelID;
+            let channel = client.channels.get(channel_id);
             channel.fetchMessage(message_id).then(msg => msg.delete()).catch(() => {});
             db.run("UPDATE rolesChannels SET (channelID, messageID) = (NULL, NULL) WHERE guildID = ?", [guild_id], (err) => {
                 if (err) {

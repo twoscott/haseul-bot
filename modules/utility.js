@@ -7,7 +7,7 @@ const client = require("../haseul").client;
 
 handle = (message) => {
 
-    var args = message.content.trim().split(" ");
+    let args = message.content.trim().split(" ");
 
     //Handle commands
 
@@ -16,7 +16,7 @@ handle = (message) => {
         case ".github":
             message.channel.startTyping();
             message.channel.send("https://github.com/haseul/haseul-bot");
-            message.channel.stopTyping(true);
+            message.channel.stopTyping();
             break;
 
     }

@@ -8,7 +8,7 @@ const database = require("../modules/roles_database");
 
 handle = async (message) => {
 
-    var args = message.content.trim().split(" ");
+    let args = message.content.trim().split(" ");
 
     //Get server role channel
 
@@ -35,7 +35,10 @@ handle = async (message) => {
                     message.channel.startTyping();
                     add_role(message, args.slice(2)).then(response => {
                         message.channel.send(response);
-                        message.channel.stopTyping(true);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
                     })
                     break;
 
@@ -45,7 +48,10 @@ handle = async (message) => {
                     message.channel.startTyping();
                     remove_role(message, args.slice(2)).then(response => {
                         message.channel.send(response);
-                        message.channel.stopTyping(true);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
                     })
                     break;
 
@@ -53,7 +59,10 @@ handle = async (message) => {
                     message.channel.startTyping();
                     list_roles(message).then(response => {
                         message.channel.send(response);
-                        message.channel.stopTyping(true);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
                     })
                     break;
 
@@ -66,7 +75,10 @@ handle = async (message) => {
                             message.channel.startTyping();
                             set_roles_channel(message, args.slice(3)).then(response => {
                                 message.channel.send(response);
-                                message.channel.stopTyping(true);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
                             })
                             break; 
 
@@ -76,7 +88,10 @@ handle = async (message) => {
                             message.channel.startTyping();
                             remove_roles_channel(message, args.slice(3)).then(response => {
                                 message.channel.send(response);
-                                message.channel.stopTyping(true);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
                             })
                             break;
 
@@ -84,7 +99,10 @@ handle = async (message) => {
                             message.channel.startTyping();
                             update_roles_channel(message, args.slice(3)).then(response => {
                                 message.channel.send(response);
-                                message.channel.stopTyping(true);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
                             })
                             break;
 
@@ -97,7 +115,10 @@ handle = async (message) => {
                                     message.channel.startTyping();
                                     set_roles_channel_msg(message, args.slice(4)).then(response => {
                                         message.channel.send(response);
-                                        message.channel.stopTyping(true);
+                                        message.channel.stopTyping();
+                                    }).catch(error => {
+                                        console.error(error);
+                                        message.channel.stopTyping();
                                     })
                                     break;
                             }
@@ -113,13 +134,16 @@ handle = async (message) => {
             message.channel.startTyping();
             toggle_available_role(message, args.slice(1)).then(response => {
                 message.channel.send(response);
-                message.channel.stopTyping(true);
-            })    
+                message.channel.stopTyping();
+            })    .catch(error => {
+                console.error(error);
+                message.channel.stopTyping();
+            })
     }
 }
 
 roles_response = (responses) => {
-    var list = [];
+    let list = [];
     for (let [key, val] of Object.entries(responses)) {
         if (val.length > 0) list.push(`**${key}**: ${val.join(", ")}`)
     }
@@ -127,7 +151,7 @@ roles_response = (responses) => {
 }
 
 roles_embed = (responses) => {
-    var embed = new discord.RichEmbed();
+    let embed = new discord.RichEmbed();
     for (let [key, val] of Object.entries(responses)) {
         if (val.length > 0) embed.addField(key, val.join(", "), inline=false);
     }
@@ -144,9 +168,9 @@ assign_roles = async (message) => {
 
     //Process commands
 
-    var args = message.content.trim().split(" ");
+    let args = message.content.trim().split(" ");
     if (args.length < 2) {message.delete(timeout=1000).catch(() => {}); return;}
-    var prefix = message.content.trim().match(/^(?:\+|\-)\s*(main|sub|other)/i);
+    let prefix = message.content.trim().match(/^(?:\+|\-)\s*(main|sub|other)/i);
     if (!prefix) {
         message.reply("Invalid formatting. Please read the instructions above.").then(reply => {
             reply.delete(4000).catch(() => {});
@@ -154,15 +178,15 @@ assign_roles = async (message) => {
         }) 
         return;
     }
-    var modifier = prefix[0][0]; 
-    var type = prefix[1];
-    var role_commands = message.content.slice(message.content.indexOf(type) + type.length).split(",");
-    var roles_to_process = [];
-    var roles_successful = [];
-    var roles_unsuccessful = [];
-    var errors = [];
+    let modifier = prefix[0][0]; 
+    let type = prefix[1];
+    let role_commands = message.content.slice(message.content.indexOf(type) + type.length).split(",");
+    let roles_to_process = [];
+    let roles_successful = [];
+    let roles_unsuccessful = [];
+    let errors = [];
     
-    var member;
+    let member;
     if (message.member) {
         member = message.member;
     } else {
@@ -175,7 +199,7 @@ assign_roles = async (message) => {
         let role_command = role_commands[i].trim();
         let role_id = await database.get_role(role_command, message.guild.id, type);
         let role = message.guild.roles.get(role_id);
-        var colour;
+        let colour;
 
         //Process role
 
@@ -240,7 +264,7 @@ assign_roles = async (message) => {
                 message.delete(embed.fields.length * 2000 + 2000)
             })
             break;
-        
+
         default:
             return;
             break;
@@ -257,16 +281,16 @@ add_role = async (message, args) => {
             resolve("\\⚠ Missing arguments.\nUsage: .roles add [role type] [role command]: [role name]");
             return
         }
-        var type = args[0]
+        let type = args[0]
         if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
             resolve("\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
             return
         }
-        var roles_text = args.slice(1).join(" ");
-        var pairs = roles_text.split(",")
-        var errors = [];
-        var roles_added = [];
-        var roles_exist = [];
+        let roles_text = args.slice(1).join(" ");
+        let pairs = roles_text.split(",")
+        let errors = [];
+        let roles_added = [];
+        let roles_exist = [];
     
         for (i = 0; i < pairs.length; i++) {
             let pair = pairs[i].trim();
@@ -274,16 +298,16 @@ add_role = async (message, args) => {
                 errors.push(pair);
                 continue;
             }
-            var roles = pair.split(":", 2);
-            var role_command = roles[0].trim();
-            var role_name = roles[1].trim();
-            var role = message.guild.roles.find("name", role_name);
+            let roles = pair.split(":", 2);
+            let role_command = roles[0].trim();
+            let role_name = roles[1].trim();
+            let role = message.guild.roles.find("name", role_name);
             if (role_command.length < 1 || role_name.length < 1) {
                 errors.push(role_command);
             } else if (!role || !message.guild.roles.has(role.id)) {
                 errors.push(role_command);
             } else {
-                var role_id = message.guild.roles.find("name", role_name).id
+                let role_id = message.guild.roles.find("name", role_name).id
                 added = await database.add_role(role_command, role_id, role_name, message.guild.id, type)
                 if (added) {
                     roles_added.push(role_name);
@@ -292,7 +316,7 @@ add_role = async (message, args) => {
                 }
             }
         }
-        var responses = {"Role commands added": roles_added, "Role commands already paired": roles_exist, "Errors": errors}
+        let responses = {"Role commands added": roles_added, "Role commands already paired": roles_exist, "Errors": errors}
         responses = roles_response(responses);
         resolve(responses);
     })
@@ -304,17 +328,17 @@ remove_role = async (message, args) => {
             resolve("\\⚠ Missing arguments.\nUsage: .roles remove [role type] [role command]");
             return
         }
-        var type = args[0];
+        let type = args[0];
         if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
             resolve("\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
             return
         }
-        var roles_text = args.slice(1).join(" ");
-        var role_commands = roles_text.split(",")
+        let roles_text = args.slice(1).join(" ");
+        let role_commands = roles_text.split(",")
     
-        var roles_removed = [];
-        var roles_nonexistent = [];
-        var errors = [];
+        let roles_removed = [];
+        let roles_nonexistent = [];
+        let errors = [];
         
         for (i = 0; i < role_commands.length; i++) {
             let role_command = role_commands[i].trim();
@@ -329,7 +353,7 @@ remove_role = async (message, args) => {
                 }
             }
         }
-        var responses = {"Role commands removed": roles_removed, "Role commands nonexistent": roles_nonexistent, "Errors": errors}
+        let responses = {"Role commands removed": roles_removed, "Role commands nonexistent": roles_nonexistent, "Errors": errors}
         responses = roles_response(responses);
         resolve(responses);
     })
@@ -337,11 +361,11 @@ remove_role = async (message, args) => {
 
 list_roles = async (message) => {
     return new Promise(async (resolve, reject) => {
-        var rows = await database.get_all_roles(message.guild.id);
-        var guild = message.guild
-        var main_roles = [];
-        var sub_roles = [];
-        var other_roles = [];
+        let rows = await database.get_all_roles(message.guild.id);
+        let guild = message.guild
+        let main_roles = [];
+        let sub_roles = [];
+        let other_roles = [];
         for (i = 0; i < rows.length; i++) {
             let row = rows[i];
             command = row.roleCommand;
@@ -356,7 +380,7 @@ list_roles = async (message) => {
         main_roles = "__**Main Roles**__\n" + main_roles.join(" **|** ") + "\n";
         sub_roles = "__**Sub Roles**__\n" + sub_roles.join(" **|** ") + "\n";
         other_roles = "__**Other Roles**__\n" + other_roles.join(" **|** ") + "\n";
-        var list = [main_roles, sub_roles, other_roles].join("\n");
+        let list = [main_roles, sub_roles, other_roles].join("\n");
         resolve(list);
     })
 }
@@ -364,9 +388,9 @@ list_roles = async (message) => {
 set_roles_channel = (message, args) => {
     return new Promise(async (resolve, reject) => {
         if (args.length < 1) {
-            var channel_id = message.channel.id;
+            let channel_id = message.channel.id;
         } else {
-            var channel_id = args[0].match(/<?#?!?(\d+)>?/);
+            let channel_id = args[0].match(/<?#?!?(\d+)>?/);
             if (!channel_id) {
                 resolve("\\⚠ Invalid channel or channel ID.")
                 return
@@ -387,7 +411,7 @@ set_roles_channel = (message, args) => {
 
 remove_roles_channel = (message, args) => {
     return new Promise(async (resolve, reject) => {
-        var guild_id;
+        let guild_id;
         if (args.length < 1) {
             guild_id = message.guild.id;
         } else {
@@ -409,7 +433,7 @@ remove_roles_channel = (message, args) => {
 
 update_roles_channel = (message, args) => {
     return new Promise(async (resolve, reject) => {
-        var guild_id;
+        let guild_id;
         if (args.length < 1) {
             guild_id = message.guild.id;
         } else {
@@ -435,7 +459,7 @@ set_roles_channel_msg = (message, args) => {
             resolve("Please provide a message.");
             return;
         }
-        var channel_message = args.join(" ");
+        let channel_message = args.join(" ");
         database.set_channel_msg(message.guild.id, channel_message).then(res => {
             resolve(res);
         })
@@ -448,17 +472,17 @@ toggle_available_role = async (message, args) => {
             resolve("\\⚠ Missing arguments.\nUsage: .avarole [role type] [role name]");
             return
         }
-        var type = args[0]
+        let type = args[0]
         if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
             resolve("\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
             return
         }
-        var roles_text = args.slice(1).join(" ");
-        var role_names = roles_text.split(",");
+        let roles_text = args.slice(1).join(" ");
+        let role_names = roles_text.split(",");
     
-        var roles_added = [];
-        var roles_removed = [];
-        var errors = [];
+        let roles_added = [];
+        let roles_removed = [];
+        let errors = [];
     
         for (i = 0; i < role_names.length; i++) {
             let role_name = role_names[i];
@@ -476,7 +500,7 @@ toggle_available_role = async (message, args) => {
                 }
             }
         }
-        var responses = {"Role names added": roles_added, "Role names removed": roles_removed, "Errors": errors}
+        let responses = {"Role names added": roles_added, "Role names removed": roles_removed, "Errors": errors}
         responses = roles_response(responses);
         resolve(responses);
     })

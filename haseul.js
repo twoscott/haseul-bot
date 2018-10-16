@@ -4,9 +4,21 @@ exports.client = client;
 
 //Fetch handlers
 
-messages = require("./handlers/msghandler");
+const messages = require("./handlers/msghandler");
 
 //Events
+
+client.on("error", error => {
+    console.error(error);
+})
+
+client.on("disconnect", closeEvent => {
+    console.log(`Fatal error occured... Attempting to reconnect. Reason: ${closeEvent.reason}`)
+})
+
+client.on("reconnecting", () => {
+    console.log("Reconnecting...");
+})
 
 client.on("ready", () => {
     console.log("Ready!");
@@ -20,4 +32,5 @@ client.on("message", message => {
 
 //Login
 
-client.login("TOKEN");
+client.login("NDU3NjQwNzgxNTU4MDU0OTI1.DpRbHA.c-Qf_9TomPWwJdyJTREY5SyOzhQ");
+// client.login("NDE4ODk1Nzk1MTE1NTI0MTE2.DqEL4g.E373d_agzRtXVKUdENfojgsIsKY");
