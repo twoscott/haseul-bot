@@ -49,16 +49,18 @@ say = (message, args) => {
         let files = [];
         for (i=0; i < attachments.length; i++) {
             let attachment = attachments[i];
-            let file = {attachment: attachment.url, name: attachment.filename}
+            let file = {attachment: attachment.url, name: attachment.filename};
             files.push(file);
         }
 
         let content = args.slice(1).join(" ");
+        channel.startTyping();
         channel.send(content, {files: files}).then(() => {
-            resolve(`Message sent to <#${channel_id}>.`)
+            channel.stopTyping();
+            resolve(`Message sent to <#${channel_id}>.`);
         }).catch(error => {
             console.error(error);
-            resolve("Error occured sending message.")
+            resolve("Error occured sending message.");
         })
 
     })

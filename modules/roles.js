@@ -195,11 +195,11 @@ assign_roles = async (message) => {
 
     //Parse role commands
 
+    let colour;
     for (i = 0; i < role_commands.length; i++) {
         let role_command = role_commands[i].trim();
         let role_id = await database.get_role(role_command, message.guild.id, type);
         let role = message.guild.roles.get(role_id);
-        let colour;
 
         //Process role
 
@@ -387,20 +387,21 @@ list_roles = async (message) => {
 
 set_roles_channel = (message, args) => {
     return new Promise(async (resolve, reject) => {
+        let channel_id
         if (args.length < 1) {
-            let channel_id = message.channel.id;
+            channel_id = message.channel.id;
         } else {
-            let channel_id = args[0].match(/<?#?!?(\d+)>?/);
+            channel_id = args[0].match(/<?#?!?(\d+)>?/);
             if (!channel_id) {
-                resolve("\\⚠ Invalid channel or channel ID.")
-                return
+                resolve("\\⚠ Invalid channel or channel ID.");
+                return;
             } else {
-                channel_id = channel_id[1]
+                channel_id = channel_id[1];
             }
         }
         if (!message.guild.channels.has(channel_id)) {
-            resolve("\\⚠ Channel doesn't exist in this server.")
-            return
+            resolve("\\⚠ Channel doesn't exist in this server.");
+            return;
         } else {
             database.set_roles_channel(channel_id, message.guild.id).then(res => {
                 resolve(res);

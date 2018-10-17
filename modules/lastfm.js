@@ -131,7 +131,7 @@ set_lf_user = async (message, args) => {
         }
         let username = args.join(" ").trim();
     
-        axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURI(username)}&api_key=${api_key}&format=json`).then(response => {
+        axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`).then(response => {
             database.set_lf_user(message.author.id, username).then(response => {
                 resolve(response);
             })
@@ -166,7 +166,7 @@ lf_recents = async (message, args) => {
             resolve("\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.");
             return;
         }
-        axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURI(username)}&api_key=${api_key}&format=json&limit=2`).then(response => {
+        axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=2`).then(response => {
             let tracks = response.data.recenttracks.track;
             let attr = response.data.recenttracks["@attr"];
             let lf_user = attr.user;
@@ -252,7 +252,7 @@ lf_profile = async (message, args) => {
 
         let response
         try {
-            response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURI(username)}&api_key=${api_key}&format=json`)
+            response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
         } catch (error) {
             resolve(`\\⚠ ${username} is not a valid Last.fm user.`);
             console.error(error);
@@ -303,7 +303,7 @@ lf_youtube = async (message, args) => {
             resolve("\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.");
             return;
         }
-        axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURI(username)}&api_key=${api_key}&format=json&limit=1`).then(response => {
+        axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=1`).then(response => {
 
             let track = response.data.recenttracks.track[0];
             let artist = track.artist["#text"];
