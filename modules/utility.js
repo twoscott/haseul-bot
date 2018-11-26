@@ -37,6 +37,7 @@ handle = (message) => {
                 console.error(error);
                 message.channel.stopTyping();
             })
+            break;
 
         case ".help":
             message.channel.startTyping();
@@ -47,6 +48,7 @@ handle = (message) => {
                 console.error(error);
                 message.channel.stopTyping();
             })
+            break;
 
     }
 }
