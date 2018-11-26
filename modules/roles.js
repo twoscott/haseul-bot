@@ -153,7 +153,7 @@ roles_response = (responses) => {
 roles_embed = (responses) => {
     let embed = new discord.RichEmbed();
     for (let [key, val] of Object.entries(responses)) {
-        if (val.length > 0) embed.addField(key, val.join(", "), inline=false);
+        if (val.length > 0) embed.addField(key, val.join(", "), false);
     }
     return embed;
 }
@@ -307,7 +307,7 @@ add_role = async (message, args) => {
             } else if (!role || !message.guild.roles.has(role.id)) {
                 errors.push(role_command);
             } else {
-                let role_id = message.guild.roles.find("name", role_name).id
+                let role_id = role.id
                 added = await database.add_role(role_command, role_id, role_name, message.guild.id, type)
                 if (added) {
                     roles_added.push(role_name);

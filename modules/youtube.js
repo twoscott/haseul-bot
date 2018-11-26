@@ -34,10 +34,10 @@ query = (query) => {
             resolve("\\⚠ Please provide a query to search for!");
             return;
         }
-        axios.get(`https://www.youtube.com/results?search_query=${encodeURI(query)}`).then(response => {
+        axios.get(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`).then(response => {
             let search = response.data.match(/<div class="yt-lockup-content"><h3 class="yt-lockup-title "><a href="\/watch\?v=([^&"]+)/i)
             if (!search) {
-                console.error("Something went wrong requesting a Youtube search.");
+                resolve(`\\⚠ No results found for this search!`);
                 return;
             }
             let video_id = search[1];

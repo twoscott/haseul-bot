@@ -1,6 +1,6 @@
 const discord = require("discord.js");
 const sql = require("sqlite3").verbose();
-const db = new sql.Database('./haseul_databases/Roles Database.db');
+const db = new sql.Database('./haseul_data/Roles Database.db');
 const client = require("../haseul").client;
 
 db.serialize(() => {
@@ -55,7 +55,7 @@ exports.set_roles_channel = async (channel_id, guild_id) => {
                 if (other_roles.length > 1) embed.addField("Other Roles", other_roles, false);
                 embed.setTitle("__Available Roles__");
                 let colour = 0xFFFFFF;
-                if (sender && sender.roles) {
+                if (sender && sender.colorRole) {
                     colour = sender.colorRole.color;
                 }
                 embed.setColor(colour);

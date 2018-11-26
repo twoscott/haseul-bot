@@ -1,6 +1,6 @@
 const discord = require("discord.js");
 const sql = require("sqlite3").verbose();
-const db = new sql.Database('./haseul_databases/Last.fm Database.db');
+const db = new sql.Database('./haseul_data/Last.fm Database.db');
 const client = require("../haseul").client;
 
 db.serialize(() => {
