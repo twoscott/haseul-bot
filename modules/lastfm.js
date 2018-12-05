@@ -73,7 +73,7 @@ handle = async (message) => {
                         recentsCount = 2;
                     }
 
-                    if (recentsCount > 250) recentsCount = 250;
+                    if (recentsCount > 1000) recentsCount = 1000;
                     
                     if (recentsCount < 3) {
                         message.channel.startTyping();
@@ -382,7 +382,7 @@ lf_recents_list = async (message, username, recentsCount) => {
         let pages = [];
         let length = 0;
         let page = [];
-        for (i=0; i < recentsCount; i++) {
+        for (i=0; i < recentsCount && i < tracks.length; i++) {
             let track = tracks[i];
             let row;
             if (track["@attr"] && track["@attr"].nowplaying == "true") {
@@ -411,7 +411,7 @@ lf_recents_list = async (message, username, recentsCount) => {
             .setAuthor(`${lf_user}${posessive} Recent Tracks`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lf_user}/library`)
             .setColor(0xc1222a);
 
-        functions.embedPages(message, embed, pages);
+        functions.embedPages(message, embed, pages, 600000);
         resolve();
         
     })
@@ -499,7 +499,7 @@ lf_top_artists = async (message, args) => {
             .setThumbnail(artist_thumbnail)
             .setColor(0xf49023);
 
-        functions.embedPages(message, embed, pages);
+        functions.embedPages(message, embed, pages, 600000);
         resolve();
         
     })
@@ -587,7 +587,7 @@ lf_top_albums = async (message, args) => {
             .setThumbnail(album_thumbnail)
             .setColor(0x2f8f5e);
 
-        functions.embedPages(message, embed, pages);
+        functions.embedPages(message, embed, pages, 600000);
         resolve();
         
     })
@@ -675,7 +675,7 @@ lf_top_tracks = async (message, args) => {
             .setThumbnail(track_thumbnail)
             .setColor(0x2b61fb);
 
-        functions.embedPages(message, embed, pages);
+        functions.embedPages(message, embed, pages, 600000);
         resolve();
         
     })

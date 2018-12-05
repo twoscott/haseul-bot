@@ -8,7 +8,7 @@ const functions = require("../functions/functions.js")
 
 //Variables
 
-const translate_key = "a53e64f50fad4820a39c55250e88af52"
+const translate_key = "KEY"
 
 //Functions
 
@@ -37,6 +37,7 @@ handle = (message) => {
                 console.error(error);
                 message.channel.stopTyping();
             })
+            break;
 
         case ".help":
             message.channel.startTyping();
@@ -47,6 +48,7 @@ handle = (message) => {
                 console.error(error);
                 message.channel.stopTyping();
             })
+            break;
 
     }
 }
@@ -161,7 +163,7 @@ help = async (message, args) => {
             }
             pages.push(page.join("\n"));
     
-            functions.embedPages(message, embed, pages);
+            functions.embedPages(message, embed, pages, 600000);
             resolve();
             return;
         }
@@ -213,7 +215,7 @@ help = async (message, args) => {
             .setColor(module_obj.colour)
             .setDescription(module_obj.description)
 
-        functions.embedPagesFields(message, embed, pages);
+        functions.embedPagesFields(message, embed, pages, 600000);
         resolve();
     })  
 }

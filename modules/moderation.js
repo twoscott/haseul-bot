@@ -2,12 +2,22 @@
 
 const discord = require("discord.js");
 const client = require("../haseul").client;
+const database = require("./mod_database");
 
 //Functions
 
 handle = async (message) => {
 
     let args = message.content.trim().split(" ");
+
+    //Get poll channel
+
+    database.get_poll_channel(message.guild.id).then(poll_channel_id => {
+        if (message.channel.id === poll_channel_id) {
+            await message.react('✅');
+            await message.react('❌');
+        }
+    })
 
     //Handle commands
 
@@ -61,8 +71,42 @@ handle = async (message) => {
             })
             break;
 
+        case ".poll":
+            switch (args[1]) {
+
+                case "channel":
+
+                    switch (args[2]) {
+
+                        case "set":
+                            setPollChannel(message, args.slice(3)).then(response => {
+                                message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+
+                        case "remove":
+                        case "delete":
+                            removePollChannel(message).then(response => {
+                                message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+
+                    }
+
+            }
+
     }
 }
+
+//Commands
 
 say = (message, args, raw) => {
     return new Promise((resolve, reject) => {
@@ -148,6 +192,39 @@ edit = (message, args, raw) => {
         }).catch(error => {
             console.error(error);
             resolve("\\⚠ Invalid message ID.")
+        })
+    })
+}
+
+setPollChannel = (message, args) => {
+    return new Promise(async (resolve, reject) => {
+        let channel_id
+        if (args.length < 1) {
+            channel_id = message.channel.id;
+        } else {
+            channel_id = args[0].match(/<?#?!?(\d+)>?/);
+            if (!channel_id) {
+                resolve("\\⚠ Invalid channel or channel ID.");
+                return;
+            } else {
+                channel_id = channel_id[1];
+            }
+        }
+        if (!message.guild.channels.has(channel_id)) {
+            resolve("\\⚠ Channel doesn't exist in this server.");
+            return;
+        } else {
+            database.set_poll_channel(message.guild.id, channel_id).then(res => {
+                resolve(res);
+            })
+        }
+    })
+}
+
+removePollChannel = (message) => {
+    return new Promise(async (resolve, reject) => {
+        database.remove_poll_channel(message.guild.id).then(res => {
+            resolve(res);
         })
     })
 }

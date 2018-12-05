@@ -47,13 +47,13 @@ exports.remove_lf_user = (user_id) => {
                 return;
             }
             if (!row) {
-                resolve("No Last.fm username found.")
+                resolve("No Last.fm username found.");
             } else {
                 db.run("DELETE FROM lastfm WHERE userID = ?", [user_id], err => {
                     if (err) {
                         reject(err);
                     } else {
-                        resolve("Last.fm username removed.")
+                        resolve("Last.fm username removed.");
                     }
                 })
             }
@@ -71,7 +71,7 @@ exports.get_lf_user = (user_id) => {
                 return;
             }
             if (!row) {
-                resolve()
+                resolve();
             } else {
                 resolve(row.lfUser);
             }

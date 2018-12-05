@@ -3,6 +3,7 @@
 const discord = require("discord.js");
 const axios = require("axios")
 const client = require("../haseul").client;
+const functions = require("../functions/functions");
 
 //Functions
 
@@ -16,8 +17,8 @@ handle = (message) => {
 
         case ".yt":
             message.channel.startTyping();
-            query(args.slice(1).join(" ")).then(response => {
-                message.channel.send(response);
+            yt_pages(message, args.slice(1).join(" ")).then(response => {
+                if (response) message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
                 console.error(error);
@@ -42,6 +43,32 @@ query = (query) => {
             }
             let video_id = search[1];
             resolve(`https://youtu.be/${video_id}`);
+        }).catch(error => {
+            reject(error);
+        })
+    })
+}
+
+yt_pages = (message, query) => {
+    return new Promise((resolve, reject) => {
+        if (!query) {
+            resolve("\\⚠ Please provide a query to search for!");
+            return;
+        }
+        axios.get(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`).then(response => {
+            let regExp = /<div class="yt-lockup-content"><h3 class="yt-lockup-title "><a href="\/watch\?v=([^&"]+)/ig;
+            let pages = [];
+            let search = regExp.exec(response.data);
+            while (search !== null) {
+                pages.push(`https://youtu.be/${search[1]}`);
+                search = regExp.exec(response.data);
+            }
+            if (pages.length < 1) {
+                resolve(`\\⚠ No results found for this search!`);
+                return;
+            }
+            functions.pages(message, pages, 600000, true);
+            resolve();
         }).catch(error => {
             reject(error);
         })
