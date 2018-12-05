@@ -12,7 +12,7 @@ handle = async (message) => {
 
     //Get poll channel
 
-    database.get_poll_channel(message.guild.id).then(poll_channel_id => {
+    database.get_poll_channel(message.guild.id).then(async poll_channel_id => {
         if (message.channel.id === poll_channel_id) {
             await message.react('✅');
             await message.react('❌');
