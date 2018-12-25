@@ -6,12 +6,12 @@ const client = require("../haseul").client;
 pages = async (message, pages, timeout, lock) => {
     let currentPage = 0;
     let content = `${pages[currentPage]}`;
-        
+
     if (pages.length < 2) {
         message.channel.send(content);
     } else {
         message.channel.send(content).then(async reply => {  
-            await reply.react("⏮");          
+            await reply.react("⏮");
             await reply.react("⬅");
             await reply.react("➡");
             await reply.react("⏭");

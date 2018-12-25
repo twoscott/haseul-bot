@@ -1,28 +1,29 @@
 //Require modules
 
 const discord = require("discord.js");
-const axios = require("axios")
+const axios = require("axios");
 
-const client = require("../haseul").client;
-const database = require("../modules/lastfm_database");
-const functions = require("../functions/functions.js")
-const youtube = require("./youtube.js")
+const client = require("../haseul.js").client;
+const config = require("../config.json");
+const database = require("../modules/lastfm_database.js");
+const functions = require("../functions/functions.js");
+const youtube = require("./youtube.js");
 
-//Variables
+//Init
 
-const api_key = "KEY"
+const api_key = config.lastfm_key;
 
 let week = ["7", "7day", "7days", "weekly", "week", "1week"];
 let month = ["30", "30day", "30days", "monthly", "month", "1month"];
 let three_month = ["90", "90day", "90days", "3months", "3month"];
 let six_month = ["180", "180day", "180days", "6months", "6month"];
 let year = ["365", "365day", "365days", "1year", "year", "yr", "12months", "yearly"];
-let overall = ["all", "alltime", "forever", "overall"];
+let overall = ["all", "at", "alltime", "forever", "overall"];
 let grids = ["3x3", "4x4", "5x5"];
 
 //Functions
 
-handle = async (message) => {
+exports.handle = async (message) => {
 
     let args = message.content.trim().split(" ");
 
@@ -62,38 +63,29 @@ handle = async (message) => {
                     let recentsCount;
                     let username;
                     if (args.length > 2) {
-                        if (!parseInt(args[2])) {
-                            username = args[2];
-                            recentsCount = 2;
-                        } else {
-                            recentsCount = parseInt(args[2]);
+                        recentsNum = parseInt(args[2])
+                        if (recentsNum) {
+                            recentsCount = recentsNum;
                             username = args[3];
-                        } 
+                        }
+                        else {
+                            recentsCount = 10;
+                            username = args[2];
+                        }
                     } else {
-                        recentsCount = 2;
+                        recentsCount = 10;
                     }
-
-                    if (recentsCount > 1000) recentsCount = 1000;
+                    recentsCount = recentsCount > 1000 ? 1000 : recentsCount;
                     
-                    if (recentsCount < 3) {
-                        message.channel.startTyping();
-                        lf_recents(message, username, recentsCount).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                        }).catch(error => {
-                            console.error(error);
-                            message.channel.stopTyping();
-                        })
-                    } else {
-                        message.channel.startTyping();
-                        lf_recents_list(message, username, recentsCount).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                        }).catch(error => {
-                            console.error(error);
-                            message.channel.stopTyping();
-                        })
-                    }
+                    let recentsFunc = recentsCount < 3 ? lf_recents : lf_recents_list;
+                    message.channel.startTyping();
+                    recentsFunc(message, username, recentsCount).then(response => {
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
                     break;
 
                 case "topartists":
@@ -111,6 +103,7 @@ handle = async (message) => {
                     break;
 
                 case "topalbums":
+                case "talb":
                 case "tal":
                 case "tab":
                     message.channel.startTyping();
@@ -224,7 +217,9 @@ remove_lf_user = async (message) => {
     return new Promise(async (resolve, reject) => {
         database.remove_lf_user(message.author.id).then(response => {
             resolve(response);
-        })    
+        }).catch(err => {
+            reject(err)
+        })
     })
 }
 
@@ -253,7 +248,6 @@ lf_recents = async (message, username, recentsCount) => {
         let tracks = response.data.recenttracks.track;
         let attr = response.data.recenttracks["@attr"];
         let lf_user = attr.user;
-        let totalScrobbles = attr.total;
         if (!tracks || tracks.length < 1) {
             resolve(`\\⚠ ${lf_user} hasn't listened to any Music.`);
             return;
@@ -291,7 +285,7 @@ lf_recents = async (message, username, recentsCount) => {
         }
 
         let album_thumbnail = track1.image[2]["#text"];
-        let album_image = track1.image[track1.image.length - 1]["#text"].replace("300x300/", "");
+        let album_image = track1.image[track1.image.length-1]["#text"].replace("300x300/", "");
         if (!album_thumbnail || album_thumbnail.length < 1) {
             album_thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
         }
@@ -308,22 +302,17 @@ lf_recents = async (message, username, recentsCount) => {
             track1.status = "Last Played";
         }
 
-        let field1 = `${track1.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track1.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track1.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track1.name).replace(/\)/g, "\\)")})`;
-        let field2 = `${track2.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track2.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track2.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track2.name).replace(/\)/g, "\\)")})`;
+        let field1 = `${track1.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track1.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track1.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track1.name).replace(/\)/g, "\\)")})`;
+        let field2 = `${track2.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track2.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track2.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track2.name).replace(/\)/g, "\\)")})`;
         if (track1.album["#text"]) field1+=` | **${track1.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`
         if (track2.album["#text"]) field2+=` | **${track2.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`
 
-        let posessive;
-        if (lf_user[lf_user.length - 1].toLowerCase() == "s") {
-            posessive = "'";
-        } else {
-            posessive = "'s";
-        }
+        let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
         let embed = new discord.RichEmbed()
-            .setColor(0xc1222a)
-            .setThumbnail(album_thumbnail)
-            .setURL(album_image)
-            .addField(`${track1.status}`, field1, false);
+        .setColor(0xc1222a)
+        .setThumbnail(album_thumbnail)
+        .setURL(album_image)
+        .addField(`${track1.status}`, field1, false);
         
         if (recentsCount === 1) {
             let tagResponse = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=track.gettoptags&artist=${encodeURIComponent(track1.artist["#text"])}&track=${encodeURIComponent(track1.name)}&api_key=${api_key}&format=json`);
@@ -386,9 +375,9 @@ lf_recents_list = async (message, username, recentsCount) => {
             let track = tracks[i];
             let row;
             if (track["@attr"] && track["@attr"].nowplaying == "true") {
-                row = `\\▶ ${track.artist["#text"]} - [${track.name.replace("]", "\\]")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (Now)`;
+                row = `\\▶ ${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (Now)`;
             } else {
-                row = `${i + 1}. ${track.artist["#text"]} - [${track.name.replace("]", "\\]")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (${getTimeAgo(parseInt(track.date.uts))})`;
+                row = `${i + 1}. ${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (${getTimeAgo(parseInt(track.date.uts))})`;
             }
             if (length + (row.length + 1) > 2048 || page.length > 19) { // + 1 = line break
                 pages.push(page.join("\n"));
@@ -401,15 +390,20 @@ lf_recents_list = async (message, username, recentsCount) => {
         }
         pages.push(page.join("\n"));
 
-        let posessive;
-        if (lf_user[lf_user.length - 1].toLowerCase() == "s") {
-            posessive = "'";
-        } else {
-            posessive = "'s";
+        let album_thumbnail = tracks[0].image[2]["#text"];
+        let album_image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "");
+        if (!album_thumbnail || album_thumbnail.length < 1) {
+            album_thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
         }
+        if (!album_image || album_image.length < 1) {
+            album_image = "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+        }
+
+        let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
         let embed = new discord.RichEmbed()
-            .setAuthor(`${lf_user}${posessive} Recent Tracks`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lf_user}/library`)
-            .setColor(0xc1222a);
+        .setAuthor(`${lf_user}${posessive} Recent Tracks`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lf_user}/library`)
+        .setColor(0xc1222a)
+        .setThumbnail(album_thumbnail);
 
         functions.embedPages(message, embed, pages, 600000);
         resolve();
@@ -420,18 +414,14 @@ lf_recents_list = async (message, username, recentsCount) => {
 lf_top_artists = async (message, args) => {
     return new Promise(async (resolve, reject) => {
 
-        let time = getTimeFrame(args[0]);
-        let timeframe = time.timeframe;
-        let date_preset = time.date_preset;
-        let display_time = time.display_time;
-        let time_defaulted = time.defaulted;
+        let {
+            timeframe,
+            date_preset,
+            display_time,
+            defaulted
+        } = getTimeFrame(args[0]);
 
-        let username;
-        if (time_defaulted) {
-            username = args[0];
-        } else {
-            username = args[1];
-        }
+        let username = defaulted ? args[0] : args[1]
         
         if (!username) {
             username = await database.get_lf_user(message.author.id);
@@ -487,17 +477,12 @@ lf_top_artists = async (message, args) => {
             artist_thumbnail = "https://lastfm-img2.akamaized.net/i/u/avatar170s/2a96cbd8b46e442fc41c2b86b821562f.png";
         }
 
-        let posessive;
-        if (lf_user[lf_user.length - 1].toLowerCase() == "s") {
-            posessive = "'";
-        } else {
-            posessive = "'s";
-        }
+        let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
         let embed = new discord.RichEmbed()
-            .setAuthor(`${lf_user}${posessive} Top Artists`,`https://i.imgur.com/FwnPEny.png`, `https://www.last.fm/user/${lf_user}/library/artists?date_preset=${date_preset}`)
-            .setTitle(display_time)
-            .setThumbnail(artist_thumbnail)
-            .setColor(0xf49023);
+        .setAuthor(`${lf_user}${posessive} Top Artists`,`https://i.imgur.com/FwnPEny.png`, `https://www.last.fm/user/${lf_user}/library/artists?date_preset=${date_preset}`)
+        .setTitle(display_time)
+        .setThumbnail(artist_thumbnail)
+        .setColor(0xf49023);
 
         functions.embedPages(message, embed, pages, 600000);
         resolve();
@@ -508,18 +493,14 @@ lf_top_artists = async (message, args) => {
 lf_top_albums = async (message, args) => {
     return new Promise(async (resolve, reject) => {
 
-        let time = getTimeFrame(args[0]);
-        let timeframe = time.timeframe;
-        let date_preset = time.date_preset;
-        let display_time = time.display_time;
-        let time_defaulted = time.defaulted;
+        let {
+            timeframe,
+            date_preset,
+            display_time,
+            defaulted
+        } = getTimeFrame(args[0]);
 
-        let username;
-        if (time_defaulted) {
-            username = args[0];
-        } else {
-            username = args[1];
-        }
+        let username = defaulted ? args[0] : args[1]
         
         if (!username) {
             username = await database.get_lf_user(message.author.id);
@@ -575,17 +556,12 @@ lf_top_albums = async (message, args) => {
             album_thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
         }
 
-        let posessive;
-        if (lf_user[lf_user.length - 1].toLowerCase() == "s") {
-            posessive = "'";
-        } else {
-            posessive = "'s";
-        }
+        let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
         let embed = new discord.RichEmbed()
-            .setAuthor(`${lf_user}${posessive} Top Albums`,`https://i.imgur.com/LZmYwDG.png`, `https://www.last.fm/user/${lf_user}/library/albums?date_preset=${date_preset}`)
-            .setTitle(display_time)
-            .setThumbnail(album_thumbnail)
-            .setColor(0x2f8f5e);
+        .setAuthor(`${lf_user}${posessive} Top Albums`,`https://i.imgur.com/LZmYwDG.png`, `https://www.last.fm/user/${lf_user}/library/albums?date_preset=${date_preset}`)
+        .setTitle(display_time)
+        .setThumbnail(album_thumbnail)
+        .setColor(0x2f8f5e);
 
         functions.embedPages(message, embed, pages, 600000);
         resolve();
@@ -596,18 +572,14 @@ lf_top_albums = async (message, args) => {
 lf_top_tracks = async (message, args) => {
     return new Promise(async (resolve, reject) => {
 
-        let time = getTimeFrame(args[0]);
-        let timeframe = time.timeframe;
-        let date_preset = time.date_preset;
-        let display_time = time.display_time;
-        let time_defaulted = time.defaulted;
+        let {
+            timeframe,
+            date_preset,
+            display_time,
+            defaulted
+        } = getTimeFrame(args[0]);
 
-        let username;
-        if (time_defaulted) {
-            username = args[0];
-        } else {
-            username = args[1];
-        }
+        let username = defaulted ? args[0] : args[1]
         
         if (!username) {
             username = await database.get_lf_user(message.author.id);
@@ -663,17 +635,12 @@ lf_top_tracks = async (message, args) => {
             track_thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/4128a6eb29f94943c9d206c08e625904.png";
         }
 
-        let posessive;
-        if (lf_user[lf_user.length - 1].toLowerCase() == "s") {
-            posessive = "'";
-        } else {
-            posessive = "'s";
-        }
+        let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
         let embed = new discord.RichEmbed()
-            .setAuthor(`${lf_user}${posessive} Top Tracks`,`https://i.imgur.com/RFO9qp1.png`, `https://www.last.fm/user/${lf_user}/library/tracks?date_preset=${date_preset}`)
-            .setTitle(display_time)
-            .setThumbnail(track_thumbnail)
-            .setColor(0x2b61fb);
+        .setAuthor(`${lf_user}${posessive} Top Tracks`,`https://i.imgur.com/RFO9qp1.png`, `https://www.last.fm/user/${lf_user}/library/tracks?date_preset=${date_preset}`)
+        .setTitle(display_time)
+        .setThumbnail(track_thumbnail)
+        .setColor(0x2b61fb);
 
         functions.embedPages(message, embed, pages, 600000);
         resolve();
@@ -683,6 +650,7 @@ lf_top_tracks = async (message, args) => {
 
 lf_profile = async (message, username) => {
     return new Promise(async (resolve, reject) => {
+
         if (!username) {
             username = await database.get_lf_user(message.author.id);
         }
@@ -705,7 +673,7 @@ lf_profile = async (message, username) => {
 
         let user = response.data.user;
         let thumbnail = user.image[2]["#text"];
-        let image = user.image[user.image.length - 1]["#text"].replace("300x300/", "");
+        let image = user.image[user.image.length-1]["#text"].replace("300x300/", "");
 
         let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         let date = new Date(0);
@@ -723,14 +691,14 @@ lf_profile = async (message, username) => {
         let track_count = response.data.toptracks["@attr"].total;
 
         let embed = new discord.RichEmbed()
-            .setAuthor(`${user.name}`,`https://i.imgur.com/YbZ52lN.png`, url=`https://www.last.fm/user/${user.name}/`)
-            .setColor(0xc1222a)
-            .setFooter(`Total Scrobbles: ${user.playcount}`)
-            .setThumbnail(thumbnail)
-            .setURL(image)
-            .setDescription(`Scrobbling since ${date_string}`)
-            .setTimestamp(date)
-            .addField(name="Library", value=`Artists: ${artist_count} | Albums: ${album_count} | Tracks: ${track_count}`);
+        .setAuthor(`${user.name}`,`https://i.imgur.com/YbZ52lN.png`, url=`https://www.last.fm/user/${user.name}/`)
+        .setColor(0xc1222a)
+        .setFooter(`Total Scrobbles: ${user.playcount}`)
+        .setThumbnail(thumbnail)
+        .setURL(image)
+        .setDescription(`Scrobbling since ${date_string}`)
+        .setTimestamp(date)
+        .addField(name="Library", value=`Artists: ${artist_count} | Albums: ${album_count} | Tracks: ${track_count}`);
 
         resolve({embed: embed});
     })
@@ -817,22 +785,12 @@ lf_chart = async (message, args) => {
     })
 }
 
-//--------------
-
-discord_markdown_replace = (text) => {
-    let chars = "()`*~_";
-    for (i=0; i < chars.length; i++) {
-        let char = chars[i]
-        text = text.replace(char, `\\${char}`);
-    }
-    return text;
-}
+//Util Functions
 
 getTimeFrame = (timeframe) => {
     
     let display_time;
     let date_preset;
-    let username;
     let defaulted = false;
 
     switch (true) {
@@ -916,8 +874,4 @@ getTimeAgo = (time) => {
     }
 
     return timeAgoText;
-}
-
-module.exports = {
-    handle: handle
 }

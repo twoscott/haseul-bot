@@ -1,2 +1,5 @@
+config*.json
 node_modules/
-haseul_databases/
+haseul_data/*.db
+.vscode/
+

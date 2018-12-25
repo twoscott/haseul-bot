@@ -1,24 +1,24 @@
 {
   "name": "haseul-bot",
   "version": "1.0.0",
-  "description": "Haseul Bot",
+  "description": "General purpose Discord bot",
   "main": "haseul.js",
-  "dependencies": {
-    "axios": "^0.18.0",
-    "discord.js": "^11.4.2",
-    "get-pixels": "^3.3.2",
-    "google-translate-api": "^2.3.0",
-    "request": "^2.88.0",
-    "sqlite3": "^4.0.2"
-  },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "haseul-bot"
+    "url": "git+https://github.com/haseul/haseul-bot.git"
   },
   "author": "Scotto",
-  "license": "ISC"
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/haseul/haseul-bot/issues"
+  },
+  "homepage": "https://github.com/haseul/haseul-bot#readme",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "discord.js": "^11.4.2",
+    "sqlite3": "^4.0.4"
+  }
 }

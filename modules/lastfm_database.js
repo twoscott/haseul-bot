@@ -1,7 +1,9 @@
-const discord = require("discord.js");
+//Require modules
+
 const sql = require("sqlite3").verbose();
-const db = new sql.Database('./haseul_data/Last.fm Database.db');
-const client = require("../haseul").client;
+const db = new sql.Database('./haseul_data/lastfm.db');
+
+//Init
 
 db.serialize(() => {
     db.run("CREATE TABLE IF NOT EXISTS lastfm (userID, lfUser)");
@@ -12,25 +14,16 @@ db.serialize(() => {
 exports.set_lf_user = (user_id, lastfm_user) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT lfUser FROM lastfm WHERE userID = ?", [user_id], (err, row) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            if (!row) {
-                db.run("INSERT INTO lastfm VALUES (?, ?)", [user_id, lastfm_user], err => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(`Last.fm username set to ${lastfm_user}.`);
-                    }
+            if (err) {reject(err); return;}
+            if (row) {
+                db.run("UPDATE lastfm SET lfUser = ? WHERE userID = ?", [lastfm_user, user_id], err => {
+                    if (err) {reject(err); return;}
+                    resolve(`Last.fm username set to ${lastfm_user}.`);
                 })
             } else {
-                db.run("UPDATE lastfm SET lfUser = ? WHERE userID = ?", [lastfm_user, user_id], err => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(`Last.fm username set to ${lastfm_user}.`);
-                    }
+                db.run("INSERT INTO lastfm VALUES (?, ?)", [user_id, lastfm_user], err => {
+                    if (err) {reject(err); return;}
+                    resolve(`Last.fm username set to ${lastfm_user}.`);
                 })
             }
         })
@@ -42,21 +35,12 @@ exports.set_lf_user = (user_id, lastfm_user) => {
 exports.remove_lf_user = (user_id) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT lfUser FROM lastfm WHERE userID = ?", [user_id], (err, row) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            if (!row) {
-                resolve("No Last.fm username found.");
-            } else {
-                db.run("DELETE FROM lastfm WHERE userID = ?", [user_id], err => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve("Last.fm username removed.");
-                    }
-                })
-            }
+            if (err) {reject(err); return;}
+            if (!row) {resolve("No Last.fm username found."); return}
+            db.run("DELETE FROM lastfm WHERE userID = ?", [user_id], err => {
+                if (err) {reject(err); return;}
+                resolve("Last.fm username removed.");
+            })
         })
     })
 }
@@ -66,15 +50,8 @@ exports.remove_lf_user = (user_id) => {
 exports.get_lf_user = (user_id) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT lfUser FROM lastfm WHERE userID = ?", [user_id], (err, row) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            if (!row) {
-                resolve();
-            } else {
-                resolve(row.lfUser);
-            }
+            if (err) {reject(err); return;}
+            resolve(row ? row.lfUser : undefined);
         })
     })
 }

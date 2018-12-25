@@ -1,23 +1,29 @@
 //Require modules
 
 const discord = require("discord.js");
-const client = require("../haseul").client;
-const database = require("./mod_database");
+const client = require("../haseul.js").client;
+const serverSettings = require("./server_settings.js");
 
 //Functions
 
-handle = async (message) => {
+poll = async (message) => {
+    let pollOn = await serverSettings.getSetting(message.guild.id, "pollOn")
+    if (!pollOn) return;
+    let pollChannelID = await serverSettings.getSetting(message.guild.id, "pollChannel")
+    if (!message.guild.channels.has(pollChannelID)) return;
+    if (message.channel.id == pollChannelID) {
+        await message.react('✅');
+        await message.react('❌');
+    }
+}
+
+exports.handle = async (message) => {
 
     let args = message.content.trim().split(" ");
 
-    //Get poll channel
-
-    database.get_poll_channel(message.guild.id).then(async poll_channel_id => {
-        if (message.channel.id === poll_channel_id) {
-            await message.react('✅');
-            await message.react('❌');
-        }
-    })
+    //Check if poll channel
+    
+    poll(message);
 
     //Handle commands
 
@@ -79,6 +85,7 @@ handle = async (message) => {
                     switch (args[2]) {
 
                         case "set":
+                            message.channel.startTyping();
                             setPollChannel(message, args.slice(3)).then(response => {
                                 message.channel.send(response);
                                 message.channel.stopTyping();
@@ -88,9 +95,34 @@ handle = async (message) => {
                             })
                             break;
 
-                        case "remove":
-                        case "delete":
-                            removePollChannel(message).then(response => {
+                    }
+                    break;
+                
+                case "toggle":
+                    message.channel.startTyping();
+                    togglePoll(message).then(response => {
+                        message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    
+                    
+            }
+            break;
+
+        case ".join":
+        case ".joins":
+        case ".joinlogs":
+            switch (args[1]) {
+
+                case "channel":
+                    switch (args[2]) {
+
+                        case "set":
+                            message.channel.startTyping();
+                            setJoinChannel(message, args.slice(3)).then(response => {
                                 message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -100,8 +132,21 @@ handle = async (message) => {
                             break;
 
                     }
+                    break;
+                
+                case "toggle":
+                    message.channel.startTyping();
+                    toggleJoin(message).then(response => {
+                        message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
 
             }
+
 
     }
 }
@@ -198,37 +243,74 @@ edit = (message, args, raw) => {
 
 setPollChannel = (message, args) => {
     return new Promise(async (resolve, reject) => {
-        let channel_id
+        let channel_id;
         if (args.length < 1) {
             channel_id = message.channel.id;
-        } else {
+        } 
+        else {
             channel_id = args[0].match(/<?#?!?(\d+)>?/);
             if (!channel_id) {
                 resolve("\\⚠ Invalid channel or channel ID.");
                 return;
-            } else {
-                channel_id = channel_id[1];
             }
+            channel_id = channel_id[1];
         }
         if (!message.guild.channels.has(channel_id)) {
             resolve("\\⚠ Channel doesn't exist in this server.");
             return;
-        } else {
-            database.set_poll_channel(message.guild.id, channel_id).then(res => {
-                resolve(res);
-            })
         }
-    })
-}
-
-removePollChannel = (message) => {
-    return new Promise(async (resolve, reject) => {
-        database.remove_poll_channel(message.guild.id).then(res => {
-            resolve(res);
+        serverSettings.setSetting(message.guild.id, "pollChannel", channel_id).then(() => {
+            resolve(`Poll channel set to <#${channel_id}>.`);
+        }).catch(err => {
+            reject(err);
         })
     })
 }
 
-module.exports = {
-    handle: handle
+togglePoll = (message) => {
+    return new Promise((resolve, reject) => {
+        serverSettings.toggle(message.guild.id, "pollOn").then(tog => {
+            let state = tog ? "on":"off";
+            resolve(`Poll setting turned ${state}.`);
+        }).catch(err => {
+            reject(err);
+        })
+    })
+}
+
+setJoinChannel = (message, args) => {
+    return new Promise(async (resolve, reject) => {
+        let channel_id;
+        if (args.length < 1) {
+            channel_id = message.channel.id;
+        } 
+        else {
+            channel_id = args[0].match(/<?#?!?(\d+)>?/);
+            if (!channel_id) {
+                resolve("\\⚠ Invalid channel or channel ID.");
+                return;
+            }
+            channel_id = channel_id[1];
+        }
+        if (!message.guild.channels.has(channel_id)) {
+            resolve("\\⚠ Channel doesn't exist in this server.");
+            return;
+        }
+        serverSettings.setSetting(message.guild.id, "joinLogsChan", channel_id).then(() => {
+            resolve(`Join logs channel set to <#${channel_id}>.`);
+        }).catch(err => {
+            reject(err);
+        })
+    })
+}
+
+toggleJoin = (message) => {
+    return new Promise((resolve, reject) => {
+        serverSettings.toggle(message.guild.id, "joinLogsOn").then(tog => {
+            let state = tog ? "on":"off";
+            resolve(`Join logs turned ${state}.`);
+        }).catch(err => {
+            reject(err);
+        })
+    })
 }

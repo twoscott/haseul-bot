@@ -2,17 +2,19 @@
 
 const discord = require("discord.js");
 const axios = require("axios")
+
 const client = require("../haseul").client;
-const helpfuncs = require("../haseul_data/help");
+const config = require("../config.json");
+const helpmodules = require("../haseul_data/help");
 const functions = require("../functions/functions.js")
 
-//Variables
+//Init
 
-const translate_key = "KEY"
+const translate_key = config.trans_key;
 
 //Functions
 
-handle = (message) => {
+exports.handle = async (message) => {
 
     let args = message.content.trim().split(" ");
 
@@ -21,9 +23,8 @@ handle = (message) => {
     switch (args[0]) {
 
         case ".github":
-            message.channel.startTyping();
+        case ".git":
             message.channel.send("https://github.com/haseul/haseul-bot");
-            message.channel.stopTyping();
             break;
         
         case ".translate":
@@ -47,6 +48,15 @@ handle = (message) => {
             }).catch(error => {
                 console.error(error);
                 message.channel.stopTyping();
+            })
+            break;
+            
+        case ".ping":
+            let start = Date.now();
+            message.channel.send("Discord API:").then(msg => {
+                let end = Date.now();
+                let ms = end - start;
+                msg.edit(`Response: \`${ms}ms\``);
             })
             break;
 
@@ -145,13 +155,13 @@ help = async (message, args) => {
     return new Promise((resolve, reject) => {
         if (args.length < 1) {            
             let embed = new discord.RichEmbed()
-                .setAuthor(`Help`, `https://i.imgur.com/p9n0Y0C.png`)
-                .setColor(0xfe4971);
+            .setAuthor(`Help`, `https://i.imgur.com/p9n0Y0C.png`)
+            .setColor(0xfe4971);
             let pages = [];
             let page = ["To get help, type `.help <module name>`. Here you will see the module's commands and how to use them.\n\n**Modules**"];
             let length = page[0].length;
     
-            for (let module_name in helpfuncs.modules) {
+            for (let module_name in helpmodules) {
                 if (length + (module_name.length + 1) > 2048 || page.length > 19) { // + 1 = line break
                     pages.push(page.join("\n"));
                     page = [module_name];
@@ -189,10 +199,9 @@ help = async (message, args) => {
             default:
                 resolve("\\⚠ Invalid module name provided.");
                 return;
-                break;
         }
 
-        let module_obj = helpfuncs.modules[module_name];
+        let module_obj = helpmodules[module_name];
         
         let commands = module_obj.commands;
         let pages = [];
@@ -211,15 +220,11 @@ help = async (message, args) => {
         pages.push(page);
 
         let embed = new discord.RichEmbed()
-            .setAuthor(module_obj.name, module_obj.image)
-            .setColor(module_obj.colour)
-            .setDescription(module_obj.description)
+        .setAuthor(module_obj.name, module_obj.image)
+        .setColor(+module_obj.colour)
+        .setDescription(module_obj.description)
 
         functions.embedPagesFields(message, embed, pages, 600000);
         resolve();
     })  
-}
-
-module.exports = {
-    handle: handle
 }

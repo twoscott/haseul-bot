@@ -7,7 +7,7 @@ const functions = require("../functions/functions");
 
 //Functions
 
-handle = (message) => {
+exports.handle = async (message) => {
     let args = message.content.trim().split(" ");
 
     //Handle commands
@@ -75,7 +75,4 @@ yt_pages = (message, query) => {
     })
 }
 
-module.exports = {
-    handle: handle,
-    query: query
-}
+module.query = query;

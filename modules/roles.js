@@ -1,27 +1,30 @@
 //Require modules
 
 const discord = require("discord.js");
-const client = require("../haseul").client;
-const database = require("../modules/roles_database");
+const client = require("../haseul.js").client;
+const database = require("../modules/roles_database.js");
+const serverSettings = require("../modules/server_settings.js")
 
 //Functions
+roles = async (message) => {
+    let rolesOn = await serverSettings.getSetting(message.guild.id, "rolesOn")
+    if (!rolesOn) return;
+    let rolesChannelID = await serverSettings.getSetting(message.guild.id, "rolesChannel");
+    if (rolesChannelID == message.channel.id) assign_roles(message); //Assign roles if in roles channel
+}
 
-handle = async (message) => {
+exports.handle = async (message) => {
 
     let args = message.content.trim().split(" ");
 
-    //Get server role channel
-
-    roles_channel_id = await database.get_roles_channel(message.guild.id);
-
-    if (message.channel.id === roles_channel_id) {
-        assign_roles(message);
-        return;
-    }
+    //Check if roles on
+    
+    roles(message);
 
     //Handle commands
 
     let perms = ["ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG"];
+    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
     if (!perms.some(p => message.member.hasPermission(p))) return;
 
     switch (args[0]) {
@@ -30,6 +33,18 @@ handle = async (message) => {
 
         case ".roles":
             switch (args[1]) {
+
+                case "toggle":
+                    message.channel.startTyping();
+                    toggleRoles(message).then(response => {
+                        message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
+                    
 
                 case "add":
                     message.channel.startTyping();
@@ -66,6 +81,24 @@ handle = async (message) => {
                     })
                     break;
 
+                //Roles msg
+
+                case "message":
+                case "msg":
+                    switch (args[2]) {
+                        case "set":
+                            message.channel.startTyping();
+                            set_roles_channel_msg(message, args.slice(3)).then(response => {
+                                message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+                    }
+                    break;    
+
                 //Roles channel
 
                 case "channel":
@@ -74,19 +107,6 @@ handle = async (message) => {
                         case "set":
                             message.channel.startTyping();
                             set_roles_channel(message, args.slice(3)).then(response => {
-                                message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break; 
-
-                        case "remove":
-                        case "delete":
-                        case "del":
-                            message.channel.startTyping();
-                            remove_roles_channel(message, args.slice(3)).then(response => {
                                 message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -106,25 +126,9 @@ handle = async (message) => {
                             })
                             break;
 
-                        //Channel message
-                        
-                        case "message":
-                        case "msg":
-                            switch (args[3]) {
-                                case "set":
-                                    message.channel.startTyping();
-                                    set_roles_channel_msg(message, args.slice(4)).then(response => {
-                                        message.channel.send(response);
-                                        message.channel.stopTyping();
-                                    }).catch(error => {
-                                        console.error(error);
-                                        message.channel.stopTyping();
-                                    })
-                                    break;
-                            }
-                            break;
                     }
                     break;
+
             }
             break;
 
@@ -198,7 +202,7 @@ assign_roles = async (message) => {
     let colour;
     for (i = 0; i < role_commands.length; i++) {
         let role_command = role_commands[i].trim();
-        let role_id = await database.get_role(role_command, message.guild.id, type);
+        let role_id = await database.get_role_id(role_command, message.guild.id, type);
         let role = message.guild.roles.get(role_id);
 
         //Process role
@@ -275,6 +279,34 @@ assign_roles = async (message) => {
 
 //-----------------------------------------------
 
+create_avarole_embed = async (message) => {
+    let guild = client.guilds.get(message.guild.id);
+    let sender = await guild.fetchMember(client.user.id);
+    let role_rows = await database.get_available_roles(message.guild.id);
+    if (!role_rows || !role_rows.length) return;
+
+    let main_roles = [];
+    let sub_roles = [];
+    let other_roles = [];
+    for(i = 0; i < role_rows.length; i++) {
+        let row = role_rows[i];
+        switch (row.type) {
+            case "MAIN": main_roles.push(`\`${row.roleName}\``); break;
+            case "SUB": sub_roles.push(`\`${row.roleName}\``); break;
+            case "OTHER": other_roles.push(`\`${row.roleName}\``); break; 
+        }
+    }
+
+    let embed = new discord.RichEmbed()
+    .setTitle("__Available Roles__")
+    .setColor(sender && sender.colorRole ? sender.colorRole.color : 0xffffff);
+    if (main_roles.length) embed.addField("Main Roles", main_roles.join(", "), false);
+    if (sub_roles.length) embed.addField("Sub Roles", sub_roles.join(", "), false);
+    if (other_roles.length) embed.addField("Other Roles", other_roles.join(", "), false);
+    return embed;
+}
+
+
 add_role = async (message, args) => {
     return new Promise(async (resolve, reject) => {
         if (args.length < 2) {
@@ -284,7 +316,7 @@ add_role = async (message, args) => {
         let type = args[0]
         if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
             resolve("\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
-            return
+            return;
         }
         let roles_text = args.slice(1).join(" ");
         let pairs = roles_text.split(",")
@@ -359,6 +391,46 @@ remove_role = async (message, args) => {
     })
 }
 
+toggle_available_role = async (message, args) => {
+    return new Promise(async (resolve, reject) => {
+        if (args.length < 2) {
+            resolve("\\⚠ Missing arguments.\nUsage: .avarole [role type] [role name]");
+            return;
+        }
+        let type = args[0]
+        if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
+            resolve("\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
+            return;
+        }
+        let roles_text = args.slice(1).join(" ");
+        let role_names = roles_text.split(",");
+    
+        let roles_added = [];
+        let roles_removed = [];
+        let errors = [];
+    
+        for (i = 0; i < role_names.length; i++) {
+            let role_name = role_names[i];
+            if (role_name.length < 1) {
+                errors.push(role_name);
+                resolve();
+            } else {
+                [added, removed] = await database.available_role_toggle(role_name, message.guild.id, type)
+                if (added) {
+                    roles_added.push(added);
+                } else if (removed) {
+                    roles_removed.push(removed);
+                } else {
+                    reject("Unknown error occurred toggling available roles")
+                }
+            }
+        }
+        let responses = {"Role names added" : roles_added, "Role names removed": roles_removed, "Errors": errors}
+        responses = roles_response(responses);
+        resolve(responses);
+    })
+}
+
 list_roles = async (message) => {
     return new Promise(async (resolve, reject) => {
         let rows = await database.get_all_roles(message.guild.id);
@@ -385,9 +457,10 @@ list_roles = async (message) => {
     })
 }
 
-set_roles_channel = (message, args) => {
+
+set_roles_channel = async (message, args) => {
     return new Promise(async (resolve, reject) => {
-        let channel_id
+        let channel_id;
         if (args.length < 1) {
             channel_id = message.channel.id;
         } else {
@@ -395,64 +468,59 @@ set_roles_channel = (message, args) => {
             if (!channel_id) {
                 resolve("\\⚠ Invalid channel or channel ID.");
                 return;
-            } else {
-                channel_id = channel_id[1];
             }
+            channel_id = channel_id[1];
         }
         if (!message.guild.channels.has(channel_id)) {
             resolve("\\⚠ Channel doesn't exist in this server.");
             return;
-        } else {
-            database.set_roles_channel(channel_id, message.guild.id).then(res => {
-                resolve(res);
+        }
+        
+        let data = await database.get_roles_msg(message.guild.id);
+        if (!data || !data.msg) {
+            resolve("\\⚠ No roles channel message assigned.");
+            return;
+        }
+
+        let channel = client.channels.get(channel_id);
+        let embed = await create_avarole_embed(message);
+        let msg = await channel.send(data.msg, {embed: embed})
+        if (data && data.messageID) {
+            serverSettings.getSetting(message.guild.id, "rolesChannel").then(rolesChannel => {
+                client.channels.get(rolesChannel)
+                .fetchMessage(data.messageID).then(msg => msg
+                .delete().catch(() => {return}));
             })
         }
-    })
-}
 
-remove_roles_channel = (message, args) => {
-    return new Promise(async (resolve, reject) => {
-        let guild_id;
-        if (args.length < 1) {
-            guild_id = message.guild.id;
-        } else {
-            if (args[0].match(/^\d+$/)) {
-                if (client.guilds.has(args[0])) {
-                    guild_id = args[0];
-                } else {
-                    resolve("Invalid server ID.");
-                }
-            } else {
-                resolve("Not a server ID.");
-            } 
-        }        
-        database.remove_roles_channel(guild_id).then(res => {
-            resolve(res);
-        })
+        await database.set_msg_id(message.guild.id, msg.id)
+        await serverSettings.setSetting(message.guild.id, "rolesChannel", channel_id);
+        resolve(`Roles channel set to <#${channel_id}>.`);
     })
 }
 
 update_roles_channel = (message, args) => {
     return new Promise(async (resolve, reject) => {
-        let guild_id;
-        if (args.length < 1) {
-            guild_id = message.guild.id;
-        } else {
-            if (args[0].match(/^\d+$/)) {
-                if (client.guilds.has(args[0])) {
-                    guild_id = args[0];
-                } else {
-                    resolve("Invalid server ID.");
-                }
-            } else {
-                resolve("Not a server ID.");
-            } 
-        } 
-        database.update_roles_channel(guild_id).then(res => {
-            resolve(res);
-        })
+        let data = await database.get_roles_msg(message.guild.id);
+        if (!data || !data.msg) {
+            resolve("\\⚠ No roles channel message assigned.");
+            return;
+        }
+
+        let message_id = data.messageID;
+        let content = data.msg;
+        let channel_id = serverSettings.getSetting(message.guild.id, "rolesChannel");
+        let channel = client.channels.get(channel_id);
+        let embed = create_avarole_embed(message);
+        
+        let old_message = channel.fetchMessage(message_id);
+        old_message.delete();
+        let msg = await channel.send(content, {embed: embed});
+        await database.set_msg_id(message.guild.id, msg.id);
+        resolve(`Roles channel message updated.`);
     })
 }
+
 
 set_roles_channel_msg = (message, args) => {
     return new Promise(async (resolve, reject) => {
@@ -461,52 +529,21 @@ set_roles_channel_msg = (message, args) => {
             return;
         }
         let channel_message = args.join(" ");
-        database.set_channel_msg(message.guild.id, channel_message).then(res => {
+        database.set_roles_msg(message.guild.id, channel_message).then(res => {
             resolve(res);
         })
     })
 }
 
-toggle_available_role = async (message, args) => {
-    return new Promise(async (resolve, reject) => {
-        if (args.length < 2) {
-            resolve("\\⚠ Missing arguments.\nUsage: .avarole [role type] [role name]");
-            return
-        }
-        let type = args[0]
-        if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
-            resolve("\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
-            return
-        }
-        let roles_text = args.slice(1).join(" ");
-        let role_names = roles_text.split(",");
-    
-        let roles_added = [];
-        let roles_removed = [];
-        let errors = [];
-    
-        for (i = 0; i < role_names.length; i++) {
-            let role_name = role_names[i];
-            if (role_name.length < 1) {
-                errors.push(role_name);
-                resolve();
-            } else {
-                [added, removed] = await database.available_role_toggle(role_name, message.guild.id, type)
-                if (added) {
-                    roles_added.push(added);
-                } else if (removed) {
-                    roles_removed.push(removed);
-                } else {
-                    reject("Unknown error occurred toggling available roles")
-                }
-            }
-        }
-        let responses = {"Role names added": roles_added, "Role names removed": roles_removed, "Errors": errors}
-        responses = roles_response(responses);
-        resolve(responses);
-    })
-}
+//Toggle
 
-module.exports = {
-    handle: handle
+toggleRoles = (message) => {
+    return new Promise((resolve, reject) => {
+        serverSettings.toggle(message.guild.id, "rolesOn").then(tog => {
+            let state = tog ? "on":"off";
+            resolve(`Roles assignment turned ${state}.`);
+        }).catch(err => {
+            reject(err);
+        })
+    })
 }
