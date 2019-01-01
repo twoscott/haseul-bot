@@ -2,4 +2,3 @@ config*.json
 node_modules/
 haseul_data/*.db
 .vscode/
-

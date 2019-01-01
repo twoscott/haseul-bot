@@ -8,27 +8,27 @@ const serverSettings = require("../modules/server_settings.js");
 log = async (member, logEvent) => {
 
     //Check if logs on
-    let logsOn = await serverSettings.getSetting(member.guild.id, "joinLogsOn");
+    let logsOn = await serverSettings.get(member.guild.id, "joinLogsOn");
     if (!logsOn) return;
-    let logChannelID = await serverSettings.getSetting(member.guild.id, "joinLogsChan");
+    let logChannelID = await serverSettings.get(member.guild.id, "joinLogsChan");
     if (!member.guild.channels.has(logChannelID)) return;
     if (logChannelID) logEvent(member, logChannelID); //Log
 
 }
 
-exports.join = async (member) => {
+exports.join = async function (member) {
 
     log(member, logJoin);
 
 }
 
-exports.leave = async (member) => {
+exports.leave = async function (member) {
 
     log(member, logLeave);
 
 }
 
-logJoin = async (member, destination) => {
+logJoin = async function (member, destination) {
     
     let memNo = await getMemberNo(member);
     let {
@@ -49,7 +49,7 @@ logJoin = async (member, destination) => {
 
 }
 
-logLeave = async (member, destination) => {
+logLeave = async function (member, destination) {
 
     member.leftAt = new Date(Date.now());
     let {
@@ -70,7 +70,7 @@ logLeave = async (member, destination) => {
 
 }
 
-getMemberNo = async (member) => {
+getMemberNo = async function (member) {
 
     let guild = await member.guild.fetchMembers();
 

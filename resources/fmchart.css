@@ -1,0 +1,39 @@
+div {
+        font-size: 0px;
+	overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+}
+
+body {
+        display: block;
+        margin: 0px;
+}
+
+.grid {
+	background-color: black;
+}
+
+.container {
+	width: 300px;
+	display: inline-block;
+	position: relative;
+}
+
+.text {
+	width: 296px;
+	position: absolute;
+	text-align: left;
+	line-height: 1;
+	
+	font-family: 'Roboto Mono', monospace;
+	font-size: 16px;
+	font-weight: medium;
+	color: white;
+	text-shadow: 
+		1px 1px black;
+	
+	top: 2px;
+ 	left: 2px;
+	right:2px;
+}

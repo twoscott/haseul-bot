@@ -3,7 +3,13 @@
 const discord = require("discord.js");
 const client = require("../haseul").client;
 
-pages = async (message, pages, timeout, lock) => {
+//Functions
+
+exports.capitalise = (text) => {
+    return text[0].toUpperCase() + text.slice(1).toLowerCase();
+}
+
+exports.pages = async (message, pages, timeout, lock) => {
     let currentPage = 0;
     let content = `${pages[currentPage]}`;
 
@@ -132,7 +138,7 @@ pages = async (message, pages, timeout, lock) => {
     
 }
 
-embedPages = async (message, embed, pages, timeout) => {
+exports.embedPages = async (message, embed, pages, timeout) => {
     let currentPage = 0;
     embed.setDescription(pages[currentPage]);
     embed.setFooter(`Page ${currentPage + 1} of ${pages.length}`);
@@ -243,7 +249,7 @@ embedPages = async (message, embed, pages, timeout) => {
     
 }
 
-embedPagesFields = async (message, embed, pages, timeout, lock) => {
+exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
     let currentPage = 0;
     for (i=0; i < pages[currentPage].length; i++) {
         embed.addField(pages[currentPage][i].name, pages[currentPage][i].usage);
@@ -391,12 +397,4 @@ embedPagesFields = async (message, embed, pages, timeout, lock) => {
         })
     }
     
-}
-
-
-
-module.exports = {
-    pages: pages,
-    embedPages: embedPages,
-    embedPagesFields: embedPagesFields
 }

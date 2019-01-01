@@ -16,8 +16,8 @@ db.serialize(() => {
 exports.set_msg_id = async (guild_id, msg_id) => {
     return new Promise(async (resolve, reject) => {
         db.run("UPDATE rolesMessages SET messageID = ? WHERE guildID = ?", [msg_id, guild_id], (err) => {
-            if (err) {reject(err); return;}
-            resolve();
+            if (err) return reject(err);
+            return resolve();
         })
     })
 }
@@ -25,16 +25,16 @@ exports.set_msg_id = async (guild_id, msg_id) => {
 exports.set_roles_msg = (guild_id, msg) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT msg FROM rolesMessages WHERE guildID = ?", [guild_id], (err, row) => {
-            if (err) {reject(err); return;}
+            if (err) return reject(err);
             if (!row) {
                 db.run("INSERT INTO rolesMessages (guildID, msg) VALUES (?,?)", [guild_id, msg], err => {
-                    if (err) {reject(err); return}
-                    resolve("Roles channel message assigned.");
+                    if (err) return reject(err);
+                    return resolve("Roles channel message assigned.");
                 })
             } else {
                 db.run("UPDATE rolesMessages SET msg = ? WHERE guildID = ?", [msg, guild_id], err => {
-                    if (err) {reject(err); return;}
-                    resolve("Roles channel message updated.");
+                    if (err) return reject(err);
+                    return resolve("Roles channel message updated.");
                 })
             }
         })
@@ -44,8 +44,8 @@ exports.set_roles_msg = (guild_id, msg) => {
 exports.get_roles_msg = (guild_id) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT * FROM rolesMessages WHERE guildID = ?", [guild_id], (err, row) => {
-            if (err) {reject(err); return;}
-            resolve(row);
+            if (err) return reject(err);
+            return resolve(row);
         })
     })
 }
@@ -55,18 +55,15 @@ exports.get_roles_msg = (guild_id) => {
 exports.add_role = (role_command, role_id, role_name, guild_id, type) => {
     return new Promise ((resolve, reject) => {
         db.get("SELECT roleCommand FROM roles WHERE roleCommand = ? AND guildID = ? AND type = ?", [role_command.toLowerCase(), guild_id, type.toUpperCase()], (err, row) => {
-            if (err) {reject(err); return;}
-            if (row) {
-                resolve(false);
-            } else {
-                db.run("INSERT INTO roles VALUES (?, ?, ?, ?, ?)", [role_command.toLowerCase(), role_id, role_name, guild_id, type.toUpperCase()], (err) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(true);
-                    }
-                })
-            }
+            if (err) return reject(err);
+            if (row) return resolve(false);
+            db.run("INSERT INTO roles VALUES (?, ?, ?, ?, ?)", [role_command.toLowerCase(), role_id, role_name, guild_id, type.toUpperCase()], (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    return resolve(true);
+                }
+            })
         })
     })
 }
@@ -74,21 +71,15 @@ exports.add_role = (role_command, role_id, role_name, guild_id, type) => {
 exports.remove_role = (role_command, guild_id, type) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT roleCommand FROM roles WHERE roleCommand = ? AND guildID = ? AND type = ?", [role_command.toLowerCase(), guild_id, type.toUpperCase()], (err, row) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            if (!row) {
-                resolve(false);
-            } else {
-                db.run("DELETE FROM roles WHERE roleCommand = ? AND guildID = ? AND type = ?", [role_command.toLowerCase(), guild_id, type.toUpperCase()], (err) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(true);
-                    }
-                })
-            }
+            if (err) return reject(err);
+            if (!row) return resolve(false);
+            db.run("DELETE FROM roles WHERE roleCommand = ? AND guildID = ? AND type = ?", [role_command.toLowerCase(), guild_id, type.toUpperCase()], (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    return resolve(true);
+                }
+            })
         })
     }) 
 }
@@ -96,8 +87,8 @@ exports.remove_role = (role_command, guild_id, type) => {
 exports.get_all_roles = (guild_id) => {
     return new Promise((resolve, reject) => {
         db.all("SELECT roleCommand, roleID, type FROM roles WHERE guildID = ?", [guild_id], (err, rows) => {
-            if (err) {reject(err); return;}
-            resolve(rows);
+            if (err) return reject(err);
+            return resolve(rows);
         })
     }) 
 }
@@ -106,8 +97,8 @@ exports.get_role_id = (role_command, guild_id, type) => {
     return new Promise((resolve, reject) => {
         type = type.toUpperCase();
         db.get("SELECT roleID FROM roles WHERE roleCommand = ? AND guildID = ? AND type = ?", [role_command.toLowerCase(), guild_id, type], (err, row) => {
-            if (err) {reject(err); return;}
-            resolve(row ? row.roleID : undefined);
+            if (err) return reject(err);
+            return resolve(row ? row.roleID : undefined);
         })
     })
 }
@@ -117,16 +108,16 @@ exports.get_role_id = (role_command, guild_id, type) => {
 exports.available_role_toggle = (role_name, guild_id, type) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT * FROM availableRoles WHERE roleName = ? AND guildID = ? AND type = ?", [role_name, guild_id, type.toUpperCase()], (err, row) => {
-            if (err) {reject(err); return;}
+            if (err) return reject(err);
             if (row) {
                 db.run("DELETE FROM availableRoles WHERE roleName = ? AND guildID = ? AND type = ?", [role_name, guild_id, type.toUpperCase()], (err) => {
-                    if (err) {reject(err); return;}
-                    resolve([undefined, role_name]);
+                    if (err) return reject(err);
+                    return resolve([undefined, role_name]);
                 })
             } else {
                 db.run("INSERT INTO availableRoles VALUES (?, ?, ?)", [role_name, guild_id, type.toUpperCase()], (err) => {
-                    if (err) {reject(err); return;}
-                    resolve([role_name, undefined]);
+                    if (err) return reject(err);
+                    return resolve([role_name, undefined]);
                 })
             }
         })
@@ -136,8 +127,8 @@ exports.available_role_toggle = (role_name, guild_id, type) => {
 exports.get_available_roles = (guild_id) => {
     return new Promise((resolve, reject) => {
         db.all("SELECT roleName, type FROM availableRoles WHERE guildID = ?", [guild_id], (err, rows) => {
-            if (err) {reject(err); return;}
-            resolve(rows);
+            if (err) return reject(err);
+            return resolve(rows);
         })
     })
 }

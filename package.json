@@ -17,8 +17,13 @@
   },
   "homepage": "https://github.com/haseul/haseul-bot#readme",
   "dependencies": {
+    "@types/node": "^10.12.18",
     "axios": "^0.18.0",
     "discord.js": "^11.4.2",
-    "sqlite3": "^4.0.4"
+    "lodash": "^4.17.11",
+    "slang": "^0.3.0",
+    "sqlite3": "^4.0.4",
+    "tclogger": "^3.0.1",
+    "wkhtmltox": "^1.1.4"
   }
 }
