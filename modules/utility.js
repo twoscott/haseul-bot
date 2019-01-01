@@ -5,7 +5,7 @@ const axios = require("axios")
 
 const client = require("../haseul").client;
 const config = require("../config.json");
-const helpmodules = require("../haseul_data/help");
+const helpmodules = require("../resources/help.json");
 const functions = require("../functions/functions.js")
 
 //Init
@@ -115,33 +115,22 @@ translate = async function (args) {
         }
     }
 
-    if (!target_lang_code) {
-        return `\\⚠ Invalid language or language code given.`;
-    }
-    if (!text) {
-        return `\\⚠ No text given to be translated.`;
-    }
+    if (!target_lang_code) return `\\⚠ Invalid language or language code given.`;
+    if (!text) return `\\⚠ No text given to be translated.`;
 
     let url = `https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=${encodeURIComponent(target_lang_code)}`;
     if (source_lang_code) {
         url += `&from=${encodeURIComponent(source_lang_code)}`;
     }
-    let config = {
-        headers: {
-            "Ocp-Apim-Subscription-Key": translate_key
-        }
-    }
-    let response = await axios.post(url, [{"Text": text}], config)
-    let source_language;
-    let target_language;
-    if (response.data[0].detectedLanguage) {
-        source_language = response.data[0].detectedLanguage.language;
-    } else {
-        source_language = source_lang_code;
-    }
-    target_language = response.data[0].translations[0].to
 
-    return `**${source_language}-${target_language}** Translation: ${response.data[0].translations[0].text}`;
+    let translation = await axios.post(url, [{"Text": text}], {
+        headers: { "Ocp-Apim-Subscription-Key": translate_key }
+    });
+    let { detectedLanguage, translations } = translation.data[0];
+    let source_language = detectedLanguage ? detectedLanguage.language : source_lang_code;
+    let target_language = translations[0].to;
+
+    return `**${source_language}-${target_language}** Translation: ${translation.data[0].translations[0].text}`;
 
 }
 

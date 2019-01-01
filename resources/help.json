@@ -48,7 +48,7 @@
             },
             {
                 "name": "chart",
-                "usage": "`.chart artists? <time period> <grid size (3x3/4x4/5x5)>` this displays a chart of your most listened to albums (or artists if \"artists\" is included) for the given time period."
+                "usage": "`.chart artists? <time period> <grid size (e.g. 3x3)>` this displays a chart of your most listened to albums (or artists if \"artists\" is included) for the given time period."
             }
         ]
     },

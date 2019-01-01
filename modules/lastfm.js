@@ -6,22 +6,14 @@ const fs = require("fs");
 
 const client = require("../haseul.js").client;
 const config = require("../config.json");
-const functions = require("../functions/functions.js");
 const database = require("../modules/lastfm_database.js");
+const functions = require("../functions/functions.js");
 const html = require("../functions/html.js");
 const youtube = require("./youtube.js");
 
 //Init
 
 const api_key = config.lastfm_key;
-
-let week = ["7", "7day", "7days", "weekly", "week", "1week"];
-let month = ["30", "30day", "30days", "monthly", "month", "1month"];
-let three_month = ["90", "90day", "90days", "3months", "3month"];
-let six_month = ["180", "180day", "180days", "6months", "6month"];
-let year = ["365", "365day", "365days", "1year", "year", "yr", "12months", "yearly"];
-let overall = ["all", "at", "alltime", "forever", "overall"];
-let grids = ["3x3", "4x4", "5x5"];
 
 //Functions
 
@@ -100,7 +92,8 @@ exports.handle = async function (message) {
                         case "collage":
                             message.channel.startTyping();
                             lf_chart(message, args.slice(3), "artist").then(response => {
-                                if (response) message.channel.send(...response);
+                                if (response && response instanceof Array) message.channel.send(...response);
+                                else if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
                                 console.error(error);
@@ -131,7 +124,8 @@ exports.handle = async function (message) {
                         case "collage":
                             message.channel.startTyping();
                             lf_chart(message, args.slice(3), "album").then(response => {
-                                if (response) message.channel.send(...response);
+                                if (response && response instanceof Array) message.channel.send(...response);
+                                else if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
                                 console.error(error);
@@ -219,7 +213,8 @@ exports.handle = async function (message) {
                 case "artist":
                     message.channel.startTyping();
                     lf_chart(message, args.slice(2), "artist").then(response => {
-                        if (response) message.channel.send(...response);
+                        if (response && response instanceof Array) message.channel.send(...response);
+                        else if (response) message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
@@ -230,7 +225,8 @@ exports.handle = async function (message) {
                 default:
                     message.channel.startTyping();
                     lf_chart(message, args.slice(1), "album").then(response => {
-                        if (response) message.channel.send(...response);
+                        if (response && response instanceof Array) message.channel.send(...response);
+                        else if (response) message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
@@ -842,7 +838,7 @@ const lf_chart = async function (message, args, type="album") {
         `<html>\n`,
         `<head>\n`,
         `    <meta charset="UTF-8">\n`,
-        `    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">\n`,
+        `    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">\n `,
         `</head>\n\n`,
         `<style>\n`,
         `${css}\n`,
@@ -871,6 +867,13 @@ getTimeFrame = (timeframe) => {
     let display_time;
     let date_preset;
     let defaulted = false;
+
+    let week = ["7", "7day", "7days", "weekly", "week", "1week"];
+    let month = ["30", "30day", "30days", "monthly", "month", "1month"];
+    let three_month = ["90", "90day", "90days", "3months", "3month"];
+    let six_month = ["180", "180day", "180days", "6months", "6month"];
+    let year = ["365", "365day", "365days", "1year", "year", "yr", "12months", "12month", "yearly"];
+    let overall = ["all", "at", "alltime", "forever", "overall"];
 
     switch (true) {
         case week.includes(timeframe):
