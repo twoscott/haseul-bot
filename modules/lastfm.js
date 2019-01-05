@@ -4,7 +4,6 @@ const discord = require("discord.js");
 const axios = require("axios");
 const fs = require("fs");
 
-const client = require("../haseul.js").client;
 const config = require("../config.json");
 const database = require("../modules/lastfm_database.js");
 const functions = require("../functions/functions.js");
@@ -17,14 +16,13 @@ const api_key = config.lastfm_key;
 
 //Functions
 
-exports.handle = async function (message) {
-
-    let args = message.content.trim().split(" ");
+exports.handle = async function (message, args) {
 
     //Handle commands
 
     switch (args[0]) {
 
+        case ".lastfm":
         case ".fm":
             switch (args[1]) {
 
@@ -277,7 +275,6 @@ const lf_recents = async function (message, username, recentsCount) {
     }
     
     let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=2`);
-
     let { error } = response.data;
     if (error) {
         if (error == 6) {
@@ -291,20 +288,11 @@ const lf_recents = async function (message, username, recentsCount) {
     let attr = response.data.recenttracks["@attr"];
     let lf_user = attr.user;
     if (!tracks || tracks.length < 1) {
-        return `\\⚠ ${lf_user} hasn't listened to any music during this time.`;
+        return `\\⚠ ${lf_user} hasn't listened to any music.`;
     }
 
-    let track1 = tracks[0];
-    let track2 = tracks[1];
-
-    if (!track2) {
-        track2 = {
-            artist: {
-                "#text": "Null"
-            },
-            name: "Null"
-        }
-    }
+    let track1 = tracks[0] || { artist: { "#text": "Null" }, name: "Null" };
+    let track2 = tracks[1] || { artist: { "#text": "Null" }, name: "Null" };
 
     let trackResponse = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=track.getInfo&user=${lf_user}&api_key=${api_key}&artist=${encodeURIComponent(track1.artist["#text"])}&track=${encodeURIComponent(track1.name)}&format=json`);
     
@@ -319,15 +307,9 @@ const lf_recents = async function (message, username, recentsCount) {
         playCount = "0";
     }
 
-    let album_thumbnail = track1.image[2]["#text"];
-    let album_image = track1.image[track1.image.length-1]["#text"].replace("300x300/", "");
-    if (!album_thumbnail || album_thumbnail.length < 1) {
-        album_thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
-    }
-    if (!album_image || album_image.length < 1) {
-        album_image = "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
-    }
-
+    let album_thumbnail = track1.image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    let album_image = track1.image[track1.image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
+    
     let nowplaying;
     if (track1["@attr"] && track1["@attr"].nowplaying == "true") {
         nowplaying = true;
@@ -339,8 +321,8 @@ const lf_recents = async function (message, username, recentsCount) {
 
     let field1 = `${track1.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track1.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track1.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track1.name).replace(/\)/g, "\\)")})`;
     let field2 = `${track2.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track2.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track2.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track2.name).replace(/\)/g, "\\)")})`;
-    if (track1.album["#text"]) field1+=` | **${track1.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`
-    if (track2.album["#text"]) field2+=` | **${track2.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`
+    if (track1.album && track1.album["#text"]) field1+=` | **${track1.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`
+    if (track2.album && track2.album["#text"]) field2+=` | **${track2.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`
 
     let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
     let embed = new discord.RichEmbed()
@@ -396,7 +378,7 @@ const lf_recents_list = async function (message, username, recentsCount) {
     let attr = response.data.recenttracks["@attr"];
     let lf_user = attr.user;
     if (!tracks || tracks.length < 1) {
-        return `\\⚠ ${lf_user} hasn't listened to any music during this time.`;
+        return `\\⚠ ${lf_user} hasn't listened to any music.`;
     }
 
     let pages = [];
@@ -771,7 +753,8 @@ const lf_chart = async function (message, args, type="album") {
         grid = gridMatch ? args[0] : args[1];
         time = gridMatch ? args[1] : args[0];
     }
-    let dimension = +grid.split('x')[0] || 3;
+    let dims = grid.split('x');
+    let dimension = Math.round(Math.sqrt(+dims[0]*+dims[1])) || 3;
     if (dimension > 10) dimension = 10;
 
     let {
@@ -791,12 +774,13 @@ const lf_chart = async function (message, args, type="album") {
 
     let collection = response.data[`top${type}s`][type];
     if (!collection || collection.length < 1) {
-        return `\\⚠ ${lf_user} hasn't listened to any music during this time.`;
+        return `\\⚠ ${username} hasn't listened to any music during this time.`;
     }
     while (Math.sqrt(collection.length) <= dimension-1) {
         dimension--;
     }
-    let screenDimension = 300 * dimension;
+    let screen_width = (collection.length < dimension ? collection.length : dimension) * 300;
+    let screen_height = (Math.ceil(collection.length / dimension)) * 300;
 
     let css = fs.readFileSync("./resources/fmchart.css", {encoding: 'utf8'});
     let htmlString = "";
@@ -804,7 +788,7 @@ const lf_chart = async function (message, args, type="album") {
     htmlString += `<div class="grid">\n`;
     for (let i=0; i<dimension; i++) {
 
-        htmlString += `    <div class="column">\n    `;
+        htmlString += `    <div class="row">\n    `;
         for (let i=0; i<dimension; i++) {
             if (collection.length < 1) break;
             let item = collection.shift();
@@ -838,7 +822,7 @@ const lf_chart = async function (message, args, type="album") {
         `<html>\n`,
         `<head>\n`,
         `    <meta charset="UTF-8">\n`,
-        `    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">\n `,
+        `    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">\n`,
         `</head>\n\n`,
         `<style>\n`,
         `${css}\n`,
@@ -849,8 +833,8 @@ const lf_chart = async function (message, args, type="album") {
         `</html>\n`
     ].join(``);
 
-
-    let image = await html.toImage(htmlString, screenDimension, screenDimension);
+ 
+    let image = await html.toImage(htmlString, screen_width, screen_height);
     let imageAttachment = new discord.Attachment(image, `${username}-${timeframe}.jpg`);
     let posessive = username[username.length-1].toLowerCase == 's' ? "'" : "'s";
     return [

@@ -76,8 +76,29 @@
             },
             {
                 "name": "help",
-                "usage": "`.help <module name>?` displays the commands under a given module and how to use them."
+                "usage": "`.help <module name>` displays the commands under a given module and how to use them."
             }
+        ]
+    },
+    "notification": {
+        "name": "notification | notif | noti",
+        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "image": "https://i.imgur.com/UCXza9B.png",
+        "colour": "0x4965fe",
+        "commands": [
+            {
+                "name": "notification add",
+                "usage": "`.notification global? add <type> [key word/phrase]` this adds a notification with they key word or phrase entered, meaning you will then be notified when a user mentions that word either in the server you add the notification to or in any server you and haseul bot are both in if you pass the global argument. You can also specify a type, determining whether it will be `strict`, `normal`, or `lenient` in deciding whether or not to match the key word/phrase."
+            },
+            {
+                "name": "notification remove",
+                "usage": "`.notification remove [key word/phrase]` this removes a notification based on the key word or phrase you specify."
+            },
+            {
+                "name": "notification list",
+                "usage": "`.notification list` this sends you a dm with a list of all your notifications, their type, and whether they are global or local notifications."
+            }
+
         ]
     }
 }

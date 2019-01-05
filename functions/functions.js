@@ -49,7 +49,7 @@ exports.pages = async (message, pages, timeout, lock) => {
             pageBeginning.on("collect", reaction => {
                 if (currentPage != 0) {
                     currentPage = 0;
-                    content = `**#${currentPage + 1}** ${pages[currentPage]}`;
+                    content = `#${currentPage + 1} ${pages[currentPage]}`;
                     reply.edit(content);
                 }                
                 let users = reaction.users.array();
@@ -67,7 +67,7 @@ exports.pages = async (message, pages, timeout, lock) => {
                 } else {
                     currentPage--;
                 }
-                content = `**#${currentPage + 1}** ${pages[currentPage]}`;
+                content = `#${currentPage + 1} ${pages[currentPage]}`;
                 reply.edit(content);
 
                 let users = reaction.users.array();
@@ -85,7 +85,7 @@ exports.pages = async (message, pages, timeout, lock) => {
                 } else {
                     currentPage++;
                 }
-                content = `**#${currentPage + 1}** ${pages[currentPage]}`;
+                content = `#${currentPage + 1} ${pages[currentPage]}`;
                 reply.edit(content);
                 
                 let users = reaction.users.array();
@@ -100,7 +100,7 @@ exports.pages = async (message, pages, timeout, lock) => {
             pageEnd.on("collect", reaction => {
                 if (currentPage != pages.length - 1) {
                     currentPage = pages.length - 1;
-                    content = `**#${currentPage + 1}** ${pages[currentPage]}`;
+                    content = `#${currentPage + 1} ${pages[currentPage]}`;
                     reply.edit(content);
                 }                
                 let users = reaction.users.array();

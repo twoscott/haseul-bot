@@ -13,9 +13,7 @@ roles = async (message) => {
     if (rolesChannelID == message.channel.id) assign_roles(message); //Assign roles if in roles channel
 }
 
-exports.handle = async function (message) {
-
-    let args = message.content.trim().split(" ");
+exports.handle = async function (message, args) {
 
     //Check if roles on
     
@@ -404,7 +402,7 @@ toggle_available_role = async function (message, args) {
     let errors = [];
 
     for (i = 0; i < role_names.length; i++) {
-        let role_name = role_names[i];
+        let role_name = role_names[i].trim();
         if (role_name.length < 1) {
             break;            
         } else {
@@ -503,9 +501,9 @@ update_roles_channel = async function (message) {
     let content = data.msg;
     let channel_id = await serverSettings.get(message.guild.id, "rolesChannel");
     let channel = client.channels.get(channel_id);
-    let embed = create_avarole_embed(message);
+    let embed = await create_avarole_embed(message);
     
-    let old_message = channel.fetchMessage(message_id);
+    let old_message = await channel.fetchMessage(message_id);
     old_message.delete();
     let msg = await channel.send(content, {embed: embed});
     await database.set_msg_id(message.guild.id, msg.id);

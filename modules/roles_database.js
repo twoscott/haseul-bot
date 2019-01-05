@@ -58,11 +58,8 @@ exports.add_role = (role_command, role_id, role_name, guild_id, type) => {
             if (err) return reject(err);
             if (row) return resolve(false);
             db.run("INSERT INTO roles VALUES (?, ?, ?, ?, ?)", [role_command.toLowerCase(), role_id, role_name, guild_id, type.toUpperCase()], (err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    return resolve(true);
-                }
+                if (err) return reject(err);
+                return resolve(true);
             })
         })
     })
@@ -74,11 +71,8 @@ exports.remove_role = (role_command, guild_id, type) => {
             if (err) return reject(err);
             if (!row) return resolve(false);
             db.run("DELETE FROM roles WHERE roleCommand = ? AND guildID = ? AND type = ?", [role_command.toLowerCase(), guild_id, type.toUpperCase()], (err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    return resolve(true);
-                }
+                if (err) return reject(err);
+                return resolve(true);
             })
         })
     }) 

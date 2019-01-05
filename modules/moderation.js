@@ -17,9 +17,7 @@ poll = async (message) => {
     }
 }
 
-exports.handle = async function (message) {
-
-    let args = message.content.trim().split(" ");
+exports.handle = async function (message, args) {
 
     //Check if poll channel
     

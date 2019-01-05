@@ -14,9 +14,7 @@ const translate_key = config.trans_key;
 
 //Functions
 
-exports.handle = async function (message) {
-
-    let args = message.content.trim().split(" ");
+exports.handle = async function (message, args) {
 
     //Handle commands
 
@@ -130,7 +128,7 @@ translate = async function (args) {
     let source_language = detectedLanguage ? detectedLanguage.language : source_lang_code;
     let target_language = translations[0].to;
 
-    return `**${source_language}-${target_language}** Translation: ${translation.data[0].translations[0].text}`;
+    return `**${source_language}-${target_language}** Translation: ${translations[0].text}`;
 
 }
 
@@ -178,9 +176,15 @@ help = async function (message, args) {
             module_name = "utility";
             break;
         
+        case "notifications":
+        case "notification":
+        case "notif":
+        case "noti":
+            module_name = "notification"
+            break;
+        
         default:
-            resolve("\\⚠ Invalid module name provided.");
-            return;
+            return "\\⚠ Invalid module name provided.";
     }
 
     let module_obj = helpmodules[module_name];

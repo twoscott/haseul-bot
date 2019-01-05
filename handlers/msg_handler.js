@@ -5,21 +5,27 @@ const lastfm = require("../modules/lastfm.js");
 const youtube = require("../modules/youtube.js");
 const utility = require("../modules/utility.js");
 const moderation = require("../modules/moderation.js");
+const notifications = require("../modules/notifications.js");
 
 //Handle message
 
 exports.handle = (message) => {
 
-    if (message.system) return;
-    if (message.author.bot) return;
-    if (message.channel.type === "dm") return;
+    let { system, author, channel, content } = message
+
+    if (system) return;
+    if (author.bot) return;
+    if (channel.type === "dm") return;
+
+    let args = content.replace(/\s{2,}/gi, ' ').trim().split(' ');
 
     //Pass message to modules
 
-    roles.handle(message);
-    lastfm.handle(message);
-    youtube.handle(message);
-    utility.handle(message);
-    moderation.handle(message);
+    roles.handle(message, args);
+    lastfm.handle(message, args);
+    youtube.handle(message, args);
+    utility.handle(message, args);
+    moderation.handle(message, args);
+    notifications.handle(message, args);
 
 }
