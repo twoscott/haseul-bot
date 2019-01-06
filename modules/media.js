@@ -61,13 +61,13 @@ yt_pages = async function (message, query) {
     if (!query) {
         return "\\⚠ Please provide a query to search for!";
     }
-    let r = await axios.get(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`);
+    let { data } = await axios.get(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`);
     let regExp = /<div class="yt-lockup-content"><h3 class="yt-lockup-title "><a href="\/watch\?v=([^&"]+)/ig;
     let pages = [];
-    let search = regExp.exec(response.data);
+    let search = regExp.exec(data);
     while (search !== null) {
         pages.push(`https://youtu.be/${search[1]}`);
-        search = regExp.exec(response.data);
+        search = regExp.exec(data);
     }
     if (pages.length < 1) {
         return "\\⚠ No results found for this search!";
@@ -88,7 +88,7 @@ lb_movie_query = async function (query) {
         timeout: 5000,
         headers: { "User-Agent": user_agent }
     })
-    let {data} = await letterboxd.get(`/search/films/${encodeURIComponent(query)}`);
+    let { data } = await letterboxd.get(`/search/films/${encodeURIComponent(query)}`);
     let regExp = /<ul class="results">[^]*?data-film-link="(.*?)"/i;
     let result = data.match(regExp);
     return result ? base_url + result[1] : "\\⚠ No results found.";

@@ -11,16 +11,18 @@ db.run(
     keyword TEXT NOT NULL,
     keyexp TEXT NOT NULL, 
     type TEXT DEFAULT "NORMAL"
-    )`
-);
+)`);
 db.run(`CREATE TABLE IF NOT EXISTS localNotifs  (
     guildID TEXT NOT NULL, 
     userID TEXT NOT NULL, 
     keyword TEXT NOT NULL,
     keyexp TEXT NOT NULL, 
     type TEXT DEFAULT "NORMAL"
-    )`
-);
+)`);
+db.run(`CREATE TABLE IF NOT EXISTS channelsBlacklist (
+    guildID TEXT NOT NULL,
+    channelID TEXT NOT NULL
+)`);
 
 //Add notficiation
 
@@ -106,5 +108,45 @@ exports.get_local_notifs = (guild_id) => {
                 return resolve(rows);
             })
         }
+    })
+}
+
+//Blacklist
+
+exports.add_blacklist_channel = (guild_id, channel_id) => {
+    return new Promise((resolve, reject) => {
+        db.get("SELECT channelID FROM channelsBlacklist WHERE guildID = ? AND channelID = ?",
+        [guild_id, channel_id], (err, row) => {
+            if (err) return reject(err);
+            if (row) return resolve();
+            db.run("INSERT INTO channelsBlacklist VALUES (?, ?)", [guild_id, channel_id], err => {
+                if (err) return reject(err);
+                resolve(true);
+            })
+        })
+    })
+}
+
+exports.remove_blacklist_channel = (guild_id, channel_id) => {
+    return new Promise((resolve, reject) => {
+        db.get("SELECT channelID FROM channelsBlacklist WHERE guildID = ? AND channelID = ?",
+        [guild_id, channel_id], (err, row) => {
+            if (err) return reject(err);
+            if (!row) return resolve();
+            db.run("DELETE FROM channelsBlacklist WHERE guildID = ? AND channelID = ?",
+            [guild_id, channel_id], err => {
+                if (err) return reject(err);
+                resolve(true);
+            })
+        })
+    })
+}
+
+exports.get_blacklist_channels = () => {
+    return new Promise((resolve, reject) => {
+        db.all("SELECT channelID FROM channelsBlacklist", (err, rows) => {
+            if (err) return reject(err);
+            return resolve(rows);
+        })
     })
 }

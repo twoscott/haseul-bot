@@ -12,11 +12,13 @@ const notify = async (message) => {
     //Fetch stored notifications
 
     let { guild, channel, author, content, member } = message;
-    guild = await guild.fetchMembers();
+    let chan_blacklist = await database.get_blacklist_channels();
+    if (chan_blacklist.find(row => row.channelID == channel.id)) return;
+    
     let locals = await database.get_local_notifs(guild.id);
     let globals = await database.get_global_notifs();
     let notifs = locals.concat(globals).filter(n => n.userID != author.id);
-    let blacklist = new Array();
+    let notified = new Array();
 
     //Embed template
 
@@ -38,14 +40,19 @@ const notify = async (message) => {
     //Filter notificationss and notify valid users
 
     for (let notif of notifs) {
-        if (notif.guildID && notif.guildID != guild.id || blacklist.includes(notif.userID) || !guild.members.has(notif.userID)) { 
+        if (notif.guildID && notif.guildID != guild.id || notified.includes(notif.userID)) { 
             continue; 
         }
+        let member = await guild.fetchMember(notif.userID);
+        if (!member) continue;
+        let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL");
+        if (!can_read) continue;
+
         let regxp = new RegExp(notif.keyexp, 'i');
         let match = content.match(regxp);
         if (!match) continue;
 
-        blacklist.push(notif.userID);
+        notified.push(notif.userID);
         guild.fetchMember(notif.userID).then(recipent => {
             let alert = `\\💬 ${author} mentioned \`${notif.keyword}\` in ${channel}`;
             recipent.send(alert, notif_embed());
@@ -99,6 +106,49 @@ exports.handle = async function (message, args) {
                             })
                             break;
 
+                    }
+                    break;
+
+                case "blacklist":
+                    let perms = ["ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG"];
+                    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+                    if (!perms.some(p => message.member.hasPermission(p))) break;
+                    switch (args[2]) {
+
+                        case "add":
+                            switch (args[3]) {
+
+                                case "channel":
+                                    message.channel.stopTyping();
+                                    add_blacklist_channel(message, args.slice(4)).then(response => {
+                                        if (response) message.channel.send(response);
+                                        message.channel.stopTyping();
+                                    }).catch(error => {
+                                        console.error(error);
+                                        message.channel.stopTyping();
+                                    })
+                                    break;
+
+                            }
+                            break;
+
+                        case "remove":
+                            switch (args[3]) {
+
+                                case "channel":
+                                    message.channel.stopTyping();
+                                    remove_blacklist_channel(message, args.slice(4)).then(response => {
+                                        if (response) message.channel.send(response);
+                                        message.channel.stopTyping();
+                                    }).catch(error => {
+                                        console.error(error);
+                                        message.channel.stopTyping();
+                                    })
+                                    break;
+
+                            }
+                            break;
+                        
                     }
                     break;
 
@@ -170,7 +220,7 @@ const add_notification = async function (message, args, global) {
 
     let keyrgx;
     if (type == "STRICT")  {
-        keyrgx = `(^|\\s)${keyphrase}($|\\s)`;
+        keyrgx = `(^|\\s)${keyphrase}[\`']?s?($|\\s)`;
     }
     if (type == "NORMAL")  {
         keyrgx = '';
@@ -278,3 +328,52 @@ const list_notifications = async function (message) {
     return "A list of your notifications has been sent to your DMs."
 }
 
+const add_blacklist_channel = async function (message, args) {
+
+    let { guild, channel } = message;
+    let channel_id;
+    if (args.length < 1) {
+        channel_id = channel.id;
+    } else {
+        channel_id = args[0].match(/<?#?!?(\d+)>?/);
+        if (!channel_id) {
+            return"\\⚠ Invalid channel or channel ID.";
+        }
+        channel_id = channel_id[1];
+    }
+    if (!message.guild.channels.has(channel_id)) {
+        return "\\⚠ Channel doesn't exist in this server.";
+    }
+
+    let added = database.add_blacklist_channel(guild.id, channel_id);
+    if (!added) {
+        return `\\⚠ <#${channel_id}> is already blacklisted.`;
+    }
+    return `<#${channel_id}> is now blacklisted from notifying users.`;
+
+}
+
+const remove_blacklist_channel = async function (message, args) {
+
+    let { guild, channel } = message;
+    let channel_id;
+    if (args.length < 1) {
+        channel_id = channel.id;
+    } else {
+        channel_id = args[0].match(/<?#?!?(\d+)>?/);
+        if (!channel_id) {
+            return"\\⚠ Invalid channel or channel ID.";
+        }
+        channel_id = channel_id[1];
+    }
+    if (!message.guild.channels.has(channel_id)) {
+        return "\\⚠ Channel doesn't exist in this server.";
+    }
+
+    let added = database.remove_blacklist_channel(guild.id, channel_id);
+    if (!added) {
+        return `\\⚠ <#${channel_id}> is not blacklisted.`;
+    }
+    return `<#${channel_id}> is no longer blacklisted from notifying users.`;
+
+}
