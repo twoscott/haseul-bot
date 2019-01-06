@@ -1,7 +1,7 @@
 //Require modules
 
 const discord = require("discord.js");
-const config = require("./config.json");
+const config = require("./config_eh.json");
 const client = new discord.Client({disableEveryone: true})
 exports.client = client;
 

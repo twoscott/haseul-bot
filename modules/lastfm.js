@@ -8,7 +8,7 @@ const config = require("../config.json");
 const database = require("../modules/lastfm_database.js");
 const functions = require("../functions/functions.js");
 const html = require("../functions/html.js");
-const youtube = require("./youtube.js");
+const media = require("./media.js");
 
 //Init
 
@@ -725,7 +725,7 @@ const lf_youtube = async function (message, username) {
     let nowplaying = (track["@attr"] && track["@attr"].nowplaying == "true");
     let status = nowplaying ? "Now Playing" : "Last Played";        
 
-    let video_link = await youtube.query(query);
+    let video_link = await media.yt_query(query);
     return `${status}: ${video_link}`;
 
 }

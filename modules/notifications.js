@@ -13,15 +13,15 @@ const notify = async (message) => {
 
     let { guild, channel, author, content, member } = message;
     guild = await guild.fetchMembers();
-    let locals    = await database.get_local_notifs(guild.id);
-    let globals   = await database.get_global_notifs();
-    let notifs    = locals.concat(globals).filter(n => n.userID != author.id);
+    let locals = await database.get_local_notifs(guild.id);
+    let globals = await database.get_global_notifs();
+    let notifs = locals.concat(globals).filter(n => n.userID != author.id);
     let blacklist = new Array();
 
     //Embed template
 
     let notif_embed = () => {
-        let msg     = content.length < 1025 ? content
+        let msg = content.length < 1025 ? content
                     : content[1020] == ' '  ? content.slice(0,1020)+'...'
                     : content.slice(0,1021) + '...';
         let msg_url = `https://discordapp.com/channels/${guild.id}/${channel.id}/${message.id}`;
@@ -173,7 +173,17 @@ const add_notification = async function (message, args, global) {
         keyrgx = `(^|\\s)${keyphrase}($|\\s)`;
     }
     if (type == "NORMAL")  {
-        keyrgx = `${keyphrase}`;
+        keyrgx = '';
+        for (i=0; i<keyphrase.length; i++) {
+            let char = keyphrase[i];
+            if (char == '\\' && keyphrase[i+1] != '\\') {
+                let nextchar = keyphrase[++i];
+                keyrgx += (i) < keyphrase.length - 1 ? `${char+nextchar}+\\W*` : `${char+nextchar}+`;
+            } else {
+                keyrgx += i < keyphrase.length - 1 ? `${char}+\\W*` : `${char}+`;
+            }
+        }
+        keyrgx = `(^|\\W)${keyrgx}[\`']?s?($|\\W)`; 
     }
     if (type == "LENIENT") {
         keyrgx = '';
@@ -186,6 +196,7 @@ const add_notification = async function (message, args, global) {
                 keyrgx += i < keyphrase.length - 1 ? `${char}+\\W*` : `${char}+`;
             }
         }
+        keyrgx += `[\`']?s?`;
     }
 
     let { guild, author } = message;

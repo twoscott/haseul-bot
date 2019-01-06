@@ -2,7 +2,7 @@
 
 const roles = require("../modules/roles.js");
 const lastfm = require("../modules/lastfm.js");
-const youtube = require("../modules/youtube.js");
+const media = require("../modules/media.js");
 const utility = require("../modules/utility.js");
 const moderation = require("../modules/moderation.js");
 const notifications = require("../modules/notifications.js");
@@ -23,7 +23,7 @@ exports.handle = (message) => {
 
     roles.handle(message, args);
     lastfm.handle(message, args);
-    youtube.handle(message, args);
+    media.handle(message, args);
     utility.handle(message, args);
     moderation.handle(message, args);
     notifications.handle(message, args);
