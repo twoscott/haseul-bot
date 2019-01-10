@@ -48,15 +48,20 @@ const notify = async (message) => {
         let match = content.match(regxp);
         if (!match) continue;
 
-        guild.fetchMember(notif.userID).then(member => {
-            if (!member) return;
-            let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL");
-            if (!can_read) return;
+        let member;
+        try {
+            member = await guild.fetchMember(notif.userID);
+        } catch (e) {
+            member = null;
+        }
 
-            notified.push(notif.userID);
-            let alert = `\\💬 ${author} mentioned \`${notif.keyword}\` in ${channel}`;
-            member.send(alert, notif_embed());
-        }).catch(() => {/*ignore*/});
+        if (!member) return;
+        let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL");
+        if (!can_read) return;
+
+        notified.push(notif.userID);
+        let alert = `\\💬 ${author} mentioned \`${notif.keyword}\` in ${channel}`;
+        member.send(alert, notif_embed());
     }
 
 }
