@@ -1,6 +1,6 @@
 //Require modules
 
-const discord = require("discord.js");
+const Discord = require("discord.js");
 const axios = require("axios");
 const fs = require("fs");
 
@@ -16,7 +16,7 @@ const api_key = config.lastfm_key;
 
 //Functions
 
-exports.handle = async function (message, args) {
+exports.msg = async function (message, args) {
 
     //Handle commands
 
@@ -325,7 +325,7 @@ const lf_recents = async function (message, username, recentsCount) {
     if (track2.album && track2.album["#text"]) field2+=` | **${track2.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`
 
     let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
-    let embed = new discord.RichEmbed()
+    let embed = new Discord.RichEmbed()
     .setColor(0xc1222a)
     .setThumbnail(album_thumbnail)
     .setURL(album_image)
@@ -391,7 +391,7 @@ const lf_recents_list = async function (message, username, recentsCount) {
         if (track["@attr"] && track["@attr"].nowplaying == "true") {
             row = `\\▶ ${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (Now)`;
         } else {
-            row = `${i + 1}. ${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (${getTimeAgo(+track.date.uts)})`;
+            row = `${i + 1}. ${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (${functions.getTimeAgo(+track.date.uts)})`;
         }
         if (length + (row.length + 1) > 2048 || page.length > 19) { // + 1 = line break
             pages.push(page.join("\n"));
@@ -415,7 +415,7 @@ const lf_recents_list = async function (message, username, recentsCount) {
     }
 
     let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
-    let embed = new discord.RichEmbed()
+    let embed = new Discord.RichEmbed()
     .setAuthor(`${lf_user}${posessive} Recent Tracks`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lf_user}/library`)
     .setColor(0xc1222a)
     .setThumbnail(album_thumbnail);
@@ -487,7 +487,7 @@ const lf_top_artists = async function (message, args) {
     }
 
     let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
-    let embed = new discord.RichEmbed()
+    let embed = new Discord.RichEmbed()
     .setAuthor(`${lf_user}${posessive} Top Artists`,`https://i.imgur.com/FwnPEny.png`, `https://www.last.fm/user/${lf_user}/library/artists?date_preset=${date_preset}`)
     .setTitle(display_time)
     .setThumbnail(artist_thumbnail)
@@ -560,7 +560,7 @@ const lf_top_albums = async function (message, args)  {
     }
 
     let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
-    let embed = new discord.RichEmbed()
+    let embed = new Discord.RichEmbed()
     .setAuthor(`${lf_user}${posessive} Top Albums`,`https://i.imgur.com/LZmYwDG.png`, `https://www.last.fm/user/${lf_user}/library/albums?date_preset=${date_preset}`)
     .setTitle(display_time)
     .setThumbnail(album_thumbnail)
@@ -633,7 +633,7 @@ const lf_top_tracks = async function (message, args) {
     }
 
     let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
-    let embed = new discord.RichEmbed()
+    let embed = new Discord.RichEmbed()
     .setAuthor(`${lf_user}${posessive} Top Tracks`,`https://i.imgur.com/RFO9qp1.png`, `https://www.last.fm/user/${lf_user}/library/tracks?date_preset=${date_preset}`)
     .setTitle(display_time)
     .setThumbnail(track_thumbnail)
@@ -683,7 +683,7 @@ const lf_profile = async function (message, username) {
     response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${username}&api_key=${api_key}&format=json`)
     let track_count = response.data.toptracks["@attr"].total;
 
-    let embed = new discord.RichEmbed()
+    let embed = new Discord.RichEmbed()
     .setAuthor(`${user.name}`,`https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${user.name}/`)
     .setColor(0xc1222a)
     .setFooter(`Total Scrobbles: ${user.playcount}`)
@@ -835,7 +835,7 @@ const lf_chart = async function (message, args, type="album") {
 
  
     let image = await html.toImage(htmlString, screen_width, screen_height);
-    let imageAttachment = new discord.Attachment(image, `${username}-${timeframe}.jpg`);
+    let imageAttachment = new Discord.Attachment(image, `${username}-${timeframe}.jpg`);
     let posessive = username[username.length-1].toLowerCase == 's' ? "'" : "'s";
     return [
         `**${username}${posessive}** ${display_time} ${functions.capitalise(type)} Chart`, 
@@ -903,32 +903,4 @@ getTimeFrame = (timeframe) => {
         date_preset: date_preset,
         defaulted: defaulted
     };
-}
-
-getTimeAgo = (time) => {
-
-    let currTime = Date.now() / 1000;
-    let timeDiffSecs = currTime - time;
-    let timeAgoText;
-    let timeAgo;
-
-    if (timeDiffSecs < 60) {            //60 = minute
-        timeAgo = Math.floor(timeDiffSecs);
-        timeAgoText = timeAgo > 1 ? `${timeAgo}secs ago` : `${timeAgo}sec ago`;
-    } else if (timeDiffSecs < 3600) {   //3600 = hour
-        timeAgo = Math.floor((timeDiffSecs) / 60);
-        timeAgoText = timeAgo > 1 ? `${timeAgo}mins ago` : `${timeAgo}min ago`;
-    } else if (timeDiffSecs < 86400) {  //86400 = day
-        timeAgo = Math.floor((timeDiffSecs) / 3600);
-        timeAgoText = timeAgo > 1 ?  `${timeAgo}hrs ago` :  `${timeAgo}hr ago`;
-    } else if (timeDiffSecs < 604800) { //604800 = week
-        timeAgo = Math.floor((timeDiffSecs) / 86400);
-        timeAgoText = timeAgo > 1 ? `${timeAgo}days ago` : `${timeAgo}day ago`;
-    } else {                            //More than a week
-        timeAgo = Math.floor((timeDiffSecs) / 604800)
-        timeAgoText = timeAgo > 1 ?  `${timeAgo}wks ago` :  `${timeAgo}wk ago`;
-    }
-
-    return timeAgoText;
-    
 }

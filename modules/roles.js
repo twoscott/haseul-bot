@@ -1,7 +1,7 @@
 //Require modules
 
-const discord = require("discord.js");
-const client = require("../haseul.js").client;
+const Discord = require("discord.js");
+const Client = require("../haseul.js").Client;
 const database = require("../modules/roles_database.js");
 const serverSettings = require("../modules/server_settings.js")
 
@@ -13,7 +13,7 @@ roles = async (message) => {
     if (rolesChannelID == message.channel.id) assign_roles(message); //Assign roles if in roles channel
 }
 
-exports.handle = async function (message, args) {
+exports.msg = async function (message, args) {
 
     //Check if roles on
     
@@ -153,7 +153,7 @@ roles_response = (responses) => {
 }
 
 roles_embed = (responses) => {
-    let embed = new discord.RichEmbed();
+    let embed = new Discord.RichEmbed();
     for (let [key, val] of Object.entries(responses)) {
         if (val.length > 0) embed.addField(key, val.join(", "), false);
     }
@@ -271,8 +271,8 @@ assign_roles = async function (message) {
 
 create_avarole_embed = async function (message) {
 
-    let guild = client.guilds.get(message.guild.id);
-    let sender = await guild.fetchMember(client.user.id);
+    let guild = Client.guilds.get(message.guild.id);
+    let sender = await guild.fetchMember(Client.user.id);
     let role_rows = await database.get_available_roles(message.guild.id);
     if (!role_rows || !role_rows.length) return;
 
@@ -288,7 +288,7 @@ create_avarole_embed = async function (message) {
         }
     }
 
-    let embed = new discord.RichEmbed()
+    let embed = new Discord.RichEmbed()
     .setTitle("__Available Roles__")
     .setColor(sender && sender.colorRole ? sender.colorRole.color : 0xffffff);
     if (main_roles.length) embed.addField("Main Roles", main_roles.join(", "), false);
@@ -460,7 +460,7 @@ set_roles_channel = async function (message, args) {
     } else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return"\\⚠ Invalid channel or channel ID.";
+            return "\\⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
     }
@@ -470,15 +470,15 @@ set_roles_channel = async function (message, args) {
     
     let data = await database.get_roles_msg(message.guild.id);
     if (!data || !data.msg) {
-        return"\\⚠ No roles channel message assigned.";
+        return "\\⚠ No roles channel message assigned.";
     }
 
-    let channel = client.channels.get(channel_id);
+    let channel = Client.channels.get(channel_id);
     let embed = await create_avarole_embed(message);
     let msg = await channel.send(data.msg, {embed: embed})
     if (data && data.messageID) {
         serverSettings.get(message.guild.id, "rolesChannel").then(rolesChannel => {
-            client.channels.get(rolesChannel)
+            Client.channels.get(rolesChannel)
             .fetchMessage(data.messageID)
             .then(msg => msg.delete());
         })
@@ -500,7 +500,7 @@ update_roles_channel = async function (message) {
     let message_id = data.messageID;
     let content = data.msg;
     let channel_id = await serverSettings.get(message.guild.id, "rolesChannel");
-    let channel = client.channels.get(channel_id);
+    let channel = Client.channels.get(channel_id);
     let embed = await create_avarole_embed(message);
     
     let old_message = await channel.fetchMessage(message_id);

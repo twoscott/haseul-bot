@@ -19,10 +19,18 @@ db.run(
     joinLogsChan TEXT,
     rolesOn INT NOT NULL DEFAULT 0,
     rolesChannel TEXT
-    )`
-)
+)`);
 
-//Functions
+// db.run(`CREATE TABLE IF NOT EXISTS msgIndex (
+//     guildID TEXT NOT NULL,
+//     postCount INT,
+//     lastMsgTimestamp INT,
+//     lastMsgID TEXT,
+//     firstMsgTimestamp INT,
+//     firstMsgID TEXT
+// )`);
+
+//Server Settings
 
 exports.setVal = (guildID, col, val) => {
     if (!columns.includes(col)) return;
@@ -91,3 +99,50 @@ exports.getServer = (guildID) => {
         })
     })
 }
+
+//Message indexing
+
+// exports.setMsgIndex = (guild_id, post_count, last_msg_ts, last_msg_id, first_msg_ts, first_msg_id) => {
+//     return new Promise((resolve, reject) => {
+//         db.get("SELECT * FROM msgIndex WHERE guildID = ?", [guild_id], (err, row) => {
+//             if (err) return reject(err);
+//             if (row) {
+//                 db.run("UPDATE msgIndex SET postCount = ?, lastMsgTimestamp = ?, lastMsgID = ?, firstMsgTimestamp = ?, firstMsgID = ? WHERE guildID = ?",
+//                 [post_count, last_msg_ts, last_msg_id, first_msg_ts, first_msg_id, guild_id], err => {
+//                     if (err) return reject(err);
+//                     return resolve();
+//                 })
+//             } else {
+//                 db.run("INSERT INTO msgIndex VALUES (?, ?, ?, ?, ?, ?)", [guild_id, post_count, last_msg_ts, last_msg_id, first_msg_ts, first_msg_id], err => {
+//                     if (err) return reject(err);
+//                     return resolve();
+//                 })
+//             }
+
+//         })
+//     })
+// }
+
+// exports.getMsgIndex = (guild_id) => {
+//     return new Promise((resolve, reject) => {
+//         db.get("SELECT * FROM msgIndex WHERE guildID = ?", [guild_id], (err, row) => {
+//             if (err) return reject(err);
+//             return resolve(row);
+//         })
+//     })
+// }
+
+// exports.clearMsgIndex = (guild_id) => {
+//     return new Promise((resolve, reject) => {
+//         db.get("SELECT * FROM msgIndex WHERE guildID = ?", [guild_id], (err, row) => {
+//             if (err) return reject(err);
+//             if (row) {
+//                 db.run("DELETE FROM msgIndex WHERE guildID = ?", [guild_id], err => {
+//                     return err ? reject(err) : resolve(true);
+//                 })
+//             } else {
+//                 return resolve();
+//             }
+//         })
+//     })
+// }

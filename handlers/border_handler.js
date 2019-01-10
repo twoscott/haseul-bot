@@ -1,6 +1,6 @@
 //Require modules
 
-const logs = require("../modules/join_leave_logs.js");
+const logs = require("../modules/users.js");
 
 //Handle joins
 

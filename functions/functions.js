@@ -1,12 +1,40 @@
 // Require modules
 
-const discord = require("discord.js");
-const client = require("../haseul").client;
+const Discord = require("discord.js");
+const Client = require("../haseul").Client;
 
 //Functions
 
 exports.capitalise = (text) => {
     return text[0].toUpperCase() + text.slice(1).toLowerCase();
+}
+
+exports.getTimeAgo = (time, limit) => {
+
+    let currTime = Date.now() / 1000;
+    let timeDiffSecs = currTime - time;
+    let timeAgoText;
+    let timeAgo;
+
+    if (timeDiffSecs < 60 || limit == 'seconds') {            //60 = minute
+        timeAgo = Math.floor(timeDiffSecs);
+        timeAgoText = timeAgo > 1 ? `${timeAgo}secs ago` : `${timeAgo}sec ago`;
+    } else if (timeDiffSecs < 3600 || limit == 'minutes') {   //3600 = hour
+        timeAgo = Math.floor((timeDiffSecs) / 60);
+        timeAgoText = timeAgo > 1 ? `${timeAgo}mins ago` : `${timeAgo}min ago`;
+    } else if (timeDiffSecs < 86400 || limit == 'hours') {  //86400 = day
+        timeAgo = Math.floor((timeDiffSecs) / 3600);
+        timeAgoText = timeAgo > 1 ?  `${timeAgo}hrs ago` :  `${timeAgo}hr ago`;
+    } else if (timeDiffSecs < 604800 || limit == 'days') { //604800 = week
+        timeAgo = Math.floor((timeDiffSecs) / 86400);
+        timeAgoText = timeAgo > 1 ? `${timeAgo}days ago` : `${timeAgo}day ago`;
+    } else {                            //More than a week
+        timeAgo = Math.floor((timeDiffSecs) / 604800)
+        timeAgoText = timeAgo > 1 ?  `${timeAgo}wks ago` :  `${timeAgo}wk ago`;
+    }
+
+    return timeAgoText;
+    
 }
 
 exports.pages = async (message, pages, timeout, lock) => {
@@ -55,7 +83,7 @@ exports.pages = async (message, pages, timeout, lock) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -73,7 +101,7 @@ exports.pages = async (message, pages, timeout, lock) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -91,7 +119,7 @@ exports.pages = async (message, pages, timeout, lock) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -106,7 +134,7 @@ exports.pages = async (message, pages, timeout, lock) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -124,7 +152,7 @@ exports.pages = async (message, pages, timeout, lock) => {
                     } else {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];
-                            if (user != client.user) {
+                            if (user != Client.user) {
                                 reaction.remove(user);
                             }
                         }
@@ -183,7 +211,7 @@ exports.embedPages = async (message, embed, pages, timeout) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -202,7 +230,7 @@ exports.embedPages = async (message, embed, pages, timeout) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -221,7 +249,7 @@ exports.embedPages = async (message, embed, pages, timeout) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -237,7 +265,7 @@ exports.embedPages = async (message, embed, pages, timeout) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -289,7 +317,7 @@ exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
             pageBeginning.on("collect", reaction => {
                 currentPage = 0;
 
-                let new_embed = new discord.RichEmbed()
+                let new_embed = new Discord.RichEmbed()
                     .setAuthor(embed.author.name, embed.author.icon_url)
                     .setColor(embed.color)
                     .setDescription(embed.description);
@@ -305,7 +333,7 @@ exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -318,7 +346,7 @@ exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
                     currentPage--;
                 }
                 
-                let new_embed = new discord.RichEmbed()
+                let new_embed = new Discord.RichEmbed()
                     .setAuthor(embed.author.name, embed.author.icon_url)
                     .setColor(embed.color)
                     .setDescription(embed.description);
@@ -334,7 +362,7 @@ exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -347,7 +375,7 @@ exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
                     currentPage++;
                 }
 
-                let new_embed = new discord.RichEmbed()
+                let new_embed = new Discord.RichEmbed()
                     .setAuthor(embed.author.name, embed.author.icon_url)
                     .setColor(embed.color)
                     .setDescription(embed.description);
@@ -363,7 +391,7 @@ exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }
@@ -372,7 +400,7 @@ exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
             pageEnd.on("collect", reaction => {
                 currentPage = pages.length - 1;
 
-                let new_embed = new discord.RichEmbed()
+                let new_embed = new Discord.RichEmbed()
                     .setAuthor(embed.author.name, embed.author.icon_url)
                     .setColor(embed.color)
                     .setDescription(embed.description);
@@ -388,7 +416,7 @@ exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
                 let users = reaction.users.array();
                 for (i=0; i < users.length; i++) {
                     let user = users[i];
-                    if (user != client.user) {
+                    if (user != Client.user) {
                         reaction.remove(user);
                     }
                 }

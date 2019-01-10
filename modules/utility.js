@@ -1,9 +1,9 @@
 //Require modules
 
-const discord = require("discord.js");
+const Discord = require("discord.js");
 const axios = require("axios")
 
-const client = require("../haseul").client;
+const Client = require("../haseul").Client;
 const config = require("../config.json");
 const helpmodules = require("../resources/help.json");
 const functions = require("../functions/functions.js")
@@ -14,7 +14,7 @@ const translate_key = config.trans_key;
 
 //Functions
 
-exports.handle = async function (message, args) {
+exports.msg = async function (message, args) {
 
     //Handle commands
 
@@ -135,7 +135,7 @@ translate = async function (args) {
 help = async function (message, args) {
 
     if (args.length < 1) {            
-        let embed = new discord.RichEmbed()
+        let embed = new Discord.RichEmbed()
         .setAuthor(`Help`, `https://i.imgur.com/p9n0Y0C.png`)
         .setColor(0xfe4971);
         let pages = [];
@@ -205,7 +205,7 @@ help = async function (message, args) {
     }
     pages.push(page);
 
-    let embed = new discord.RichEmbed()
+    let embed = new Discord.RichEmbed()
     .setAuthor(module_obj.name, module_obj.image)
     .setColor(+module_obj.colour)
     .setDescription(module_obj.description)

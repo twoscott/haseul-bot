@@ -1,6 +1,6 @@
 // Require modules
 
-const discord = require("discord.js");
+const Discord = require("discord.js");
 
 const database = require("./notifications_database.js");
 const functions = require("../functions/functions.js");
@@ -28,7 +28,7 @@ const notify = async (message) => {
                     : content.slice(0,1021) + '...';
         let msg_url = `https://discordapp.com/channels/${guild.id}/${channel.id}/${message.id}`;
         let colour  =  member.displayColor || 0xffffff;
-        return new discord.RichEmbed()
+        return new Discord.RichEmbed()
         .setAuthor(author.tag, author.avatarURL, author.avatarURL)
         .setDescription(`__[View Message](${msg_url})__`)
         .addField("Content", msg)
@@ -43,25 +43,25 @@ const notify = async (message) => {
         if (notif.guildID && notif.guildID != guild.id || notified.includes(notif.userID)) { 
             continue; 
         }
-        let member = await guild.fetchMember(notif.userID);
-        if (!member) continue;
-        let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL");
-        if (!can_read) continue;
 
         let regxp = new RegExp(notif.keyexp, 'i');
         let match = content.match(regxp);
         if (!match) continue;
 
-        notified.push(notif.userID);
-        guild.fetchMember(notif.userID).then(recipent => {
+        guild.fetchMember(notif.userID).then(member => {
+            if (!member) return;
+            let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL");
+            if (!can_read) return;
+
+            notified.push(notif.userID);
             let alert = `\\💬 ${author} mentioned \`${notif.keyword}\` in ${channel}`;
-            recipent.send(alert, notif_embed());
-        })
+            member.send(alert, notif_embed());
+        }).catch(() => {/*ignore*/});
     }
 
 }
 
-exports.handle = async function (message, args) {
+exports.msg = async function (message, args) {
 
     //Notify
 
@@ -295,7 +295,7 @@ const list_notifications = async function (message) {
         return "\\⚠ You don't have any notifications!";
     }
 
-    let embed = new discord.RichEmbed()
+    let embed = new Discord.RichEmbed()
     .setTitle("Keyword - Scope - Type")
     .setColor(message.member.displayColor || 0xffffff)
     .setFooter(`${notifs.length} Notifications`);

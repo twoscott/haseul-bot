@@ -1,7 +1,7 @@
 //Require modules
 
-const discord = require("discord.js");
-const client = require("../haseul.js").client;
+const Discord = require("discord.js");
+const Client = require("../haseul.js").Client;
 const serverSettings = require("./server_settings.js");
 
 //Functions
@@ -17,7 +17,7 @@ poll = async (message) => {
     }
 }
 
-exports.handle = async function (message, args) {
+exports.msg = async function (message, args) {
 
     //Check if poll channel
     
@@ -163,7 +163,7 @@ say = async function (message, args, raw) {
     }
     channel_id = channel_id[1];
 
-    let channel = client.channels.get(channel_id);
+    let channel = Client.channels.get(channel_id);
     if (!channel) {
         return "\\⚠ Invalid channel provided.";
     }
@@ -198,7 +198,7 @@ edit = async function (message, args, raw) {
     }
     channel_id = channel_id[1];
     
-    let channel = client.channels.get(channel_id);
+    let channel = Client.channels.get(channel_id);
     if (!channel) {
         return "\\⚠ Invalid channel provided.";
     }

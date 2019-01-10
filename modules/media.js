@@ -1,12 +1,12 @@
 //Require modules
 
-const discord = require("discord.js");
+const Discord = require("discord.js");
 const axios = require("axios")
 const functions = require("../functions/functions");
 
 //Functions
 
-exports.handle = async function (message, args) {
+exports.msg = async function (message, args) {
 
     //Handle commands
 
@@ -82,7 +82,6 @@ lb_movie_query = async function (query) {
         return "\\⚠ Please provide a query to search for!";
     }
     let user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36";
-    let base_url = 'https://letterboxd.com';
     const letterboxd = axios.create({
         baseURL: 'https://letterboxd.com',
         timeout: 5000,
@@ -91,7 +90,7 @@ lb_movie_query = async function (query) {
     let { data } = await letterboxd.get(`/search/films/${encodeURIComponent(query)}`);
     let regExp = /<ul class="results">[^]*?data-film-link="(.*?)"/i;
     let result = data.match(regExp);
-    return result ? base_url + result[1] : "\\⚠ No results found.";
+    return result ? "https://letterboxd.com" + result[1] : "\\⚠ No results found.";
 
 }
 

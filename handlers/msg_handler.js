@@ -1,15 +1,17 @@
 //Require modules
 
+const users = require("../modules/users.js");
 const roles = require("../modules/roles.js");
 const lastfm = require("../modules/lastfm.js");
 const media = require("../modules/media.js");
 const utility = require("../modules/utility.js");
 const moderation = require("../modules/moderation.js");
 const notifications = require("../modules/notifications.js");
+const servers = require("../modules/servers.js");
 
 //Handle message
 
-exports.handle = (message) => {
+exports.handleMsg = (message) => {
 
     let { system, author, channel, content } = message
 
@@ -20,12 +22,14 @@ exports.handle = (message) => {
     let args = content.replace(/\s{2,}/gi, ' ').trim().split(' ');
 
     //Pass message to modules
-
-    roles.handle(message, args);
-    lastfm.handle(message, args);
-    media.handle(message, args);
-    utility.handle(message, args);
-    moderation.handle(message, args);
-    notifications.handle(message, args);
+    users.msg(message, args);
+    roles.msg(message, args);
+    lastfm.msg(message, args);
+    media.msg(message, args);
+    utility.msg(message, args);
+    moderation.msg(message, args);
+    notifications.msg(message, args);
+    servers.msg(message, args);
 
 }
+
