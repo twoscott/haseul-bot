@@ -51,23 +51,45 @@ const server_embed = async (guild) => {
 
     guild = await guild.fetchMembers();
 
-    let region = [];
-    for (let sec of guild.region.split('-')) {
-        region.push(sec[0].toUpperCase() + sec.slice(1));
+    let status_emojis = {
+        "online" : "<:online:532078078063673355>",
+        "offline": "<:offline:532078078210473994>",
+        "idle"   : "<:idle:532078078269194263>",
+        "dnd"    : "<:dnd:532078078382571540>" 
     }
-    region = region.join('-');
+
+    let flags = {
+        "brazil": ':flag_br:', "eu-central": ':flag_eu:',
+        "hongkong": ':flag_hk:', "japan": ':flag_jp:',
+        "russia": ':flag_ru:', "singapore": ':flag_sg:',
+        "south-africa": ':flag_za:', "sydney": ':flag_au:',
+        "us-central": ':flag_us:', "us-east": ':flag_us:',
+        "us-south": ':flag_us:', "us-west": ':flag_us:',
+        "eu-west": ':flag_eu:', "london": ':flag_gb:'
+    }
+    let flag = flags[guild.region];
+
+    let region = [];
+    guild.region = guild.region.replace("hongkong", "hong-kong").replace("southafrica", "south-africa");
+    for (let sec of guild.region.split('-')) {
+        region.push(sec.length < 3 ?
+                    sec.toUpperCase() :
+                    sec[0].toUpperCase() + sec.slice(1));
+    }
+    region = region.join(' ');
+    region = flag ? `${flag} ${region}` : region;
 
     let presences = {};
     for (presence of guild.presences.array()) {
         presences[presence.status] ? presences[presence.status] += 1: presences[presence.status] = 1;
     }
     let statuses = [];
-    if (presences.online) statuses.push(`${presences.online} Online`);
-    if (presences.idle) statuses.push(`${presences.idle} Idle`);
-    if (presences.dnd) statuses.push(`${presences.dnd} Do Not Disturb`);
+    if (presences.online) statuses.push(`${status_emojis.online}${presences.online}`);
+    if (presences.idle) statuses.push(`${status_emojis.idle}${presences.idle}`);
+    if (presences.dnd) statuses.push(`${status_emojis.dnd}${presences.dnd}`);
     let offline = guild.memberCount - ((presences.online || 0) + (presences.idle || 0) + (presences.dnd || 0))
-    statuses.push(`${offline} Offline`);
-    statuses = statuses.join(', ');
+    statuses.push(`${status_emojis.offline}${offline}`);
+    statuses = statuses.join(' ');
 
     let embed = new Discord.RichEmbed()
     .setAuthor(guild.name, guild.iconURL)

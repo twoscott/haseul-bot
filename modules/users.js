@@ -168,7 +168,7 @@ const userinfo = async function (message, target) {
             let user = await Client.fetchUser(user_id)
             return user_embed(user, guild);
         } catch (e) {
-            console.log(e);
+            console.error(e);
             return "\\⚠ Invalid user.";
         }
 
@@ -201,21 +201,50 @@ const member_embed = async (member) => {
     .addField("Account Created", user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true);
 
     if (lastMsg) {
-        embed.addField("Last Seen", `[View Message](https://discordapp.com/channels/${guild.id}/${lastMsg.channel.id}/${lastMsg.id} "Go To User's Last Message")`, true);
+        embed.addField("Last Seen", `[View Message](https://discordapp.com/channels/${guild.id}/${lastMsg.channel.id}/${lastMsg.id} "Go To User's Last Message")`);
     }
 
     if (member.roles && member.roles.size > 1) {
-        let roles = member.roles.array().sort((a, b) => {
-            return b.calculatedPosition - a.calculatedPosition;
-        })
-        embed.addField("Roles", roles.slice(0, -1).join(', '));
-    }   
+        let allRoles = member.roles.array().sort((a, b) => b.comparePositionTo(a)).slice(0,-1);
+        let modRoles = [];
+        let roles = [];
+        let perms = [
+            "ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG", 
+            "KICK_MEMBERS", "BAN_MEMBERS"
+        ];
+        for (let role of allRoles) {
+            if (perms.some(p => role.hasPermission(p))) {
+                modRoles.push(role);
+            } else {
+                roles.push(role);
+            }
+        }
+        if (modRoles.length > 0) {
+            modRoles = modRoles.join(' ');
+            if (modRoles.length > 1024) {
+                modRoles = modRoles.substring(0, 1024);
+                modRoles = modRoles.substring(0, Math.min(modRoles.length, modRoles.lastIndexOf('>')+1));
+                modRoles += '.'.repeat(modRoles.length > 1021 ? 1024-roles.length: 3);
+            }
+            embed.addField("Mod Roles", modRoles, true);
+        }
+        if (roles.length > 0) {
+            roles = roles.join(' ');
+            if (roles.length > 1024) {
+                roles = roles.substring(0, 1024);
+                roles = roles.substring(0, roles.lastIndexOf('>')+1);
+                roles += '.'.repeat(roles.length > 1021 ? 1024-roles.length : 3);
+                console.log(roles.length)
+            }
+            embed.addField("Roles", roles, true);
+        }
+    }
 
     return embed;
 
 }
 
-user_embed = async (user) => {
+const user_embed = async (user) => {
 
     let status = {
         "online" : "<:online:532078078063673355>Online",
