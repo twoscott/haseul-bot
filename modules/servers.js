@@ -68,16 +68,13 @@ const server_embed = async (guild) => {
         "eu-west": ':flag_eu:', "london": ':flag_gb:'
     }
     let flag = flags[guild.region];
+    flag = flag ? flag + ' ' : '';
 
-    let region = [];
-    guild.region = guild.region.replace("hongkong", "hong-kong").replace("southafrica", "south-africa");
-    for (let sec of guild.region.split('-')) {
-        region.push(sec.length < 3 ?
-                    sec.toUpperCase() :
-                    sec[0].toUpperCase() + sec.slice(1));
-    }
-    region = region.join(' ');
-    region = flag ? `${flag} ${region}` : region;
+    let region = guild.region.replace("hongkong", "hong-kong").replace("southafrica", "south-africa").replace("us", "US").replace("eu", "EU");
+    region = flag + region.split('-').map(x => x[0].toUpperCase() + x.slice(1)).join(' ');
+
+    let presences = guild.presences.array().map(p => p.status);
+    
 
     let presences = {};
     for (presence of guild.presences.array()) {
@@ -104,7 +101,7 @@ const server_embed = async (guild) => {
     .addField("Members", guild.memberCount, true)
     .addField("Roles", guild.roles.size, true)
     .addField("Region", region, true)
-    .addField("Emojis", guild.emojis.size, true);
+    .addField("Emojis", `${guild.emojis.size} (${guild.emojis.array().filter(e=>e.animated).length} animated)`, true);
 
     if (statuses) {
         embed.addField("Statuses", statuses);

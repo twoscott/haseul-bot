@@ -118,7 +118,7 @@ exports.msg = async function (message, args) {
         case ".memberinfo":
         case ".meminfo":
             message.channel.startTyping();
-            userinfo(message, args[1]).then(response => {
+            userinfo(message, args.slice(1)).then(response => {
                 if (response) message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -133,18 +133,21 @@ exports.msg = async function (message, args) {
 
 //Userinfo
 
-const userinfo = async function (message, target) {
+const userinfo = async function (message, args) {
 
     let { author, guild } = message;
-
+    let target = args[0];
     let user_id;
+
     if (!target) {
         user_id = author.id;
     } else {
         let match = target.match(/^<?@?!?(\d+)>?$/);
         if (!match) {
+            target = args.join(' ');
             guild = await guild.fetchMembers();
-            let member = guild.members.find(m => m.user.tag.toLowerCase()      == target.toLowerCase());
+
+            let member = guild.members.find(m => m.user.tag.toLowerCase() == target.toLowerCase());
             if (!member) {
                 member = guild.members.find(m => m.user.username.toLowerCase() == target.toLowerCase());
             }
@@ -223,8 +226,8 @@ const member_embed = async (member) => {
             modRoles = modRoles.join(' ');
             if (modRoles.length > 1024) {
                 modRoles = modRoles.substring(0, 1024);
-                modRoles = modRoles.substring(0, Math.min(modRoles.length, modRoles.lastIndexOf('>')+1));
-                modRoles += '.'.repeat(modRoles.length > 1021 ? 1024-roles.length: 3);
+                modRoles = modRoles.substring(0, modRoles.lastIndexOf('>')+1);
+                modRoles += '.'.repeat(modRoles.length > 1021 ? 1024-roles.length : 3);
             }
             embed.addField("Mod Roles", modRoles, true);
         }
@@ -234,7 +237,6 @@ const member_embed = async (member) => {
                 roles = roles.substring(0, 1024);
                 roles = roles.substring(0, roles.lastIndexOf('>')+1);
                 roles += '.'.repeat(roles.length > 1021 ? 1024-roles.length : 3);
-                console.log(roles.length)
             }
             embed.addField("Roles", roles, true);
         }

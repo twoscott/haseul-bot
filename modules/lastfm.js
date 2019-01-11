@@ -757,10 +757,7 @@ const lf_chart = async function (message, args, type="album") {
     let dimension = Math.round(Math.sqrt(+dims[0]*+dims[1])) || 3;
     if (dimension > 10) dimension = 10;
 
-    let {
-        timeframe,
-        display_time
-    } = getTimeFrame(time);
+    let { timeframe, display_time } = getTimeFrame(time);
 
     let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type.toLowerCase()}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${dimension ** 2}`);
     let { error } = response.data;
@@ -785,10 +782,10 @@ const lf_chart = async function (message, args, type="album") {
     let css = fs.readFileSync("./resources/fmchart.css", {encoding: 'utf8'});
     let htmlString = "";
 
-    htmlString += `<div class="grid">\n`;
+    htmlString += `<div class="grid">\n    `;
     for (let i=0; i<dimension; i++) {
 
-        htmlString += `    <div class="row">\n    `;
+        htmlString += `<div class="row">\n    `;
         for (let i=0; i<dimension; i++) {
             if (collection.length < 1) break;
             let item = collection.shift();
@@ -822,7 +819,6 @@ const lf_chart = async function (message, args, type="album") {
         `<html>\n`,
         `<head>\n`,
         `    <meta charset="UTF-8">\n`,
-        `    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">\n`,
         `</head>\n\n`,
         `<style>\n`,
         `${css}\n`,
