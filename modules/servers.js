@@ -72,8 +72,8 @@ const server_embed = async (guild) => {
     }
     guild.presences.array().forEach(p => statusObj[p.status].count += 1);
     let statusData = Object.values(statusObj);
-    statusObj.offline.count = guild.memberCount - statusData.reduce((a, c) => a + c.count, 0);
-    let statuses = statusData.map(d => d.emoji + d.count).join(' ');
+    statusObj.offline.count = guild.memberCount - statusData.map(d => d.count).reduce((a, c) => a + c);
+    let statuses = statusData.map(d => d.emoji + d.count).join('  ');
 
     let embed = new Discord.RichEmbed()
     .setAuthor(guild.name, guild.iconURL)
