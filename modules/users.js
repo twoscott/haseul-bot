@@ -142,17 +142,23 @@ const userinfo = async function (message, args) {
     if (!target) {
         user_id = author.id;
     } else {
-        let match = target.match(/^<?@?!?(\d+)>?$/);
+        let match = target.match(/^<?@?!?(\d{8,})>?$/);
         if (!match) {
-            target = args.join(' ');
+            target = args.join(' ').toLowerCase();
             guild = await guild.fetchMembers();
 
-            let member = guild.members.find(m => m.user.tag.toLowerCase() == target.toLowerCase());
+            let member = guild.members.find(m => m.user.tag.toLowerCase() == target.replace(/^@/, ''));
             if (!member) {
-                member = guild.members.find(m => m.user.username.toLowerCase() == target.toLowerCase());
+                member = guild.members.find(m => m.user.username.toLowerCase() == target);
             }
             if (!member) {
-                member = guild.members.find(m => m.user.username.toLowerCase().includes(target.toLowerCase()))
+                member = guild.members.find(m => m.user.username.toLowerCase().includes(target));
+            }
+            if (!member) {
+                member = guild.members.find(m => m.nickname ? m.nickname.toLowerCase() == target : false);
+            }
+            if (!member) {
+                member = guild.members.find(m => m.nickname ? m.nickname.toLowerCase().includes(target) : false);
             }
             if (!member) {
                 return "\\⚠ Invalid user or user ID.";

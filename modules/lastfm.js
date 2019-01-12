@@ -5,7 +5,7 @@ const axios = require("axios");
 const fs = require("fs");
 
 const config = require("../config.json");
-const database = require("../modules/lastfm_database.js");
+const database = require("./lastfm_db.js");
 const functions = require("../functions/functions.js");
 const html = require("../functions/html.js");
 const media = require("./media.js");

@@ -2,7 +2,7 @@
 
 const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
-const database = require("../modules/roles_database.js");
+const database = require("./roles_db.js");
 const serverSettings = require("../modules/server_settings.js")
 
 //Functions

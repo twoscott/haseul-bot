@@ -1,6 +1,6 @@
 //Require modules
 
-const database = require("./server_database.js");
+const database = require("./server_db.js");
 let servers = new Object();
 
 //Init

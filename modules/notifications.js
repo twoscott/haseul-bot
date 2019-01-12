@@ -2,8 +2,7 @@
 
 const Discord = require("discord.js");
 
-const database = require("./notifications_database.js");
-const functions = require("../functions/functions.js");
+const database = require("./notifications_db.js");
 
 //Functions
 
@@ -110,6 +109,18 @@ exports.msg = async function (message, args) {
                                 message.channel.stopTyping();
                             })
                             break;
+                            
+                        case "clear":
+                        case "purge":
+                            message.channel.startTyping();
+                            clear_notifications(message, true).then(response => {
+                                if (response) message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
 
                     }
                     break;
@@ -181,6 +192,18 @@ exports.msg = async function (message, args) {
                         message.channel.stopTyping();
                     })
                     break;
+
+                    case "clear":
+                    case "purge":
+                        message.channel.startTyping();
+                        clear_notifications(message).then(response => {
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
+                        break;
 
                 //Misc
 
@@ -286,6 +309,18 @@ const remove_notification = async function (message, args, global) {
 
     author.send(`You will no longer be notified when \`${keyphrase}\` is mentioned${!global ? ` in \`${guild.name}\`.` : `.`}`)
     return `Notification removed.`;
+
+}
+
+const clear_notifications = async function (message, global) {
+
+    let { author, guild } = message;
+    let cleared = global  ? database.clear_global_notifs(author.id) : database.clear_local_notifs(guild.id, author.id);
+    if (!cleared) {
+        return global ? `\\⚠ No notifications to clear.` : `\\⚠ No notifications in \`${guild.name}\` to clear.`;
+    } else {
+        return global ? `All global notifications cleared.` : `All notifications in \`${guild.name}\` cleared.`;
+    }
 
 }
 

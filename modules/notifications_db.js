@@ -111,6 +111,34 @@ exports.get_local_notifs = (guild_id) => {
     })
 }
 
+//Clear notifications
+
+exports.clear_global_notifs = (user_id) => {
+    return new Promise((resolve, reject) => {
+        db.get("SELECT * FROM globalNotifs WHERE userID = ?", [user_id], (err, row) => {
+            if (err) return reject(err);
+            if (!row) return resolve();
+            db.run("DELETE FROM globalNotifs WHERE userID = ?", [user_id], err => {
+                if (err) return reject(err);
+                return resolve(true);
+            })
+        })
+    })
+}
+
+exports.clear_local_notifs = (guild_id, user_id) => {
+    return new Promise((resolve, reject) => {
+        db.get("SELECT * FROM localNotifs WHERE guildID = ? AND userID = ?", [guild_id, user_id], (err, row) => {
+            if (err) return reject(err);
+            if (!row) return resolve();
+            db.run("DELETE FROM localNotifs WHERE guildID = ? AND userID = ?", [guild_id, user_id], err => {
+                if (err) return reject(err);
+                return resolve(true);
+            })
+        })
+    })
+}
+
 //Blacklist
 
 exports.add_blacklist_channel = (guild_id, channel_id) => {
