@@ -65,10 +65,10 @@ const server_embed = async (guild) => {
     region = flag + region.split('-').map(x => x[0].toUpperCase() + x.slice(1)).join(' ');
 
     let statusObj = {
-        online : { emoji: "<:online:532078078063673355>", count: 0 },
-        idle   : { emoji: "<:idle:532078078269194263>", count: 0 },
-        dnd    : { emoji: "<:dnd:532078078382571540>", count: 0 },
-        offline: { emoji: "<:offline:532078078210473994>", count: 0 } 
+        online : { emoji: "<:online_cb:533459049765928970>", count: 0 },
+        idle   : { emoji: "<:idle_cb:533459049702752266>", count: 0 },
+        dnd    : { emoji: "<:dnd_cb:533459049547563008>", count: 0 },
+        offline: { emoji: "<:offline_cb:533459049648226317>", count: 0 } 
     }
     guild.presences.array().forEach(p => statusObj[p.status].count += 1);
     let statusData = Object.values(statusObj);

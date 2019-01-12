@@ -191,10 +191,10 @@ const member_embed = async (member) => {
     let lastMsg = member.lastMessage
 
     let status = {
-        "online" : "<:online:532078078063673355>Online",
-        "offline": "<:offline:532078078210473994>Offline",
-        "idle"   : "<:idle:532078078269194263>Idle",
-        "dnd"    : "<:dnd:532078078382571540>Do Not Disturb" 
+        "online" : "<:online_cb:533459049765928970>Online",
+        "idle"   : "<:idle_cb:533459049702752266>Idle",
+        "dnd"    : "<:dnd_cb:533459049547563008>Do Not Disturb", 
+        "offline": "<:offline_cb:533459049648226317>Offline"
     }
 
     let embed = new Discord.RichEmbed()
