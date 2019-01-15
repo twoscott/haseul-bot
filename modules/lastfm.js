@@ -98,7 +98,7 @@ exports.msg = async function (message, args) {
                 case "nowplaying":
                 case "np":
                     message.channel.startTyping();
-                    lf_recents(message, args[2], 1).then(response => {
+                    lf_recents(message, args.slice(2), 1).then(response => {
                         if (response) message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
@@ -164,7 +164,7 @@ exports.msg = async function (message, args) {
 
                 default:
                     message.channel.startTyping();
-                    lf_recents(message, null, 2).then(response => {
+                    lf_recents(message, args.slice(1), 2).then(response => {
                         if (response) message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
