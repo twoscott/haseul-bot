@@ -52,26 +52,8 @@ exports.msg = async function (message, args) {
 
                 case "recent":
                 case "recents":
-                    let recentsCount;
-                    let username;
-                    if (args.length > 2) {
-                        recentsNum = +args[2];
-                        if (recentsNum) {
-                            recentsCount = recentsNum;
-                            username = args[3];
-                        }
-                        else {
-                            recentsCount = 10;
-                            username = args[2];
-                        }
-                    } else {
-                        recentsCount = 10;
-                    }
-                    recentsCount = recentsCount > 1000 ? 1000 : recentsCount;
-                    
-                    let recentsFunc = recentsCount < 3 ? lf_recents : lf_recents_list;
                     message.channel.startTyping();
-                    recentsFunc(message, username, recentsCount).then(response => {
+                    lf_recents(message, args.slice(2)).then(response => {
                         if (response) message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
@@ -89,7 +71,7 @@ exports.msg = async function (message, args) {
                         case "chart":
                         case "collage":
                             message.channel.startTyping();
-                            lf_chart(message, args.slice(3), "artist").then(response => {
+                            lf_chart(message, args.slice(3), 'artist').then(response => {
                                 if (response && response instanceof Array) message.channel.send(...response);
                                 else if (response) message.channel.send(response);
                                 message.channel.stopTyping();
@@ -101,7 +83,7 @@ exports.msg = async function (message, args) {
 
                         default:
                             message.channel.startTyping();
-                            lf_top_artists(message, args.slice(2)).then(response => {
+                            lf_top_media(message, args.slice(2), 'artist').then(response => {
                                 if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -113,6 +95,18 @@ exports.msg = async function (message, args) {
                     }
                     break;
 
+                case "nowplaying":
+                case "np":
+                    message.channel.startTyping();
+                    lf_recents(message, args[2], 1).then(response => {
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
+
                 case "topalbums":
                 case "talb":
                 case "tal":
@@ -121,7 +115,7 @@ exports.msg = async function (message, args) {
                         case "chart":
                         case "collage":
                             message.channel.startTyping();
-                            lf_chart(message, args.slice(3), "album").then(response => {
+                            lf_chart(message, args.slice(3), 'album').then(response => {
                                 if (response && response instanceof Array) message.channel.send(...response);
                                 else if (response) message.channel.send(response);
                                 message.channel.stopTyping();
@@ -133,7 +127,7 @@ exports.msg = async function (message, args) {
 
                         default:
                             message.channel.startTyping();
-                            lf_top_albums(message, args.slice(2)).then(response => {
+                            lf_top_media(message, args.slice(2), 'album').then(response => {
                                 if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -148,19 +142,7 @@ exports.msg = async function (message, args) {
                 case "tts":
                 case "tt":
                     message.channel.startTyping();
-                    lf_top_tracks(message, args.slice(2)).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-                
-                case "nowplaying":
-                case "np":
-                    message.channel.startTyping();
-                    lf_recents(message, args[2], 1).then(response => {
+                    lf_top_media(message, args.slice(2), 'track').then(response => {
                         if (response) message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
@@ -182,7 +164,7 @@ exports.msg = async function (message, args) {
 
                 default:
                     message.channel.startTyping();
-                    lf_recents(message, args[1], 2).then(response => {
+                    lf_recents(message, null, 2).then(response => {
                         if (response) message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
@@ -248,7 +230,8 @@ const set_lf_user = async function (message, username) {
     try {
         await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`);
     } catch (e) {
-        let { message } = e.response.data;
+        let { message, error } = e.response.data;
+        if (error != 6) console.error(new Error(message));
         return `\\⚠ ${message}.`;
     }
     
@@ -263,171 +246,204 @@ const remove_lf_user = async function (message) {
 
 }
 
-const lf_recents = async function (message, username, recentsCount) {
+const lf_recents = async function (message, args, limit) {
+
+    let username;
+    if (args) {
+        if (args.length < 1) {
+            username = null;
+            limit = limit || 10;
+        } else if (args.length < 2) {
+            username = limit  ?  args[0]  : null;
+            limit    = limit || +args[0] || 10;
+        } else {
+            username = limit  ?  args[0]  : args[1] || args[0];
+            limit    = limit || +args[0] || 10;
+        }
+    }
 
     if (!username) {
         username = await database.get_lf_user(message.author.id);
     }
     if (!username) {
-        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
+        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`.";
     }
-    
+
+    limit = Math.min(limit, 1000);
+
     let response;
     try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=2`);
+        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=${limit}`);
     } catch (e) {
         let { message } = e.response.data;
+        console.error(new Error(message));
         return `\\⚠ ${message}.`;
     }
 
-    let tracks = response.data.recenttracks.track;
-    let attr = response.data.recenttracks["@attr"];
-    let lf_user = attr.user;
-    if (!tracks || tracks.length < 1) {
-        return `\\⚠ ${lf_user} hasn't listened to any music.`;
-    }
-
-    let track1 = tracks[0] || { artist: { "#text": "Null" }, name: "Null" };
-    let track2 = tracks[1] || { artist: { "#text": "Null" }, name: "Null" };
-
-    let trackResponse = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=track.getInfo&user=${lf_user}&api_key=${api_key}&artist=${encodeURIComponent(track1.artist["#text"])}&track=${encodeURIComponent(track1.name)}&format=json`);
-    
-    if (trackResponse.data.error) {
-        throw new Error(trackResponse.data.message);
-    }
+    let tracks = response.data.recenttracks.track.slice(0, limit);
+    let lfUser = response.data.recenttracks['@attr'].user;
 
     let playCount;
-    if (trackResponse.data.track && trackResponse.data.track.userplaycount) {
-        playCount = trackResponse.data.track.userplaycount;
+    let loved;
+    let tags;
+    if (tracks.length < 3) {
+        try {
+            let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=track.getInfo&user=${lfUser}&api_key=${api_key}&artist=${encodeURIComponent(tracks[0].artist["#text"])}&track=${encodeURIComponent(tracks[0].name)}&format=json`);
+            let { userplaycount, userloved, toptags } = response.data.track;
+            playCount = userplaycount;    
+            loved = userloved;
+            tags = toptags.tag.slice(0, 5).map(x => x.name);
+        } catch (e) {
+            e = e.response ? e.response.data : e;
+            console.error(new Error(e));
+        }
+    }
+
+    if (limit < 1) {
+        return `\\⚠ ${lfUser} hasn't listened to any music.`;
+    } else if (limit < 2) {
+        return recent1Embed(tracks[0], lfUser, playCount, loved, tags);
+    } else if (limit < 3) {
+        return recent2Embed(tracks.slice(0, 2), lfUser, playCount);
     } else {
-        playCount = "0";
+        recentListPages(message.channel, tracks.slice(0, 1000), lfUser);
+        return;
     }
 
-    let album_thumbnail = track1.image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
-    let album_image = track1.image[track1.image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
+}
+
+recent1Embed = (track, lfUser, playCount, loved, tags) => {
+
+    let field = `${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")})`;
+    if (track.album) field += ` | **${track.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`;
+    let np = track['@attr'] && track['@attr'].nowplaying ? true : false;
+    let p = lfUser[lfUser.length-1].toLowerCase() == 's' ? "'" : "'s";
+
+    let thumbnail = track.image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    let image = track.image[track.image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
-    let nowplaying;
-    if (track1["@attr"] && track1["@attr"].nowplaying == "true") {
-        nowplaying = true;
-        track1.status = "Now Playing";
-    } else {
-        nowplaying = false;
-        track1.status = "Last Played";
+    let embed = new Discord.RichEmbed()
+    .setAuthor(`${lfUser+p} Latest Track`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lfUser}/`)
+    .setThumbnail(thumbnail)
+    .setURL(image)
+    .addField(np ? 'Now Playing' : 'Last Played', field)
+    .addField("Track Plays", playCount, true)
+    .addField("Loved", +loved ? '❤' : '🖤', true)
+    .setColor(0xc1222a)
+
+    if (tags.length > 0) {
+        embed.setFooter("Tags: " + tags.join(', '))
+    }
+    if (!np && track.date) {
+        embed.setTimestamp(new Date(0).setSeconds(+track.date.uts));
     }
 
-    let field1 = `${track1.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track1.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track1.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track1.name).replace(/\)/g, "\\)")})`;
-    let field2 = `${track2.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track2.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track2.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track2.name).replace(/\)/g, "\\)")})`;
-    if (track1.album && track1.album["#text"]) field1+=` | **${track1.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`
-    if (track2.album && track2.album["#text"]) field2+=` | **${track2.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`
+    return embed;
 
-    let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
-    let embed = new Discord.RichEmbed()
-    .setColor(0xc1222a)
-    .setThumbnail(album_thumbnail)
-    .setURL(album_image)
-    .addField(`${track1.status}`, field1, false);
+}
+
+recent2Embed = (tracks, lfUser, playCount) => {
+
+    let field1 = `${tracks[0].artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${tracks[0].name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(tracks[0].artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(tracks[0].name).replace(/\)/g, "\\)")})`;
+    if (tracks[0].album) field1 += ` | **${tracks[0].album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`;
+    let field2 = `${tracks[1].artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${tracks[1].name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(tracks[1].artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(tracks[1].name).replace(/\)/g, "\\)")})`;
+    if (tracks[1].album) field2 += ` | **${tracks[1].album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`;
+    let np = tracks[0]['@attr'] && tracks[0]['@attr'].nowplaying ? true : false;
+    let p = lfUser[lfUser.length-1].toLowerCase() == 's' ? "'" : "'s";
+
+    let thumbnail = tracks[0].image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    let image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
-    if (recentsCount === 1) {
-        let tagResponse = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=track.gettoptags&artist=${encodeURIComponent(track1.artist["#text"])}&track=${encodeURIComponent(track1.name)}&api_key=${api_key}&format=json`);
-        let tags = tagResponse.data.toptags.tag.slice(0, 5);
-        let taglist = [];
-        for (i=0; i < tags.length; i++) {
-            taglist.push(tags[i].name[0].toUpperCase() + tags[i].name.slice(1).toLowerCase());
-        }
-        embed.setAuthor(`${lf_user}${posessive} Latest Track`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lf_user}/`)
-        embed.addField(`Track Plays`, playCount, false);
-        if (taglist.length > 0) embed.setFooter(`Tags: ${taglist.join(", ")}`);
-    } else if (recentsCount === 2) {
-        embed.setAuthor(`${lf_user}${posessive} Recent Tracks`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lf_user}/`)
-        embed.addField(`Previous Track`, field2, false);
-        embed.setFooter(`Track Plays: ${playCount}`);
-    }
-
-    if (!nowplaying && track1.date) {
-        embed.setTimestamp(new Date(0).setSeconds(+track1.date.uts));
-    }
-    return { embed: embed };
-
-}
-
-const lf_recents_list = async function (message, username, recentsCount) {
-
-    if (!username) {
-        username = await database.get_lf_user(message.author.id);
-    }
-    if (!username) {
-        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
-    }
-
-    let response;
-    try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=${recentsCount}`);
-    } catch (e) {
-        let { message } = e.response.data;
-        return `\\⚠ ${message}.`;
-    }
-
-    let tracks = response.data.recenttracks.track;
-    let attr = response.data.recenttracks["@attr"];
-    let lf_user = attr.user;
-    if (!tracks || tracks.length < 1) {
-        return `\\⚠ ${lf_user} hasn't listened to any music.`;
-    }
-
-    let pages = [];
-    let length = 0;
-    let page = [];
-    let startTime = Date.now();
-    for (i=0; i < recentsCount && i < tracks.length; i++) {
-        let track = tracks[i];
-        let row;
-        if (track["@attr"] && track["@attr"].nowplaying == "true") {
-            row = `\\▶ ${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (Now)`;
-        } else {
-            row = `${i + 1}. ${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (${functions.getTimeAgo(+track.date.uts)})`;
-        }
-        if (length + (row.length + 1) > 2048 || page.length > 19) { // + 1 = line break
-            pages.push(page.join("\n"));
-            page = [row];
-            length = row.length + 1;
-        } else {
-            page.push(row);
-            length += row.length + 1;
-        }
-    }
-    pages.push(page.join("\n"));
-    console.log(Date.now() - startTime);
-
-    let album_thumbnail = tracks[0].image[2]["#text"];
-    let album_image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "");
-    if (!album_thumbnail || album_thumbnail.length < 1) {
-        album_thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
-    }
-    if (!album_image || album_image.length < 1) {
-        album_image = "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
-    }
-
-    let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
     let embed = new Discord.RichEmbed()
-    .setAuthor(`${lf_user}${posessive} Recent Tracks`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lf_user}/library`)
+    .setAuthor(`${lfUser+p} Latest Track`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lfUser}/`)
+    .setThumbnail(thumbnail)
+    .setURL(image)
+    .addField(np ? 'Now Playing' : 'Last Played', field1)
+    .addField("Previous Track", field2)
     .setColor(0xc1222a)
-    .setThumbnail(album_thumbnail);
 
-    functions.embedPages(message, embed, pages, 600000);
+    if (playCount) {
+        embed.setFooter("Track Plays: " + playCount)
+    }
+    if (!np && tracks[0].date) {
+        embed.setTimestamp(new Date(0).setSeconds(+tracks[0].date.uts));
+    }
+
+    return embed;
+
+}
+
+recentListPages = (destination, tracks, lfUser) => {
+
+    let thumbnail = tracks[0].image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    let image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
+    let p = lfUser[lfUser.length-1].toLowerCase() == 's' ? "'" : "'s";
+    let np = (track) => track['@attr'] && track['@attr'].nowplaying
+    let rowString = tracks.map((track, i) => `${np(track) ? '\\▶' : `${i + 1}.`} ${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (${np(track) ? 'Now' : functions.getTimeAgo(+track.date.uts)})`).join('\n');
+
+    let pages = [];
+    while (rowString.length > 2048) {
+        let currString = rowString.slice(0, 2048);
+
+        let lastIndex = 0;
+        for (let i = 0; i < 20; i++) {
+            let index = currString.indexOf('\n', lastIndex) + 1;
+            if (index) lastIndex = index; else break;
+        }
+        currString = currString.slice(0, lastIndex);
+        rowString  = rowString.slice(lastIndex);
+
+        pages.push(currString);
+    } 
+    pages.push(rowString);
+
+    let embed = new Discord.RichEmbed()
+    .setAuthor(`${lfUser+p} Latest Track`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lfUser}/`)
+    .setThumbnail(thumbnail)
+    .setURL(image)
+    .setColor(0xc1222a)
+
+    functions.embedPages(destination, embed, pages, 600000);
     return;
 
 }
 
-const lf_top_artists = async function (message, args) {
+const lf_top_media = async function (message, args, type) {
 
-    let {
-        timeframe,
-        date_preset,
-        display_time,
-        defaulted
-    } = getTimeFrame(args[0]);
+    let embeds = {
+        'artist': { 
+            colour: 0xf49023, image: 'https://i.imgur.com/FwnPEny.png',
+            defimg: "https://lastfm-img2.akamaized.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png" 
+        },
+        'album' : { 
+            colour: 0x2f8f5e, image: 'https://i.imgur.com/LZmYwDG.png',
+            defimg: "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png" 
+        },
+        'track' : { 
+            colour: 0x2b61fb, image: 'https://i.imgur.com/RFO9qp1.png',
+            defimg: "https://lastfm-img2.akamaized.net/i/u/174s/4128a6eb29f94943c9d206c08e625904.png" 
+        }
+    }
+    
+    let time;
+    let limit;
+    if (args.length < 1) {
+        time  = getTimeFrame();
+        limit = 10;
+    }
+    else if (args.length < 2) {
+        time  = getTimeFrame(args[0]);
+        limit = time.defaulted && +args[0] ? args[0] : 10;
+    }
+    else {
+        time  = getTimeFrame(args[0]);
+        limit = time.defaulted ? +args[0] || null : +args[1] || 10;
 
-    let username = defaulted ? args[0] : args[1]
+        if (time.defaulted) time = getTimeFrame(args[1]);
+        limit = time.defaulted && !limit ? +args[1] || 1 : limit || 10;
+    }
+    
+    let username = args.length > 2 ? args[2] : null;
     if (!username) {
         username = await database.get_lf_user(message.author.id);
     }
@@ -435,193 +451,55 @@ const lf_top_artists = async function (message, args) {
         return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
     }
 
-    let response;
-    try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=100`);
-    } catch (e) {
-        let { message } = e.response.data;
-        return `\\⚠ ${message}.`;
-    }
-
-    let artists = response.data.topartists.artist;
-    let attr = response.data.topartists["@attr"];
-    let lf_user = attr.user;
-    if (!artists || artists.length < 1) {
-        return `\\⚠ ${lf_user} hasn't listened to any music during this time.`;
-    }
-
-    let pages = [];
-    let length = 0;
-    let page = [];
-    for (i=0; i < artists.length; i++) {
-        let artist = artists[i];
-
-        let plays_plural = "Plays"
-        if (artist.playcount === "1") plays_plural = "Play";
-
-        let row = `${i + 1}. [${artist.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(artist.name).replace(/\)/g, "\\)")}) (${artist.playcount} ${plays_plural})`
-        if (length + (row.length + 1) > 2048 || page.length > 19) { // + 1 = line break
-            pages.push(page.join("\n"));
-            page = [row];
-            length = row.length + 1;
-        } else {
-            page.push(row);
-            length += row.length + 1;
-        }
-    }
-    pages.push(page.join("\n"));
-
-    let artist_thumbnail = artists[0].image[2]["#text"];
-    if (!artist_thumbnail) {
-        artist_thumbnail = "https://lastfm-img2.akamaized.net/i/u/avatar170s/2a96cbd8b46e442fc41c2b86b821562f.png";
-    }
-
-    let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
-    let embed = new Discord.RichEmbed()
-    .setAuthor(`${lf_user}${posessive} Top Artists`,`https://i.imgur.com/FwnPEny.png`, `https://www.last.fm/user/${lf_user}/library/artists?date_preset=${date_preset}`)
-    .setTitle(display_time)
-    .setThumbnail(artist_thumbnail)
-    .setColor(0xf49023);
-
-    functions.embedPages(message, embed, pages, 600000);
-    return;
-
-}
-
-const lf_top_albums = async function (message, args)  {
-
     let {
         timeframe,
         date_preset,
-        display_time,
-        defaulted
-    } = getTimeFrame(args[0]);
-
-    let username = defaulted ? args[0] : args[1]
-    if (!username) {
-        username = await database.get_lf_user(message.author.id);
-    }
-    if (!username) {
-        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
-    }
+        display_time
+    } = time;
 
     let response;
     try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=100`);
+        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${limit}`);
     } catch (e) {
         let { message } = e.response.data;
+        console.error(new Error(message));
         return `\\⚠ ${message}.`;
     }
 
-    let albums = response.data.topalbums.album;
-    let attr = response.data.topalbums["@attr"];
-    let lf_user = attr.user;
-    if (!albums || albums.length < 1) {
+    let lf_user = response.data[`top${type}s`]["@attr"].user;
+    let collection = response.data[`top${type}s`][type];
+    if (!collection || collection.length < 1) {
         return `\\⚠ ${lf_user} hasn't listened to any music during this time.`;
     }
 
-    let pages = [];
-    let length = 0;
-    let page = [];
-    for (i=0; i < albums.length; i++) {
-        let album = albums[i];
-
-        let plays_plural = "Plays"
-        if (album.playcount === "1") plays_plural = "Play";
-
-        let row = `${i + 1}. ${album.artist.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${album.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(album.artist.name).replace(/\)/g, "\\)")}/${encodeURIComponent(album.name).replace(/\)/g, "\\)")}) (${album.playcount} ${plays_plural})`
-        if (length + (row.length + 1) > 2048 || page.length > 19) { // + 1 = line break
-            pages.push(page.join("\n"));
-            page = [row];
-            length = row.length + 1;
-        } else {
-            page.push(row);
-            length += row.length + 1;
-        }
-    }
-    pages.push(page.join("\n"));
-
-    let album_thumbnail = albums[0].image[2]["#text"];
-    if (!album_thumbnail) {
-        album_thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
-    }
-
-    let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
-    let embed = new Discord.RichEmbed()
-    .setAuthor(`${lf_user}${posessive} Top Albums`,`https://i.imgur.com/LZmYwDG.png`, `https://www.last.fm/user/${lf_user}/library/albums?date_preset=${date_preset}`)
-    .setTitle(display_time)
-    .setThumbnail(album_thumbnail)
-    .setColor(0x2f8f5e);
-
-    functions.embedPages(message, embed, pages, 600000);
-    return;
-
-}
-
-const lf_top_tracks = async function (message, args) {
-
-    let {
-        timeframe,
-        date_preset,
-        display_time,
-        defaulted
-    } = getTimeFrame(args[0]);
-
-    let username = defaulted ? args[0] : args[1]
-    if (!username) {
-        username = await database.get_lf_user(message.author.id);
-    }
-    if (!username) {
-        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
-    }
-
-    let response;
-    try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=100`);
-    } catch (e) {
-        let { message } = e.response.data;
-        return `\\⚠ ${message}.`;
-    }
-
-    let tracks = response.data.toptracks.track;
-    let attr = response.data.toptracks["@attr"];
-    let lf_user = attr.user;
-    if (!tracks || tracks.length < 1) {
-        return `\\⚠ ${lf_user} hasn't listened to any music during this time.`;
-    }
+    let rowString;
+    if (type == 'artist') rowString = collection.map((x, i) => `${i+1}. [${x.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(x.name).replace(/\)/g, "\\)")}) (${x.playcount} ${x.playcount == 1 ? 'Play' : 'Plays'})`).join('\n');
+    if (type == 'album' ) rowString = collection.map((x, i) => `${i+1}. ${x.artist.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${x.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(x.artist.name).replace(/\)/g, "\\)")}/${  encodeURIComponent(x.name).replace(/\)/g, "\\)")}) (${x.playcount} ${x.playcount == 1 ? 'Play' : 'Plays'})`).join('\n');
+    if (type == 'track' ) rowString = collection.map((x, i) => `${i+1}. ${x.artist.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${x.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(x.artist.name).replace(/\)/g, "\\)")}/_/${encodeURIComponent(x.name).replace(/\)/g, "\\)")}) (${x.playcount} ${x.playcount == 1 ? 'Play' : 'Plays'})`).join('\n');
 
     let pages = [];
-    let length = 0;
-    let page = [];
-    for (i=0; i < tracks.length; i++) {
-        let track = tracks[i];
+    while (rowString.length > 2048) {
+        let currString = rowString.slice(0, 2048);
 
-        let plays_plural = "Plays"
-        if (track.playcount === "1") plays_plural = "Play";
-
-        let row = `${i + 1}. ${track.artist.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist.name).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (${track.playcount} ${plays_plural})`
-        if (length + (row.length + 1) > 2048 || page.length > 19) { // + 1 = line break
-            pages.push(page.join("\n"));
-            page = [row];
-            length = row.length + 1;
-        } else {
-            page.push(row);
-            length += row.length + 1;
+        let lastIndex = 0;
+        for (let i = 0; i < 20; i++) {
+            let index = currString.indexOf('\n', lastIndex) + 1;
+            if (index) lastIndex = index; else break;
         }
-    }
-    pages.push(page.join("\n"));
+        currString = currString.slice(0, lastIndex);
+        rowString  = rowString.slice(lastIndex);
 
-    let track_thumbnail = tracks[0].image[2]["#text"];
-    if (!track_thumbnail) {
-        track_thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/4128a6eb29f94943c9d206c08e625904.png";
-    }
+        pages.push(currString);
+    } 
+    pages.push(rowString);
 
-    let posessive = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
+    let thumbnail = collection[0].image[2]["#text"] || embeds[type].defimg;
+    let p = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
     let embed = new Discord.RichEmbed()
-    .setAuthor(`${lf_user}${posessive} Top Tracks`,`https://i.imgur.com/RFO9qp1.png`, `https://www.last.fm/user/${lf_user}/library/tracks?date_preset=${date_preset}`)
+    .setAuthor(`${lf_user+p} Top Tracks`, embeds[type].image, `https://www.last.fm/user/${lf_user}/library/${type}s?date_preset=${date_preset}`)
     .setTitle(display_time)
-    .setThumbnail(track_thumbnail)
-    .setColor(0x2b61fb);
+    .setThumbnail(thumbnail)
+    .setColor(embeds[type].colour);
 
     functions.embedPages(message, embed, pages, 600000);
     return;
@@ -642,6 +520,7 @@ const lf_profile = async function (message, username) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
     } catch (e) {
         let { message } = e.response.data;
+        console.error(new Error(message));
         return `\\⚠ ${message}.`;
     }
 
@@ -691,6 +570,7 @@ const lf_youtube = async function (message, username) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=1`);
     } catch (e) {
         let { message } = e.response.data;
+        console.error(new Error(message));
         return `\\⚠ ${message}.`;
     }
 
@@ -699,8 +579,7 @@ const lf_youtube = async function (message, username) {
     let title = track.name;
     let query = `${artist} - ${title}`;
 
-    let nowplaying = (track["@attr"] && track["@attr"].nowplaying == "true");
-    let status = nowplaying ? "Now Playing" : "Last Played";        
+    let status = track["@attr"] && track["@attr"].nowplaying == "true" ? "Now Playing" : "Last Played";
 
     let video_link = await media.yt_query(query);
     return `${status}: ${video_link}`;
@@ -741,12 +620,14 @@ const lf_chart = async function (message, args, type="album") {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type.toLowerCase()}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${dimension ** 2}`);
     } catch (e) {
         let { message } = e.response.data;
+        console.error(new Error(message));
         return `\\⚠ ${message}.`;
     }
 
     let collection = response.data[`top${type}s`][type];
+    let lf_user = response.data[`top${type}s`]["@attr"].user;
     if (!collection || collection.length < 1) {
-        return `\\⚠ ${username} hasn't listened to any music during this time.`;
+        return `\\⚠ ${lf_user} hasn't listened to any music during this time.`;
     }
     while (Math.sqrt(collection.length) <= dimension-1) {
         dimension--;
@@ -806,10 +687,10 @@ const lf_chart = async function (message, args, type="album") {
 
  
     let image = await html.toImage(htmlString, screen_width, screen_height);
-    let imageAttachment = new Discord.Attachment(image, `${username}-${timeframe}.jpg`);
-    let posessive = username[username.length-1].toLowerCase == 's' ? "'" : "'s";
+    let imageAttachment = new Discord.Attachment(image, `${lf_user}-${timeframe}.jpg`);
+    let posessive = lf_user[lf_user.length-1].toLowerCase == 's' ? "'" : "'s";
     return [
-        `**${username}${posessive}** ${display_time} ${functions.capitalise(type)} Chart`, 
+        `**${lf_user}${posessive}** ${display_time} ${functions.capitalise(type)} Chart`, 
         imageAttachment
     ];
 

@@ -166,15 +166,15 @@ exports.pages = async (message, pages, timeout, lock) => {
     
 }
 
-exports.embedPages = async (message, embed, pages, timeout) => {
+exports.embedPages = async (destination, embed, pages, timeout) => {
     let currentPage = 0;
     embed.setDescription(pages[currentPage]);
     embed.setFooter(`Page ${currentPage + 1} of ${pages.length}`);
         
     if (pages.length < 2) {
-        message.channel.send({embed: embed});
+        destination.send({embed: embed});
     } else {
-        message.channel.send({embed: embed}).then(async reply => {            
+        destination.send({embed: embed}).then(async reply => {            
             await reply.react("⏮");          
             await reply.react("⬅");
             await reply.react("➡");
