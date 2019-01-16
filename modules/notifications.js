@@ -36,16 +36,15 @@ const notify = async (message) => {
         .setColor(colour);
     }
 
-    //Filter notificationss and notify valid users
+    //Filter notifications and notify valid users
 
     for (let notif of notifs) {
         if (notif.guildID && notif.guildID != guild.id || notified.includes(notif.userID)) { 
-            continue; 
+            continue;
         }
 
-        let regxp = new RegExp(notif.keyexp, 'i');
-        let match = content.match(regxp);
-        if (!match) continue;
+        let dnd = await database.get_dnd(notif.userID);
+        if (dnd) continue;
 
         let member;
         try {
@@ -54,9 +53,13 @@ const notify = async (message) => {
             member = null;
         }
 
-        if (!member) return;
-        let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL");
-        if (!can_read) return;
+        if (!member) continue;
+        let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
+        if (!can_read) continue;
+
+        let regxp = new RegExp(notif.keyexp, 'i');
+        let match = content.match(regxp);
+        if (!match) continue;
 
         notified.push(notif.userID);
         let alert = `\\💬 ${author} mentioned \`${notif.keyword}\` in ${channel}`;
@@ -83,7 +86,6 @@ exports.msg = async function (message, args) {
             switch (args[1]) {
 
                 //global
-
                 case "global":
                     switch (args[2]) {
                         
@@ -169,7 +171,6 @@ exports.msg = async function (message, args) {
                     break;
 
                 //local
-                
                 case "add":
                     message.channel.startTyping();
                     add_notification(message, args.slice(2)).then(response => {
@@ -205,8 +206,22 @@ exports.msg = async function (message, args) {
                         })
                         break;
 
-                //Misc
+                //Do not Disturb
+                case "donotdisturb":
+                case "dnd":
+                case "toggle":
+                    message.channel.startTyping();
+                    toggle_dnd(message).then(response => {
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
 
+
+                //Misc
                 case "list":
                     message.channel.startTyping();
                     list_notifications(message).then(response => {
@@ -415,5 +430,12 @@ const remove_blacklist_channel = async function (message, args) {
         return `\\⚠ <#${channel_id}> is not blacklisted.`;
     }
     return `<#${channel_id}> is no longer blacklisted from notifying users.`;
+
+}
+
+const toggle_dnd = async function (message) {
+
+    let dnd = await database.toggle_dnd(message.author.id);
+    return `Do not disturb turned ${dnd ? 'on':'off'}.`
 
 }
