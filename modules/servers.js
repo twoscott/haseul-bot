@@ -51,23 +51,29 @@ const server_embed = async (guild) => {
 
     guild = await guild.fetchMembers();
 
-    let flags = {
-        "brazil": ':flag_br:', "eu-central": ':flag_eu:',
-        "hongkong": ':flag_hk:', "japan": ':flag_jp:',
-        "russia": ':flag_ru:', "singapore": ':flag_sg:',
-        "south-africa": ':flag_za:', "sydney": ':flag_au:',
-        "us-central": ':flag_us:', "us-east": ':flag_us:',
-        "us-south": ':flag_us:', "us-west": ':flag_us:',
-        "eu-west": ':flag_eu:', "london": ':flag_gb:'
+    let regions = {
+        "amsterdam":   ":flag_nl: Amsterdam",    
+        "brazil":      ":flag_br: Brazil", 
+        "eu-central":  ":flag_eu: EU Central",   
+        "eu-west":     ":flag_eu: EU West", 
+        "frankfurt":   ":flag_de: Frankfurt",    
+        "hongkong":    ":flag_hk: Hong Kong", 
+        "japan":       ":flag_jp: Japan",        
+        "london":      ":flag_gb: London", 
+        "russia":      ":flag_ru: Russia",       
+        "singapore":   ":flag_sg: Singapore", 
+        "southafrica": ":flag_za: South Africa", 
+        "sydney":      ":flag_au: Sydney",
+        "us-central":  ":flag_us: US Central",   
+        "us-east":     ":flag_us: US East", 
+        "us-south":    ":flag_us: US South",     
+        "us-west":     ":flag_us: US West"
     }
-    let flag = flags[guild.region] ? flags[guild.region] + ' ' : '';
-    let region = guild.region.replace("hongkong", "hong-kong").replace("southafrica", "south-africa").replace("us", "US").replace("eu", "EU");
-    region = flag + region.split('-').map(x => x[0].toUpperCase() + x.slice(1)).join(' ');
 
     let statusObj = {
-        online : { emoji: "<:online_cb:533459049765928970>", count: 0 },
-        idle   : { emoji: "<:idle_cb:533459049702752266>", count: 0 },
-        dnd    : { emoji: "<:dnd_cb:533459049547563008>", count: 0 },
+        online : { emoji: "<:online_cb:533459049765928970>",  count: 0 },
+        idle   : { emoji: "<:idle_cb:533459049702752266>",    count: 0 },
+        dnd    : { emoji: "<:dnd_cb:533459049547563008>",     count: 0 },
         offline: { emoji: "<:offline_cb:533459049648226317>", count: 0 } 
     }
     guild.presences.array().forEach(p => statusObj[p.status].count += 1);
@@ -87,7 +93,7 @@ const server_embed = async (guild) => {
     .addField("Voice Channels", guild.channels.array().filter(c => c.type == 'voice').length, true)
     .addField("Members", guild.memberCount, true)
     .addField("Roles", guild.roles.size, true)
-    .addField("Region", region, true)
+    .addField("Region", regions[guild.region], true)
     .addField("Emojis", `${guild.emojis.size} (${guild.emojis.array().filter(e=>e.animated).length} animated)`, true);
 
     if (statuses) {

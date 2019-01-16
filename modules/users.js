@@ -1,6 +1,8 @@
 //Require modules
 
 const Discord = require("discord.js");
+const axios = require("axios");
+
 const Client = require("../haseul.js").Client;
 const serverSettings = require("./server_settings.js");
 
@@ -127,12 +129,48 @@ exports.msg = async function (message, args) {
             })
             break;
 
+        case ".avatar":
+        case ".dp":
+            message.channel.startTyping();
+            user_dp(message, args.slice(1)).then(response => {
+                if (response) message.channel.send(response);
+                message.channel.stopTyping();
+            }).catch(error => {
+                console.error(error);
+                message.channel.stopTyping();
+            })
+            break;
+
     }
 
 }
 
-//Userinfo
+searchMembers = (members, target) => {
+   
+    let member;
+    
+    member = members.find(m => m.user.tag.toLowerCase() == target.replace(/^@/, ''));
+    if (!member) {
+        member = members.find(m => m.user.username.toLowerCase() == target);
+    }
+    if (!member) {
+        member = members.find(m => m.user.username.toLowerCase().includes(target));
+    }
+    if (!member) {
+        member = members.find(m => m.nickname ? m.nickname.toLowerCase() == target : false);
+    }
+    if (!member) {
+        member = members.find(m => m.nickname ? m.nickname.toLowerCase().includes(target) : false);
+    }
+    if (!member) {
+        member = null
+    }
 
+    return member;
+
+}
+
+//Userinfo
 const userinfo = async function (message, args) {
 
     let { author, guild } = message;
@@ -147,22 +185,11 @@ const userinfo = async function (message, args) {
             target = args.join(' ').toLowerCase();
             guild = await guild.fetchMembers();
 
-            let member = guild.members.find(m => m.user.tag.toLowerCase() == target.replace(/^@/, ''));
-            if (!member) {
-                member = guild.members.find(m => m.user.username.toLowerCase() == target);
-            }
-            if (!member) {
-                member = guild.members.find(m => m.user.username.toLowerCase().includes(target));
-            }
-            if (!member) {
-                member = guild.members.find(m => m.nickname ? m.nickname.toLowerCase() == target : false);
-            }
-            if (!member) {
-                member = guild.members.find(m => m.nickname ? m.nickname.toLowerCase().includes(target) : false);
-            }
+            let member = searchMembers(guild.members, target)
             if (!member) {
                 return "\\⚠ Invalid user or user ID.";
             }
+                
             user_id = member.id;
         } else {
             user_id = match[1];
@@ -198,9 +225,10 @@ const member_embed = async (member) => {
     }
 
     let embed = new Discord.RichEmbed()
-    .setAuthor(user.tag, user.avatarURL)
+    .setAuthor(user.tag, user.displayAvatarURL)
+    .setURL(user.displayAvatarURL.split('?')[0]+'?size=1024')
     .setDescription(user)
-    .setThumbnail(user.avatarURL)
+    .setThumbnail(user.displayAvatarURL)
     .setColor(member.displayColor || 0xffffff)
     .setFooter(`Member #${await getMemberNo(member)}`)
     .setTimestamp(member.joinedAt)
@@ -222,7 +250,7 @@ const member_embed = async (member) => {
             "KICK_MEMBERS", "BAN_MEMBERS"
         ];
         for (let role of allRoles) {
-            if (perms.some(p => role.hasPermission(p))) {
+            if (perms.some(p => role.hasPermission(p, false, true))) {
                 modRoles.push(role);
             } else {
                 roles.push(role);
@@ -262,9 +290,10 @@ const user_embed = async (user) => {
     }
 
     let embed = new Discord.RichEmbed()
-    .setAuthor(user.tag, user.avatarURL)
+    .setAuthor(user.tag, user.displayAvatarURL)
+    .setURL(user.displayAvatarURL.split('?')[0]+'?size=1024')
     .setDescription(user)
-    .setThumbnail(user.avatarURL)
+    .setThumbnail(user.displayAvatarURL)
     .setColor(0xffffff)
     .setFooter(`User not in server`)
     .setTimestamp(user.createdAt)
@@ -274,4 +303,58 @@ const user_embed = async (user) => {
 
     return embed;
     
+}
+
+//User's avatar
+user_dp = async function (message, args) {
+
+    let { author, guild } = message;
+    let target = args[0];
+    let user_id;
+
+    if (!target) {
+        user_id = author.id;
+    } else {
+        let match = target.match(/^<?@?!?(\d{8,})>?$/);
+        if (!match) {
+            target = args.join(' ').toLowerCase();
+            guild = await guild.fetchMembers();
+
+            let member = searchMembers(guild.members, target)
+            if (!member) {
+                return "\\⚠ Invalid user or user ID.";
+            }
+                
+            user_id = member.id;
+        } else {
+            user_id = match[1];
+        }
+    }
+
+    let member;
+    let user;
+    try {
+        member = await guild.fetchMember(user_id);
+        user = member.user;
+    } catch (e) {
+        try {
+            user = await Client.fetchUser(user_id)  
+        } catch (e) {
+            console.error(e);
+            return "\\⚠ Invalid user.";
+        }
+    }
+
+    let img = await axios.get(user.displayAvatarURL);
+    let img_size = img.headers['content-length'];
+    let img_type = img.headers['content-type'];
+    let username = user.username;
+    let p = username.toLowerCase().endsWith('s') ? "'" : "'s";
+
+    return new Discord.RichEmbed()
+    .setAuthor(`${username+p} Avatar`)
+    .setImage(user.displayAvatarURL.split('?')[0] + '?size=2048')
+    .setColor(member ? member.displayColor || 0xffffff : 0xffffff)
+    .setFooter(`Type: ${img_type}  |  Size: ${Math.round(img_size/100000)/10}MB`);
+
 }
