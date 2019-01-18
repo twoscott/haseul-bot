@@ -342,11 +342,11 @@ recent1Embed = (track, lfUser, totalPlays, playCount, loved) => {
     let image = track.image[track.image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
     let embed = new Discord.RichEmbed()
-    .setAuthor(`${lfUser+p} Latest Track`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lfUser}/`)
+    .setAuthor(`${lfUser+p} ${np ? 'Now Playing' : 'Last Track'}`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lfUser}/`)
     .setThumbnail(thumbnail)
     .setURL(image)
-    .addField(np ? 'Now Playing' : 'Last Played', field)
-    .addField("Track Plays", playCount, true)
+    .addField('Track', field)
+    .addField('Plays', playCount)
     .setColor(0xc1222a)
     .setFooter(`${+loved ? '❤ Loved  |  ':''}Total Plays: ${totalPlays}`);
 
@@ -376,11 +376,9 @@ recent2Embed = (tracks, lfUser, totalPlays, playCount) => {
     .setURL(image)
     .addField(np ? 'Now Playing' : 'Last Played', field1)
     .addField("Previous Track", field2)
-    .setColor(0xc1222a);
+    .setColor(0xc1222a)
+    .setFooter(`Track Plays: ${playCount}  |  Total Plays: ${totalPlays}`);
 
-    if (playCount) {
-        embed.setFooter(`Track Plays: ${playCount}  |  Total Plays: ${totalPlays}`)
-    }
     if (!np && tracks[0].date) {
         embed.setTimestamp(new Date(0).setSeconds(tracks[0].date.uts));
     }
@@ -522,7 +520,7 @@ const lf_top_media = async function (message, args, type) {
     let thumbnail = collection[0].image[2]["#text"] || embeds[type].defimg;
     let p = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
     let embed = new Discord.RichEmbed()
-    .setAuthor(`${lf_user+p} Top Tracks`, embeds[type].image, `https://www.last.fm/user/${lf_user}/library/${type}s?date_preset=${date_preset}`)
+    .setAuthor(`${lf_user+p} Top ${type[0].toUpperCase()+type.slice(1)}s`, embeds[type].image, `https://www.last.fm/user/${lf_user}/library/${type}s?date_preset=${date_preset}`)
     .setTitle(display_time)
     .setThumbnail(thumbnail)
     .setColor(embeds[type].colour);
