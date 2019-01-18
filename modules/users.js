@@ -5,6 +5,7 @@ const axios = require("axios");
 
 const Client = require("../haseul.js").Client;
 const serverSettings = require("./server_settings.js");
+const Image = require("../functions/images.js");
 
 //Functions
 
@@ -345,9 +346,12 @@ user_dp = async function (message, args) {
         }
     }
 
-    let img = await axios.get(user.displayAvatarURL);
-    let img_size = img.headers['content-length'];
-    let img_type = img.headers['content-type'];
+    let res = await axios.get(user.displayAvatarURL.split('?')[0] + '?size=2048', {responseType: 'arraybuffer'});
+    let img_size = Math.max(Math.round(res.headers['content-length']/10000)/100, 1/100);
+    let img_type = res.headers['content-type'].split('/')[1];
+
+    let img  = new Image(res.data);
+    let dims = img.dimensions;
     let username = user.username;
     let p = username.toLowerCase().endsWith('s') ? "'" : "'s";
 
@@ -355,6 +359,5 @@ user_dp = async function (message, args) {
     .setAuthor(`${username+p} Avatar`)
     .setImage(user.displayAvatarURL.split('?')[0] + '?size=2048')
     .setColor(member ? member.displayColor || 0xffffff : 0xffffff)
-    .setFooter(`Type: ${img_type}  |  Size: ${Math.round(img_size/100000)/10}MB`);
-
+    .setFooter(`Type: ${img_type.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${img_size}MB`);
 }
