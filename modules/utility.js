@@ -11,6 +11,7 @@ const functions = require("../functions/functions.js")
 //Init
 
 const translate_key = config.trans_key;
+const strawpoll_timeouts = new Map();
 
 //Functions
 
@@ -30,6 +31,19 @@ exports.msg = async function (message, args) {
         case ".tr":
             message.channel.startTyping();
             translate(args.slice(1)).then(response => {
+                message.channel.send(response);
+                message.channel.stopTyping();
+            }).catch(error => {
+                console.error(error);
+                message.channel.stopTyping();
+            })
+            break;
+
+        case ".strawpoll":
+        case ".straw":
+        case ".poll":
+            message.channel.startTyping();
+            strawpoll(message, args.slice(1)).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -61,7 +75,7 @@ exports.msg = async function (message, args) {
     }
 }
 
-translate = async function (args) {
+const translate = async function (args) {
 
     if (args.length < 1) {
         return "\\⚠ Please provide a language and text to translate to.";
@@ -132,7 +146,61 @@ translate = async function (args) {
 
 }
 
-help = async function (message, args) {
+const strawpoll = async function (message, args) {
+
+    if (args.length < 1) {
+        return "\\⚠ Please provide a question and at least 2 options.\nUsage: `.strawpoll Question | option#1, option#2, optio...`";
+    }
+
+    let { author } = message;
+
+    let timeout = strawpoll_timeouts.get(author.id);
+    if (timeout && author.id != '125414437229297664') {
+        let timeElapsed = Date.now() - timeout;
+        if (timeElapsed < 600000) {
+            let mins = Math.ceil(10 - timeElapsed / 60000);
+            return `\\⚠ You're making strawpolls too fast! Please wait another ${mins == 1 ? 'minute' : `${mins} minutes`}`;
+        }
+    } 
+
+    let multi = false;
+    if (args[0] == 'multi') {
+        multi = true;
+        args.shift();
+    }
+    if (args[0] == 'single') {
+        multi = false;
+        args.shift();
+    }
+
+    args = args.join(' ');
+
+    let sep = new RegExp(/[^\\]\|/);
+    let [ question, options ] = args.split(sep, 2);
+    question = question.replace(/\\\|/g, '|').trim();
+    options  = options.split(',').map(o => o.replace(/\\\|/g, '|').trim());
+
+    if (options.length < 2) {
+        return "\\⚠ Please provide at least 2 options.";
+    }
+
+    try {
+        let { data } = await axios.post('https://www.strawpoll.me/api/v2/polls', 
+            { title: question,
+              options: options,
+              multi: multi }, 
+            { headers: { 'Content-Type': 'application/json' } }
+        )
+        strawpoll_timeouts.set(author.id, Date.now())
+        return `https://www.strawpoll.me/${data.id}`;
+    } catch (e) {
+        console.error(Error(e));
+        return "\\⚠ Error occurred.";
+    }
+
+}
+
+const help = async function (message, args) {
 
     if (args.length < 1) {            
         let embed = new Discord.RichEmbed()
