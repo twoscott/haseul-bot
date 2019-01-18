@@ -1,6 +1,7 @@
 // Require modules
 
 const Discord = require("discord.js");
+const HashSet = require("hashset");
 
 const database = require("./notifications_db.js");
 
@@ -9,7 +10,6 @@ const database = require("./notifications_db.js");
 const notify = async (message) => {
 
     //Fetch stored notifications
-
     let { guild, channel, author, content, member } = message;
     let chan_blacklist = await database.get_blacklist_channels();
     if (chan_blacklist.find(row => row.channelID == channel.id)) return;
@@ -17,10 +17,9 @@ const notify = async (message) => {
     let locals = await database.get_local_notifs(guild.id);
     let globals = await database.get_global_notifs();
     let notifs = locals.concat(globals).filter(n => n.userID != author.id);
-    let notified = new Array();
+    let matches = new Map();
 
     //Embed template
-
     let notif_embed = () => {
         let msg = content.length < 1025 ? content
                     : content[1020] == ' '  ? content.slice(0,1020)+'...'
@@ -37,32 +36,42 @@ const notify = async (message) => {
     }
 
     //Filter notifications and notify valid users
-
     for (let notif of notifs) {
-        if (notif.guildID && notif.guildID != guild.id || notified.includes(notif.userID)) { 
+        if (notif.guildID && notif.guildID != guild.id) { 
             continue;
         }
 
         let dnd = await database.get_dnd(notif.userID);
         if (dnd) continue;
 
-        let member;
-        try {
-            member = await guild.fetchMember(notif.userID);
-        } catch (e) {
-            member = null;
-        }
-
-        if (!member) continue;
-        let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
-        if (!can_read) continue;
-
         let regxp = new RegExp(notif.keyexp, 'i');
         let match = content.match(regxp);
         if (!match) continue;
 
-        notified.push(notif.userID);
-        let alert = `\\💬 ${author} mentioned \`${notif.keyword}\` in ${channel}`;
+        let notif_set = matches.get(notif.userID);
+        if (notif_set) {
+            notif_set.add(notif.keyword)
+            matches.set(notif.userID, notif_set);
+        } else {
+            matches.set(notif.userID, new HashSet(notif.keyword));
+        }
+    }
+
+    for (let userID of matches.keys()) {
+        let member;
+        try {
+            member = await guild.fetchMember(userID);
+        } catch (e) {
+            member = null;
+        }
+        if (!member) continue;
+        
+        let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
+        if (!can_read) continue;
+
+        let set = notified.get(userID);
+        let keywords = set.toArray().sort().join('`, `');
+        let alert = `\\💬 ${author} mentioned \`${keywords}\` in ${channel}`;
         member.send(alert, notif_embed());
     }
 
@@ -194,17 +203,17 @@ exports.msg = async function (message, args) {
                     })
                     break;
 
-                    case "clear":
-                    case "purge":
-                        message.channel.startTyping();
-                        clear_notifications(message).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                        }).catch(error => {
-                            console.error(error);
-                            message.channel.stopTyping();
-                        })
-                        break;
+                case "clear":
+                case "purge":
+                    message.channel.startTyping();
+                    clear_notifications(message).then(response => {
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
 
                 //Do not Disturb
                 case "donotdisturb":
