@@ -8,7 +8,7 @@ const config = require("../config.json");
 const database = require("./lastfm_db.js");
 const functions = require("../functions/functions.js");
 const html = require("../functions/html.js");
-const media = require("./media.js");
+const media = require("./youtube.js");
 
 //Init
 
@@ -311,7 +311,7 @@ const lf_recents = async function (message, args, limit) {
             let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=track.getInfo&user=${lfUser}&api_key=${api_key}&artist=${encodeURIComponent(tracks[0].artist["#text"])}&track=${encodeURIComponent(tracks[0].name)}&format=json`);
             if (response.data.track) {
                 let { userplaycount, userloved } = response.data.track;
-                playCount = userplaycount;    
+                playCount = userplaycount || 0;    
                 loved = userloved;
             }
         } catch (e) {
@@ -618,14 +618,14 @@ const lf_youtube = async function (message, username) {
     // }
 
     let track = response.data.recenttracks.track[0];
-    let artist = track.artist["#text"];
-    let title = track.name;
-    let query = `${artist} - ${title}`;
+    let query = `${track.artist["#text"]} - ${track.name}`;
+    let np = track["@attr"] && track["@attr"].nowplaying;
 
-    let status = track["@attr"] && track["@attr"].nowplaying == "true" ? "Now Playing" : "Last Played";
-
-    let video_link = await media.yt_query(query);
-    return `${status}: ${video_link}`;
+    let video = await media.yt_vid_query(query);
+    if (!video) {
+        return `\\⚠ Couldn't find a YouTube video for \`${query}\``;
+    }
+    return `${np ? "Now Playing" : "Last Played"}: https://youtu.be/${video}`;
 
 }
 

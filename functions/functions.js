@@ -37,6 +37,10 @@ exports.getTimeAgo = (time, limit) => {
     
 }
 
+exports.parseParams = (object) => {
+    return Object.entries(object).map(x => `${x[0]}=${encodeURIComponent(x[1])}`).join('&');
+}
+
 exports.pages = async (message, pages, timeout, lock) => {
     let currentPage = 0;
     let content = `${pages[currentPage]}`;

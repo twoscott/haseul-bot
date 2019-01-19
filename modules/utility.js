@@ -159,7 +159,7 @@ const strawpoll = async function (message, args) {
         let timeElapsed = Date.now() - timeout;
         if (timeElapsed < 600000) {
             let mins = Math.ceil(10 - timeElapsed / 60000);
-            return `\\⚠ You're making strawpolls too fast! Please wait another ${mins == 1 ? 'minute' : `${mins} minutes`}`;
+            return `\\⚠ You're making strawpolls too fast! Please wait another ${mins == 1 ? 'minute' : `${mins} minutes`}.`;
         }
     } 
 
