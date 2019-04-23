@@ -1,7 +1,8 @@
 //Require modules
 
 const Discord = require("discord.js");
-const config = require("./config_eh.json");
+// const config = require("./config.json");
+const config = require("./config_test.json");
 const Client = new Discord.Client({disableEveryone: true})
 exports.Client = Client;
 
@@ -40,7 +41,8 @@ Client.on("warn", warning => {
 
 Client.on("ready", () => {
     console.log("Ready!");
-    Client.channels.get('417893349039669260').send("Ready!");
+    botchannel = Client.channels.get('417893349039669260');
+    botchannel.send("Ready!");
 })
 
 Client.on("message", message => {

@@ -8,7 +8,7 @@ const config = require("../config.json");
 const database = require("./lastfm_db.js");
 const functions = require("../functions/functions.js");
 const html = require("../functions/html.js");
-const media = require("./youtube.js");
+const media = require("./media.js");
 
 //Init
 
@@ -24,6 +24,7 @@ exports.msg = async function (message, args) {
 
         case ".lastfm":
         case ".fm":
+        case ".lf":
             switch (args[1]) {
 
                 case "set":
@@ -162,6 +163,17 @@ exports.msg = async function (message, args) {
                     })
                     break;
 
+                case "yt":
+                    message.channel.startTyping();
+                    lf_youtube(message, args[2]).then(response => {
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break; 
+
                 default:
                     message.channel.startTyping();
                     lf_recents(message, args.slice(1), 2).then(response => {
@@ -176,6 +188,7 @@ exports.msg = async function (message, args) {
             break;
         
         case ".fmyt":
+        case ".lfyt":
             message.channel.startTyping();
             lf_youtube(message, args[1]).then(response => {
                 if (response) message.channel.send(response);
@@ -225,25 +238,16 @@ const set_lf_user = async function (message, username) {
     if (!username) {
         return "\\⚠ Please provide a Last.fm username: `.fm set <username>`.";
     }
-    
-    let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`);
-    let { error } = response.data;
-    if (error) {
-        if (error == 6) {
-            return `\\⚠ ${username} is an invalid Last.fm user.`;
-        } else {
-            throw new Error(response.data);
-        }
+
+    try {
+        await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`);
+    } catch (e) {
+        let { message, error } = e.response.data;
+        if (error != 6) console.error(new Error(message));
+        return `\\⚠ ${message}.`;
     }
-    // try {
-    //     await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`);
-    // } catch (e) {
-    //     let { message, error } = e.response.data;
-    //     if (error != 6) console.error(new Error(message));
-    //     return `\\⚠ ${message}.`;
-    // }
     
-    /*let*/response = await database.set_lf_user(message.author.id, username);
+    let response = await database.set_lf_user(message.author.id, username);
     return response;
 
 }
@@ -279,23 +283,13 @@ const lf_recents = async function (message, args, limit) {
 
     limit = Math.min(limit, 1000);
 
-    let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=${limit}`);
-    let { error } = response.data;
-    if (error) {
-        if (error == 6) {
-            return `\\⚠ ${username} is an invalid Last.fm user.`;
-        } else {
-            throw new Error(response.data);
-        }
+    let response;
+    try {
+        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=${limit}`);
+    } catch (e) {
+        let { message } = e.response.data;
+        return `\\⚠ ${message}.`;
     }
-    // let response;
-    // try {
-    //     response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=${limit}`);
-    // } catch (e) {
-    //     let { message } = e.response.data;
-    //     console.error(new Error(message));
-    //     return `\\⚠ ${message}.`;
-    // }
 
     let tracks = response.data.recenttracks.track.slice(0, limit);
     if (tracks.length < 1) {
@@ -345,8 +339,8 @@ recent1Embed = (track, lfUser, totalPlays, playCount, loved) => {
     .setAuthor(`${lfUser+p} ${np ? 'Now Playing' : 'Last Track'}`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lfUser}/`)
     .setThumbnail(thumbnail)
     .setURL(image)
-    .addField('Track', field)
-    .addField('Plays', playCount)
+    .addField('Track Info', field)
+    .addField('Track Plays', playCount)
     .setColor(0xc1222a)
     .setFooter(`${+loved ? '❤ Loved  |  ':''}Total Plays: ${totalPlays}`);
 
@@ -472,23 +466,13 @@ const lf_top_media = async function (message, args, type) {
         display_time
     } = time;
 
-    let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${limit}`);
-    let { error } = response.data;
-    if (error) {
-        if (error == 6) {
-            return `\\⚠ ${username} is an invalid Last.fm user.`;
-        } else {
-            throw new Error(response.data);
-        }
+    let response;
+    try {
+        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${limit}`);
+    } catch (e) {
+        let { message } = e.response.data;
+        return `\\⚠ ${message}.`;
     }
-    // let response;
-    // try {
-    //     response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${limit}`);
-    // } catch (e) {
-    //     let { message } = e.response.data;
-    //     console.error(new Error(message));
-    //     return `\\⚠ ${message}.`;
-    // }
 
     let lf_user = response.data[`top${type}s`]["@attr"].user;
     let collection = response.data[`top${type}s`][type];
@@ -539,23 +523,13 @@ const lf_profile = async function (message, username) {
         return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm profile <username>` to see the Last.fm profile of a specific user.";
     }
 
-    let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`);
-    let { error } = response.data;
-    if (error) {
-        if (error == 6) {
-            return `\\⚠ ${username} is an invalid Last.fm user.`;
-        } else {
-            throw new Error(response.data);
-        }
+    let response;
+    try {
+        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
+    } catch (e) {
+        let { message } = e.response.data;
+        return `\\⚠ ${message}.`;
     }
-    // let response;
-    // try {
-    //     response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
-    // } catch (e) {
-    //     let { message } = e.response.data;
-    //     console.error(new Error(message));
-    //     return `\\⚠ ${message}.`;
-    // }
 
     let user = response.data.user;
     let thumbnail = user.image[2]["#text"];
@@ -599,23 +573,13 @@ const lf_youtube = async function (message, username) {
         return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.";
     }
 
-    let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=1`);
-    let { error } = response.data;
-    if (error) {
-        if (error == 6) {
-            return `\\⚠ ${username} is an invalid Last.fm user.`;
-        } else {
-            throw new Error(response.data);
-        }
+    let response;
+    try {
+        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=1`);
+    } catch (e) {
+        let { message } = e.response.data;
+        return `\\⚠ ${message}.`;
     }
-    // let response;
-    // try {
-    //     response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=1`);
-    // } catch (e) {
-    //     let { message } = e.response.data;
-    //     console.error(new Error(message));
-    //     return `\\⚠ ${message}.`;
-    // }
 
     let track = response.data.recenttracks.track[0];
     let query = `${track.artist["#text"]} - ${track.name}`;
@@ -658,23 +622,13 @@ const lf_chart = async function (message, args, type="album") {
 
     let { timeframe, display_time } = getTimeFrame(time);
 
-    let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type.toLowerCase()}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${dimension ** 2}`);
-    let { error } = response.data;
-    if (error) {
-        if (error == 6) {
-            return `\\⚠ ${username} is an invalid Last.fm user.`;
-        } else {
-            throw new Error(response.data);
-        }
+    let response;
+    try {
+        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type.toLowerCase()}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${dimension ** 2}`);
+    } catch (e) {
+        let { message } = e.response.data;
+        return `\\⚠ ${message}.`;
     }
-    // let response;
-    // try {
-    //     response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type.toLowerCase()}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${dimension ** 2}`);
-    // } catch (e) {
-    //     let { message } = e.response.data;
-    //     console.error(new Error(message));
-    //     return `\\⚠ ${message}.`;
-    // }
 
     let collection = response.data[`top${type}s`][type];
     let lf_user = response.data[`top${type}s`]["@attr"].user;

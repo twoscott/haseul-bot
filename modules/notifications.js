@@ -50,10 +50,10 @@ const notify = async (message) => {
 
         let notif_set = matches.get(notif.userID);
         if (notif_set) {
-            notif_set.add(notif.keyword)
+            notif_set.add(notif.keyword.toLowerCase())
             matches.set(notif.userID, notif_set);
         } else {
-            matches.set(notif.userID, new HashSet(notif.keyword));
+            matches.set(notif.userID, new HashSet(notif.keyword.toLowerCase()));
         }
     }
 
@@ -69,7 +69,7 @@ const notify = async (message) => {
         let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
         if (!can_read) continue;
 
-        let set = notified.get(userID);
+        let set = matches.get(userID);
         let keywords = set.toArray().sort().join('`, `');
         let alert = `\\💬 ${author} mentioned \`${keywords}\` in ${channel}`;
         member.send(alert, notif_embed());

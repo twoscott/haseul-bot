@@ -194,7 +194,7 @@ edit = async function (message, args, raw) {
 
     let channel_id = args[0].match(/<?#?!?(\d+)>?/);        
     if (!channel_id) {
-        return "\\⚠ Please provide a channel to send the message to.\nUsage: `.say {channel} {message}`";
+        return "\\⚠ Please provide a message to edit.\nUsage: `.say {channel id} {message id} <new message content>`";
     }
     channel_id = channel_id[1];
     

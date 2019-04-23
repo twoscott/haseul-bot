@@ -41,14 +41,14 @@ exports.parseParams = (object) => {
     return Object.entries(object).map(x => `${x[0]}=${encodeURIComponent(x[1])}`).join('&');
 }
 
-exports.pages = async (message, pages, timeout, lock) => {
+exports.pages = async (destination, author, pages, timeout, lock) => {
     let currentPage = 0;
     let content = `${pages[currentPage]}`;
 
     if (pages.length < 2) {
-        message.channel.send(content);
+        destination.send(content);
     } else {
-        message.channel.send(content).then(async reply => {  
+        destination.send(content).then(async reply => {  
             await reply.react("⏮");
             await reply.react("⬅");
             await reply.react("➡");
@@ -147,7 +147,7 @@ exports.pages = async (message, pages, timeout, lock) => {
             if (lock && lockListener) {
                 lockListener.on("collect", reaction => {
                     let users = reaction.users.array()
-                    if (users[users.length - 1].id == message.author.id) {
+                    if (users[users.length - 1].id == author.id) {
                         let listeners = [pageBeginning, pageBack, pageForward, pageEnd, lockListener];
                         for (i=0; i < listeners.length; i++) {
                             listeners[i].stop();
@@ -281,7 +281,7 @@ exports.embedPages = async (destination, embed, pages, timeout) => {
     
 }
 
-exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
+exports.embedPagesFields = async (destination, embed, pages, timeout, lock) => {
     let currentPage = 0;
     for (i=0; i < pages[currentPage].length; i++) {
         embed.addField(pages[currentPage][i].name, pages[currentPage][i].usage);
@@ -289,9 +289,9 @@ exports.embedPagesFields = async (message, embed, pages, timeout, lock) => {
     embed.setFooter(`Page ${currentPage + 1} of ${pages.length}`);
         
     if (pages.length < 2) {
-        message.channel.send({embed: embed});
+        destination.send({embed: embed});
     } else {
-        message.channel.send({embed: embed}).then(async reply => {            
+        destination.send({embed: embed}).then(async reply => {            
             await reply.react("⏮");          
             await reply.react("⬅");
             await reply.react("➡");

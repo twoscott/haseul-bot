@@ -222,7 +222,7 @@ const help = async function (message, args) {
         }
         pages.push(page.join("\n"));
 
-        functions.embedPages(message, embed, pages, 600000);
+        functions.embedPages(message.channel, embed, pages, 600000);
         return;
     }
 
@@ -278,6 +278,6 @@ const help = async function (message, args) {
     .setColor(+module_obj.colour)
     .setDescription(module_obj.description)
 
-    functions.embedPagesFields(message, embed, pages, 600000);
+    functions.embedPagesFields(message.channel, embed, pages, 600000);
 
 }
