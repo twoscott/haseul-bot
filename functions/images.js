@@ -34,7 +34,7 @@ class Image {
     gifDim(data) {
         this.imgWidth  = data.slice(6,  8).reduce((sum, x, i) => sum + (x * (2 ** (i*8) )), 0);
         this.imgHeight = data.slice(8, 10).reduce((sum, x, i) => sum + (x * (2 ** (i*8) )), 0);
-        return [this.imgWidth, this.imgHeight]; 
+        return [this.imgWidth, this.imgHeight];
     }
 
     get dimensions() {

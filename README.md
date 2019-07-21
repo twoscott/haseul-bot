@@ -1,2 +1,2 @@
 # Haseul Bot
-A General purpose Disord bot.
+A General purpose Discord bot aimed at K-pop servers.

@@ -3,15 +3,15 @@
 const Discord = require("discord.js");
 const HashSet = require("hashset");
 
-const database = require("./notifications_db.js");
+const database = require("../db_queries/notifications_db.js");
 
-//Functions
+// Functions
 
 const notify = async (message) => {
 
-    //Fetch stored notifications
+    // Fetch stored notifications
     let { guild, channel, author, content, member } = message;
-    let chan_blacklist = await database.get_blacklist_channels();
+    let chan_blacklist = await database.get_server_blacklist_channels(guild.id);
     if (chan_blacklist.find(row => row.channelID == channel.id)) return;
     
     let locals = await database.get_local_notifs(guild.id);
@@ -19,7 +19,7 @@ const notify = async (message) => {
     let notifs = locals.concat(globals).filter(n => n.userID != author.id);
     let matches = new Map();
 
-    //Embed template
+    // Embed template
     let notif_embed = () => {
         let msg = content.length < 1025 ? content
                     : content[1020] == ' '  ? content.slice(0,1020)+'...'
@@ -35,7 +35,7 @@ const notify = async (message) => {
         .setColor(colour);
     }
 
-    //Filter notifications and notify valid users
+    // Filter notifications and notify valid users
     for (let notif of notifs) {
         if (notif.guildID && notif.guildID != guild.id) { 
             continue;
@@ -71,7 +71,7 @@ const notify = async (message) => {
 
         let set = matches.get(userID);
         let keywords = set.toArray().sort().join('`, `');
-        let alert = `\\💬 ${author} mentioned \`${keywords}\` in ${channel}`;
+        let alert = `\\💬 **${author.username}** mentioned \`${keywords}\` in ${channel}`;
         member.send(alert, notif_embed());
     }
 
@@ -79,11 +79,11 @@ const notify = async (message) => {
 
 exports.msg = async function (message, args) {
 
-    //Notify
+    // Notify
 
     notify(message);
 
-    //Handle commands
+    // Handle commands
 
     switch (args[0]) {
 
@@ -94,7 +94,7 @@ exports.msg = async function (message, args) {
         case ".noti":
             switch (args[1]) {
 
-                //global
+                // Global
                 case "global":
                     switch (args[2]) {
                         
@@ -143,43 +143,31 @@ exports.msg = async function (message, args) {
                     switch (args[2]) {
 
                         case "add":
-                            switch (args[3]) {
-
-                                case "channel":
-                                    message.channel.stopTyping();
-                                    add_blacklist_channel(message, args.slice(4)).then(response => {
-                                        if (response) message.channel.send(response);
-                                        message.channel.stopTyping();
-                                    }).catch(error => {
-                                        console.error(error);
-                                        message.channel.stopTyping();
-                                    })
-                                    break;
-
-                            }
+                            message.channel.stopTyping();
+                            add_server_blacklist_channel(message, args.slice(3)).then(response => {
+                                if (response) message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
                             break;
 
                         case "remove":
-                            switch (args[3]) {
-
-                                case "channel":
-                                    message.channel.stopTyping();
-                                    remove_blacklist_channel(message, args.slice(4)).then(response => {
-                                        if (response) message.channel.send(response);
-                                        message.channel.stopTyping();
-                                    }).catch(error => {
-                                        console.error(error);
-                                        message.channel.stopTyping();
-                                    })
-                                    break;
-
-                            }
+                            message.channel.stopTyping();
+                            remove_server_blacklist_channel(message, args.slice(3)).then(response => {
+                                if (response) message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
                             break;
                         
                     }
                     break;
 
-                //local
+                // Local
                 case "add":
                     message.channel.startTyping();
                     add_notification(message, args.slice(2)).then(response => {
@@ -230,7 +218,7 @@ exports.msg = async function (message, args) {
                     break;
 
 
-                //Misc
+                // Misc
                 case "list":
                     message.channel.startTyping();
                     list_notifications(message).then(response => {
@@ -272,20 +260,10 @@ const add_notification = async function (message, args, global) {
 
     let keyrgx;
     if (type == "STRICT")  {
-        keyrgx = `(^|\\s)${keyphrase}[\`']?s?($|\\s)`;
+        keyrgx = `(^|\\W)${keyphrase}[\`']?s?($|\\W)`;
     }
     if (type == "NORMAL")  {
-        keyrgx = '';
-        for (i=0; i<keyphrase.length; i++) {
-            let char = keyphrase[i];
-            if (char == '\\' && keyphrase[i+1] != '\\') {
-                let nextchar = keyphrase[++i];
-                keyrgx += (i) < keyphrase.length - 1 ? `${char+nextchar}+\\W*` : `${char+nextchar}+`;
-            } else {
-                keyrgx += i < keyphrase.length - 1 ? `${char}+\\W*` : `${char}+`;
-            }
-        }
-        keyrgx = `(^|\\W)${keyrgx}[\`']?s?($|\\W)`; 
+        keyrgx = `${keyphrase}`;
     }
     if (type == "LENIENT") {
         keyrgx = '';
@@ -392,7 +370,7 @@ const list_notifications = async function (message) {
     return "A list of your notifications has been sent to your DMs."
 }
 
-const add_blacklist_channel = async function (message, args) {
+const add_server_blacklist_channel = async function (message, args) {
 
     let { guild, channel } = message;
     let channel_id;
@@ -405,19 +383,47 @@ const add_blacklist_channel = async function (message, args) {
         }
         channel_id = channel_id[1];
     }
-    if (!message.guild.channels.has(channel_id)) {
+    
+    channel = guild.channels.get(channel_id);
+    if (!channel) {
         return "\\⚠ Channel doesn't exist in this server.";
     }
 
-    let added = database.add_blacklist_channel(guild.id, channel_id);
-    if (!added) {
-        return `\\⚠ <#${channel_id}> is already blacklisted.`;
+    switch (channel.type) {
+        case "text":
+            let added = database.add_server_blacklist_channel(guild.id, channel_id);
+            if (!added) {
+                return `\\⚠ <#${channel_id}> is already blacklisted from notifying users.`;
+            }
+            return `<#${channel_id}> is now blacklisted from notifying users.`;
+        case "category":
+            if (channel.children.size == 0) return `\\⚠ There are no channels in ${channel.name}`;
+            
+            let textChans = 0;
+            let addedTotal = 0;
+            let children = channel.children.array();
+            for (let i = 0; i < children.length; i++) {
+                let child = children[i];
+                if (child.type != 'text') continue;
+                let added = await database.add_server_blacklist_channel(guild.id, child.id);
+                addedTotal += +added; textChans += 1;
+            }
+
+            if (textChans <= 0) {
+                return `\\⚠ There are no text channels belonging to \`${channel.name}\`.`;
+            } else if (addedTotal <= 0) {
+                return `\\⚠ All text channels in \`${channel.name}\` are already blacklisted from notifying users.`;
+            } else if (addedTotal == channel.children.size) {
+                return `All text channels in \`${channel.name}\` are now blacklisted from notifying users.`;
+            }
+            return `${addedTotal} channel${addedTotal != 1 ? 's':''} in \`${channel.name}\` are now blacklisted from notifying users.`;
+        default:
+            return `\\⚠ \`${channel.name}\` is not a text chanel.`;
     }
-    return `<#${channel_id}> is now blacklisted from notifying users.`;
 
 }
 
-const remove_blacklist_channel = async function (message, args) {
+const remove_server_blacklist_channel = async function (message, args) {
 
     let { guild, channel } = message;
     let channel_id;
@@ -430,15 +436,42 @@ const remove_blacklist_channel = async function (message, args) {
         }
         channel_id = channel_id[1];
     }
-    if (!message.guild.channels.has(channel_id)) {
+    channel = guild.channels.get(channel_id);
+    if (!channel) {
         return "\\⚠ Channel doesn't exist in this server.";
     }
 
-    let added = database.remove_blacklist_channel(guild.id, channel_id);
-    if (!added) {
-        return `\\⚠ <#${channel_id}> is not blacklisted.`;
+    switch (channel.type) {
+        case "text":
+            let added = database.remove_server_blacklist_channel(guild.id, channel_id);
+            if (!added) {
+                return `\\⚠ <#${channel_id}> is not blacklisted from notifying users.`;
+            }
+            return `<#${channel_id}> is no longer blacklisted from notifying users.`;
+        case "category":
+            if (channel.children.size == 0) return `\\⚠ There are no channels in ${channel.name}`;
+            
+            let textChans = 0;
+            let addedTotal = 0;
+            let children = channel.children.array();
+            for (let i = 0; i < children.length; i++) {
+                let child = children[i];
+                if (child.type != 'text') continue;
+                let added = await database.remove_server_blacklist_channel(guild.id, child.id);
+                addedTotal += +added; textChans += 1;
+            }
+
+            if (textChans <= 0) {
+                return `\\⚠ There are no text channels belonging to \`${channel.name}\`.`;
+            } else if (addedTotal <= 0) {
+                return `\\⚠ No text channels in \`${channel.name}\` are blacklisted from notifying users.`;
+            } else if (addedTotal == channel.children.size) {
+                return `All text channels in \`${channel.name}\` are no longer blacklisted from notifying users.`;
+            }
+            return `${addedTotal} channel${addedTotal != 1 ? 's':''} in \`${channel.name}\` are no longer blacklisted from notifying users.`;
+        default:
+            return `\\⚠ \`${channel.name}\` is not a text chanel.`;
     }
-    return `<#${channel_id}> is no longer blacklisted from notifying users.`;
 
 }
 

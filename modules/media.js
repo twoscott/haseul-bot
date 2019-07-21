@@ -1,14 +1,16 @@
-//Require modules
+// Require modules
 
 const Discord = require("discord.js");
+
 const axios = require("axios")
+
 const functions = require("../functions/functions");
 
-//Functions
+// Functions
 
 exports.msg = async function (message, args) {
 
-    //Handle commands
+    // Handle commands
 
     if (args.length < 1) return;
     switch (args[0].toLowerCase()) {    
@@ -66,14 +68,15 @@ yt_pages = async function (message, query) {
     let pages = [];
 
     let search = regExp.exec(data);
-    while (search) {
-        pages.push(`https://youtu.be/${search[1]}`);
+    for (let i = 0; search && i < 20; i++) {
+        pages.push({ content: `${i+1}. https://youtu.be/${search[1]}`, attachments: undefined });
         search = regExp.exec(data);
     }
     if (pages.length < 1) {
         return "\\⚠ No results found for this query!";
     }
-    functions.pages(message.channel, message.author, pages, 600000, true);
+
+    functions.pages(message, pages, true);
     
 }
 

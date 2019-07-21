@@ -1,17 +1,18 @@
-//Require modules
+// Require modules
 
 const Discord = require("discord.js");
 const axios = require("axios");
 
 const Client = require("../haseul.js").Client;
+const functions = require("../functions/functions.js");
 const serverSettings = require("./server_settings.js");
 const Image = require("../functions/images.js");
 
-//Functions
+// Functions
 
 log = async (member, logEvent) => {
 
-    //Check if logs on
+    // Check if logs on
     let logsOn = await serverSettings.get(member.guild.id, "joinLogsOn");
     if (!logsOn) return;
     let logChannelID = await serverSettings.get(member.guild.id, "joinLogsChan");
@@ -50,15 +51,16 @@ getMemberNo = async (member) => {
 
 // }
 
-//Join
+// Join
 
 exports.join = async function (member) {
 
+    // welcome(member);
     log(member, logJoin);
 
 }
 
-//Leave
+// Leave
 
 exports.leave = async function (member) {
 
@@ -66,7 +68,7 @@ exports.leave = async function (member) {
 
 }
 
-//Logs
+// Logs
 
 logJoin = async function (member, destination) {
     
@@ -109,11 +111,11 @@ logLeave = async function (member, destination) {
 
 }
 
-//Message
+// Message
 
 exports.msg = async function (message, args) {
 
-    //Handle commands
+    // Handle commands
     switch (args[0]) {
 
         case ".userinfo":
@@ -146,32 +148,9 @@ exports.msg = async function (message, args) {
 
 }
 
-searchMembers = (members, target) => {
-   
-    let member;
-    
-    member = members.find(m => m.user.tag.toLowerCase() == target.replace(/^@/, ''));
-    if (!member) {
-        member = members.find(m => m.user.username.toLowerCase() == target);
-    }
-    if (!member) {
-        member = members.find(m => m.user.username.toLowerCase().includes(target));
-    }
-    if (!member) {
-        member = members.find(m => m.nickname ? m.nickname.toLowerCase() == target : false);
-    }
-    if (!member) {
-        member = members.find(m => m.nickname ? m.nickname.toLowerCase().includes(target) : false);
-    }
-    if (!member) {
-        member = null
-    }
 
-    return member;
 
-}
-
-//Userinfo
+// Userinfo
 const userinfo = async function (message, args) {
 
     let { author, guild } = message;
@@ -186,7 +165,7 @@ const userinfo = async function (message, args) {
             target = args.join(' ').toLowerCase();
             guild = await guild.fetchMembers();
 
-            let member = searchMembers(guild.members, target)
+            let member = await functions.searchMembers(guild, target)
             if (!member) {
                 return "\\⚠ Invalid user or user ID.";
             }
@@ -199,11 +178,11 @@ const userinfo = async function (message, args) {
 
     try {
         let member = await guild.fetchMember(user_id);
-        return member_embed(member);
+        return member_embed(author, member);
     } catch (e) {
         try {
             let user = await Client.fetchUser(user_id)
-            return user_embed(user, guild);
+            return user_embed(user);
         } catch (e) {
             console.error(e);
             return "\\⚠ Invalid user.";
@@ -213,7 +192,7 @@ const userinfo = async function (message, args) {
 
 }
 
-const member_embed = async (member) => {
+const member_embed = async (author, member) => {
 
     let { user, guild } = member;
     let lastMsg = member.lastMessage
@@ -238,7 +217,7 @@ const member_embed = async (member) => {
     .addField("User ID", user.id, true)
     .addField("Account Created", user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true);
 
-    if (lastMsg) {
+    if (lastMsg && user.id != author.id) {
         embed.addField("Last Seen", `[View Message](https://discordapp.com/channels/${guild.id}/${lastMsg.channel.id}/${lastMsg.id} "Go To User's Last Message")`, true);
     }
 
@@ -321,7 +300,7 @@ user_dp = async function (message, args) {
             target = args.join(' ').toLowerCase();
             guild = await guild.fetchMembers();
 
-            let member = searchMembers(guild.members, target)
+            let member = await functions.searchMembers(guild, target)
             if (!member) {
                 return "\\⚠ Invalid user or user ID.";
             }

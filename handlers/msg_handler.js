@@ -1,9 +1,14 @@
 //Require modules
 
+const commands = require("../modules/commands.js");
+const emojis = require("../modules/emojis.js");
 const lastfm = require("../modules/lastfm.js");
+const levels = require("../modules/levels.js");
 const media = require("../modules/media.js");
 const moderation = require("../modules/moderation.js");
 const notifications = require("../modules/notifications.js");
+const profiles = require("../modules/profiles.js");
+const reps = require("../modules/reps.js");
 const roles = require("../modules/roles.js");
 const servers = require("../modules/servers.js");
 const users = require("../modules/users.js");
@@ -19,13 +24,18 @@ exports.handleMsg = (message) => {
     if (author.bot) return;
     if (channel.type === "dm") return;
 
-    let args = content.replace(/\s{2,}/gi, ' ').trim().split(' ');
+    let args = content.trim().split(/\s+/);
 
     //Pass message to modules
+    commands.msg(message, args);
+    emojis.msg(message, args);
     lastfm.msg(message, args);
+    levels.msg(message, args);
     moderation.msg(message, args);
     media.msg(message, args);
     notifications.msg(message, args);
+    profiles.msg(message, args);
+    reps.msg(message, args);
     roles.msg(message, args);
     servers.msg(message, args);
     users.msg(message, args);

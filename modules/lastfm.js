@@ -1,24 +1,48 @@
-//Require modules
+// Require modules
 
 const Discord = require("discord.js");
+
 const axios = require("axios");
 const fs = require("fs");
+const { JSDOM } = require("jsdom");
 
 const config = require("../config.json");
-const database = require("./lastfm_db.js");
+const database = require("../db_queries/lastfm_db.js");
 const functions = require("../functions/functions.js");
 const html = require("../functions/html.js");
 const media = require("./media.js");
 
-//Init
+const Image = require("../functions/images.js");
+
+// Init
 
 const api_key = config.lastfm_key;
 
-//Functions
+// Functions
+
+scrapeArtistImage = async function (artist) {
+
+    let response;
+    try {
+        response = await axios.get(`https://www.last.fm/music/${encodeURIComponent(artist)}/+images`);
+    } catch (e) {
+        let { message } = e.response.data;
+        return `\\⚠ ${message}.`;
+    }
+    
+    let doc = new JSDOM(response.data).window.document;
+    let images = doc.getElementsByClassName('image-list-item-wrapper');
+    if (images.length < 1) {
+        return "https://lastfm-img2.akamaized.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png";
+    }
+
+    return images[0].getElementsByTagName('img')[0].src.replace('/avatar170s/', '/300x300/') + '.png';
+    
+}
 
 exports.msg = async function (message, args) {
 
-    //Handle commands
+    // Handle commands
 
     switch (args[0]) {
 
@@ -163,6 +187,18 @@ exports.msg = async function (message, args) {
                     })
                     break;
 
+                case "avatar":
+                case "dp":
+                    message.channel.startTyping();
+                    lf_avatar(message, args[2]).then(response => {
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
+
                 case "yt":
                     message.channel.startTyping();
                     lf_youtube(message, args[2]).then(response => {
@@ -291,21 +327,25 @@ const lf_recents = async function (message, args, limit) {
         return `\\⚠ ${message}.`;
     }
 
-    let tracks = response.data.recenttracks.track.slice(0, limit);
-    if (tracks.length < 1) {
+    let tracks = response.data.recenttracks.track
+    if (!tracks || tracks.length < 1) {
         return `\\⚠ ${username} hasn't listened to any music.`;
     }
+    if (!Array.isArray(tracks)) {
+        tracks = [ tracks ];
+    }
+    tracks = tracks.slice(0, limit);
     let lfUser = response.data.recenttracks['@attr'].user;
     let totalPlays = response.data.recenttracks['@attr'].total;
 
-    let playCount = 0;
+    let playCount;
     let loved;
     if (tracks.length < 3) {
         try {
             let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=track.getInfo&user=${lfUser}&api_key=${api_key}&artist=${encodeURIComponent(tracks[0].artist["#text"])}&track=${encodeURIComponent(tracks[0].name)}&format=json`);
             if (response.data.track) {
                 let { userplaycount, userloved } = response.data.track;
-                playCount = userplaycount || 0;    
+                playCount = userplaycount;    
                 loved = userloved;
             }
         } catch (e) {
@@ -319,7 +359,7 @@ const lf_recents = async function (message, args, limit) {
     } else if (tracks.length < 3) {
         return recent2Embed(tracks, lfUser, totalPlays, playCount);
     } else {
-        recentListPages(message.channel, tracks, lfUser);
+        recentListPages(message, tracks, lfUser);
         return;
     }
 
@@ -333,6 +373,7 @@ recent1Embed = (track, lfUser, totalPlays, playCount, loved) => {
     let p = lfUser[lfUser.length-1].toLowerCase() == 's' ? "'" : "'s";
 
     let thumbnail = track.image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
     let image = track.image[track.image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
     let embed = new Discord.RichEmbed()
@@ -340,9 +381,14 @@ recent1Embed = (track, lfUser, totalPlays, playCount, loved) => {
     .setThumbnail(thumbnail)
     .setURL(image)
     .addField('Track Info', field)
-    .addField('Track Plays', playCount)
     .setColor(0xc1222a)
     .setFooter(`${+loved ? '❤ Loved  |  ':''}Total Plays: ${totalPlays}`);
+
+    if (playCount >= 0) {
+        embed.addField('Track Plays', playCount);
+    } else {
+        embed.addField('Track Plays', 'Unavailable');
+    }
 
     if (!np && track.date) {
         embed.setTimestamp(new Date(0).setSeconds(track.date.uts));
@@ -362,6 +408,7 @@ recent2Embed = (tracks, lfUser, totalPlays, playCount) => {
     let p = lfUser[lfUser.length-1].toLowerCase() == 's' ? "'" : "'s";
 
     let thumbnail = tracks[0].image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
     let image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
     let embed = new Discord.RichEmbed()
@@ -371,7 +418,7 @@ recent2Embed = (tracks, lfUser, totalPlays, playCount) => {
     .addField(np ? 'Now Playing' : 'Last Played', field1)
     .addField("Previous Track", field2)
     .setColor(0xc1222a)
-    .setFooter(`Track Plays: ${playCount}  |  Total Plays: ${totalPlays}`);
+    .setFooter(`Track Plays: ${playCount ? playCount : 'Unavailable'}  |  Total Plays: ${totalPlays}`);
 
     if (!np && tracks[0].date) {
         embed.setTimestamp(new Date(0).setSeconds(tracks[0].date.uts));
@@ -381,17 +428,18 @@ recent2Embed = (tracks, lfUser, totalPlays, playCount) => {
 
 }
 
-recentListPages = (destination, tracks, lfUser) => {
+recentListPages = (message, tracks, lfUser) => {
 
     let thumbnail = tracks[0].image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
     let image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     let p = lfUser[lfUser.length-1].toLowerCase() == 's' ? "'" : "'s";
 
     let np = (track) => track['@attr'] && track['@attr'].nowplaying;
     let rowString = tracks.map((track, i) => `${np(track) ? '\\▶' : `${i + 1}.`} ${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (${np(track) ? 'Now' : functions.getTimeAgo(track.date.uts)})`).join('\n');
 
-    let pages = [];
-    while (rowString.length > 2048) {
+    let descriptions = [];
+    while (rowString.length > 2048 || rowString.split('\n').length > 20) {
         let currString = rowString.slice(0, 2048);
 
         let lastIndex = 0;
@@ -402,17 +450,29 @@ recentListPages = (destination, tracks, lfUser) => {
         currString = currString.slice(0, lastIndex);
         rowString  = rowString.slice(lastIndex);
 
-        pages.push(currString);
+        descriptions.push(currString);
     } 
-    pages.push(rowString);
+    descriptions.push(rowString);
 
-    let embed = new Discord.RichEmbed()
-    .setAuthor(`${lfUser+p} Recent Tracks`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lfUser}/`)
-    .setThumbnail(thumbnail)
-    .setURL(image)
-    .setColor(0xc1222a)
+    let pages = descriptions.map((desc, i) => {
+        return {
+            content: undefined,
+            attachments: {embed: {
+                author: {
+                    name: `${lfUser+p} Recent Tracks`, icon_url: 'https://i.imgur.com/YbZ52lN.png', url: `https://www.last.fm/user/${lfUser}/`
+                },
+                url: image,
+                description: desc,
+                thumbnail: { url: thumbnail },
+                color: 0xc1222a,
+                footer: {
+                    text: `Page ${i+1} of ${descriptions.length}`
+                }
+            }}
+        }
+    });
 
-    functions.embedPages(destination, embed, pages, 600000);
+    functions.pages(message, pages);
     return;
 
 }
@@ -485,7 +545,7 @@ const lf_top_media = async function (message, args, type) {
     if (type == 'album' ) rowString = collection.map((x, i) => `${i+1}. ${x.artist.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${x.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(x.artist.name).replace(/\)/g, "\\)")}/${  encodeURIComponent(x.name).replace(/\)/g, "\\)")}) (${x.playcount} ${x.playcount == 1 ? 'Play' : 'Plays'})`).join('\n');
     if (type == 'track' ) rowString = collection.map((x, i) => `${i+1}. ${x.artist.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${x.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(x.artist.name).replace(/\)/g, "\\)")}/_/${encodeURIComponent(x.name).replace(/\)/g, "\\)")}) (${x.playcount} ${x.playcount == 1 ? 'Play' : 'Plays'})`).join('\n');
 
-    let pages = [];
+    let descriptions = [];
     while (rowString.length > 2048) {
         let currString = rowString.slice(0, 2048);
 
@@ -497,19 +557,40 @@ const lf_top_media = async function (message, args, type) {
         currString = currString.slice(0, lastIndex);
         rowString  = rowString.slice(lastIndex);
 
-        pages.push(currString);
+        descriptions.push(currString);
     } 
-    pages.push(rowString);
+    descriptions.push(rowString);
 
-    let thumbnail = collection[0].image[2]["#text"] || embeds[type].defimg;
+    let thumbnail
+    if (type == 'track' || type == 'artist') {
+        // response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${api_key}&artist=${encodeURIComponent(collection[0].artist.name)}&track=${encodeURIComponent(collection[0].name)}&format=json`);
+        // thumbnail = response.data.track.album ? response.data.track.album.image[2]["#text"] : thumbnail = collection[0].image[2]["#text"];
+        thumbnail = type == 'track' ? await scrapeArtistImage(collection[0].artist.name) : await scrapeArtistImage(collection[0].name);
+    } else {
+        thumbnail = collection[0].image[2]["#text"];
+        if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = embeds[type].defimg;
+    }
     let p = lf_user[lf_user.length-1].toLowerCase() == "s" ? "'" : "'s";
-    let embed = new Discord.RichEmbed()
-    .setAuthor(`${lf_user+p} Top ${type[0].toUpperCase()+type.slice(1)}s`, embeds[type].image, `https://www.last.fm/user/${lf_user}/library/${type}s?date_preset=${date_preset}`)
-    .setTitle(display_time)
-    .setThumbnail(thumbnail)
-    .setColor(embeds[type].colour);
 
-    functions.embedPages(message.channel, embed, pages, 600000);
+    let pages = descriptions.map((desc, i) => {
+        return {
+            content: undefined,
+            attachments: {embed: {
+                author: {
+                    name: `${lf_user+p} Top ${type[0].toUpperCase()+type.slice(1)}s`, icon_url: embeds[type].image, url: `https://www.last.fm/user/${lf_user}/library/${type}s?date_preset=${date_preset}`
+                },
+                title: display_time,
+                description: desc,
+                thumbnail: { url: thumbnail },
+                color: embeds[type].colour,
+                footer: {
+                    text: `Page ${i+1} of ${descriptions.length}`
+                }
+            }}
+        }
+    })
+
+    functions.pages(message, pages);
     return;
 
 }
@@ -564,6 +645,43 @@ const lf_profile = async function (message, username) {
 
 }
 
+const lf_avatar = async function (message, username) {
+
+    if (!username) {
+        username = await database.get_lf_user(message.author.id);
+    }
+    if (!username) {
+        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.";
+    }
+
+    let response;
+    try {
+        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
+    } catch (e) {
+        let { message } = e.response.data;
+        return `\\⚠ ${message}.`;
+    }
+
+    let { name, image } = response.data.user;
+
+    let avatar_match = image[0]['#text'].match(/(https:\/\/lastfm-img2\.akamaized\.net\/i\/u)\/.*?\/(.+)/i)
+    let avatar_url = avatar_match ? avatar_match.slice(1).join('/') : 'https://lastfm-img2.akamaized.net/i/u/818148bf682d429dc215c1705eb27b98.png';
+    let res = await axios.get(avatar_url, {responseType: 'arraybuffer'});
+    let img_size = Math.max(Math.round(res.headers['content-length']/10000)/100, 1/100);
+    let img_type = res.headers['content-type'].split('/')[1];
+
+    let img  = new Image(res.data);
+    let dims = img.dimensions;
+    let p = username.toLowerCase().endsWith('s') ? "'" : "'s";
+
+    return new Discord.RichEmbed()
+    .setAuthor(`${name+p} Last.fm Avatar`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${name}/`)
+    .setImage(avatar_url)
+    .setColor(0xc1222a)
+    .setFooter(`Type: ${img_type.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${img_size}MB`);
+
+}
+
 const lf_youtube = async function (message, username) {
 
     if (!username) {
@@ -582,6 +700,9 @@ const lf_youtube = async function (message, username) {
     }
 
     let track = response.data.recenttracks.track[0];
+    if (!track.artist) {
+        return `\\⚠ ${username} hasn't listened to any music.`;
+    }
     let query = `${track.artist["#text"]} - ${track.name}`;
     let np = track["@attr"] && track["@attr"].nowplaying;
 
@@ -620,24 +741,55 @@ const lf_chart = async function (message, args, type="album") {
     let dimension = Math.round(Math.sqrt(+dims[0]*+dims[1])) || 3;
     if (dimension > 10) dimension = 10;
 
-    let { timeframe, display_time } = getTimeFrame(time);
+    let { timeframe, display_time, date_preset } = getTimeFrame(time);
 
-    let response;
-    try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type.toLowerCase()}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${dimension ** 2}`);
-    } catch (e) {
-        let { message } = e.response.data;
-        return `\\⚠ ${message}.`;
+    let collection = [];
+    if (type == 'album') {
+
+        let response;
+        try {
+            response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type.toLowerCase()}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${dimension ** 2}`);
+        } catch (e) {
+            let { message } = e.response.data;
+            return `\\⚠ ${message}.`;
+        }
+        collection = response.data[`top${type}s`][type];
+
+    } else {
+        
+        for (let i = 0; i < Math.ceil((dimension**2)/50); i++) {
+            if (i > 0 && collection.length < 50) break;
+            let response;
+            try {
+                response = await axios.get(`https://www.last.fm/user/${username}/library/artists?date_preset=${date_preset}&page=${i+1}`);
+            } catch (e) {
+                let { message } = e.response.data;
+                return `\\⚠ ${message}.`;
+            }
+
+            let doc = new JSDOM(response.data).window.document;
+            let rows = doc.getElementsByClassName('chartlist-row link-block-basic js-link-block');
+            for (let i = 0; i < rows.length && i < dimension ** 2; i++) {
+                let row = rows[i];
+                collection.push({ 
+                    'image': [{
+                        '#text': row.getElementsByClassName('avatar')[0].getElementsByTagName('img')[0].src.replace('/avatar70s/', '/300x300/'),
+                    }],
+                    'name': row.getElementsByClassName('link-block-target')[0].textContent, 
+                    'playcount': row.getElementsByClassName('chartlist-count-bar-value')[0].textContent.match(/[0-9,]+/)[0]
+                })
+            }
+        }
+
     }
 
-    let collection = response.data[`top${type}s`][type];
-    let lf_user = response.data[`top${type}s`]["@attr"].user;
     if (!collection || collection.length < 1) {
-        return `\\⚠ ${lf_user} hasn't listened to any music during this time.`;
+        return `\\⚠ ${username} hasn't listened to any music during this time.`;
     }
     while (Math.sqrt(collection.length) <= dimension-1) {
         dimension--;
     }
+    
     let screen_width = (collection.length < dimension ? collection.length : dimension) * 300;
     let screen_height = (Math.ceil(collection.length / dimension)) * 300;
 
@@ -651,9 +803,10 @@ const lf_chart = async function (message, args, type="album") {
         for (let i=0; i<dimension; i++) {
             if (collection.length < 1) break;
             let item = collection.shift();
+
             let image = item.image[item.image.length-1]["#text"] || (type == "artist" ? 
-            "https://lastfm-img2.akamaized.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png" :
-            "https://lastfm-img2.akamaized.net/i/u/300x300/c6f59c1e5e7240a4c0d427abd71f3dbb.png");
+                "https://lastfm-img2.akamaized.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png" :
+                "https://lastfm-img2.akamaized.net/i/u/300x300/c6f59c1e5e7240a4c0d427abd71f3dbb.png");
 
             if (type == "album") {
                 htmlString += [
@@ -662,7 +815,7 @@ const lf_chart = async function (message, args, type="album") {
                     `        <div class="text">${item.artist.name}<br>${item.name}<br>Plays: ${item.playcount}</div>\n    `,
                     `    </div>\n    `
                 ].join(``);
-            }
+            }   
             if (type == "artist") {
                 htmlString += [ 
                     `    <div class="container">\n    `,
@@ -690,15 +843,11 @@ const lf_chart = async function (message, args, type="album") {
         `</body>\n\n`,
         `</html>\n`
     ].join(``);
-
  
     let image = await html.toImage(htmlString, screen_width, screen_height);
-    let imageAttachment = new Discord.Attachment(image, `${lf_user}-${timeframe}-${new Date(Date.now()).toISOString()}.jpg`);
-    let p = lf_user[lf_user.length-1].toLowerCase == 's' ? "'" : "'s";
-    return [
-        `**${lf_user+p}** ${display_time} ${functions.capitalise(type)} Collage`, 
-        imageAttachment
-    ];
+    let imageAttachment = new Discord.Attachment(image, `${username}-${timeframe}-${new Date(Date.now()).toISOString()}.jpg`);
+    let p = username[username.length-1].toLowerCase == 's' ? "'" : "'s";
+    return [ `**${username+p}** ${display_time} ${functions.capitalise(type)} Collage`, imageAttachment ];
 
 }
 

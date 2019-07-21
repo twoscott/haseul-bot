@@ -1,11 +1,12 @@
-//Require modules
+// Require modules
 
 const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
-const database = require("./roles_db.js");
+const database = require("../db_queries/roles_db.js");
 const serverSettings = require("../modules/server_settings.js")
 
-//Functions
+// Functions
+
 roles = async (message) => {
     let rolesOn = await serverSettings.get(message.guild.id, "rolesOn");
     if (!rolesOn) return;
@@ -15,11 +16,11 @@ roles = async (message) => {
 
 exports.msg = async function (message, args) {
 
-    //Check if roles on
+    // Check if roles on
     
     roles(message);
 
-    //Handle commands
+    // Handle commands
 
     let perms = ["ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG"];
     if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
@@ -27,7 +28,7 @@ exports.msg = async function (message, args) {
 
     switch (args[0]) {
 
-        //Role pairs
+        // Role pairs
 
         case ".roles":
             switch (args[1]) {
@@ -79,7 +80,7 @@ exports.msg = async function (message, args) {
                     })
                     break;
 
-                //Roles msg
+                // Roles msg
 
                 case "message":
                 case "msg":
@@ -97,7 +98,7 @@ exports.msg = async function (message, args) {
                     }
                     break;    
 
-                //Roles channel
+                // Roles channel
 
                 case "channel":
                     switch (args[2]) {
@@ -130,7 +131,7 @@ exports.msg = async function (message, args) {
             }
             break;
 
-        //Available roles
+        // Available roles
 
         case ".avarole":
             message.channel.startTyping();
@@ -160,15 +161,15 @@ roles_embed = (responses) => {
     return embed;
 }
 
-//Allows members to self-assign roles
+// Allows members to self-assign roles
 
 assign_roles = async function (message) {
 
-    //Safety net
+    // Safety net
     
     message.delete(10000).catch(() => {});
 
-    //Process commands
+    // Process commands
 
     let args = message.content.trim().split(" ");
     if (args.length < 2) {message.delete(timeout=1000).catch(() => {}); return;}
@@ -195,7 +196,7 @@ assign_roles = async function (message) {
         member = await message.guild.fetchMember(message.author.id);
     }
 
-    //Parse role commands
+    // Parse role commands
 
     let colour;
     for (i = 0; i < role_commands.length; i++) {
@@ -203,7 +204,7 @@ assign_roles = async function (message) {
         let role_id = await database.get_role_id(role_command, message.guild.id, type);
         let role = message.guild.roles.get(role_id);
 
-        //Process role
+        // Process role
 
         if (role) {
             if (!colour) colour = role.color;
@@ -235,13 +236,13 @@ assign_roles = async function (message) {
     }
     if (!colour) colour = 0xFFFFFF;
 
-    //Add/Remove roles
+    // Add/Remove roles
 
     switch (modifier) {
 
         case "+":
             member.addRoles(roles_to_process)
-            //Respond
+            // Respond
             var responses = {"Assigned Roles": roles_successful, "Current Roles": roles_unsuccessful, "Invalid Roles": errors};
             var embed = roles_embed(responses);
             embed.setColor(colour);
@@ -253,7 +254,7 @@ assign_roles = async function (message) {
 
         case "-":
             member.removeRoles(roles_to_process)
-            //Respond
+            // Respond
             var responses = {"Removed Roles": roles_successful, "Roles Not Assigned": roles_unsuccessful, "Invalid Roles": errors};
             var embed = roles_embed(responses);
             embed.setColor(colour);
@@ -521,7 +522,7 @@ set_roles_channel_msg = async function (message, args) {
     return await database.set_roles_msg(message.guild.id, channel_message);
 }
 
-//Toggle
+// Toggle
 
 toggleRoles = async function (message) {
 

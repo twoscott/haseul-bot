@@ -1,9 +1,9 @@
-//Require modules
+// Require modules
 
-const database = require("./server_db.js");
+const database = require("../db_queries/server_db.js");
 let servers = new Object();
 
-//Init
+// Init
 
 init = async () => {
     let rows = await database.getServers();
@@ -15,7 +15,7 @@ init = async () => {
 
 init();
 
-//Functions
+// Functions
 
 exports.get = async (guildID, setting) => {
     return servers[guildID] ? servers[guildID][setting] : undefined;

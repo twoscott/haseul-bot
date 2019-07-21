@@ -1,25 +1,65 @@
-//Require modules
+// Require modules
 
 const Discord = require("discord.js");
 const axios = require("axios")
 
-const Client = require("../haseul").Client;
 const config = require("../config.json");
-const helpmodules = require("../resources/help.json");
+const helpmodules = require("../resources/JSON/help.json");
 const functions = require("../functions/functions.js")
 
-//Init
+const units = {
+    nm: ['nanometer', 'nanometre', 'nanometers', 'nanometres'],
+    μm: ['um', 'micrometer', 'micrometre', 'micrometers', 'micrometres'],
+    mm: ['millimeter', 'millimeter', 'millimeters', 'millimeters'],
+    cm: ['centimeter', 'centimetre', 'centimeters', 'centimetres'],
+    m:  ['meter', 'metre', 'meters', 'metres'],
+    km: ['kilometer', 'kilometre', 'kilometers', 'kilometres'],
+    in: ['inch', 'inches'],
+    ft: ['foot', 'feet'],
+    yd: ['yard', 'yards'],
+    mi: ['mile', 'miles']
+}
+
+const meter_const = {
+
+    nm: 0.000000001,
+    μm: 0.000001,
+    mm: 0.001,
+    cm: 0.01,
+     m: 1,
+    km: 1000,
+
+    in: 0.0254,
+    ft: 0.3048,
+    yd: 0.9144,
+    mi: 1609.344,
+
+}
+
+// Init
 
 const translate_key = config.trans_key;
 const strawpoll_timeouts = new Map();
 
-//Functions
+// Functions
 
 exports.msg = async function (message, args) {
 
-    //Handle commands
+    // Handle commands
 
     switch (args[0]) {
+
+        case ".convert":
+        case ".cv":
+            message.channel.startTyping();
+            convert(args).then(response => {
+                message.channel.send(response);
+                message.channel.stopTyping();
+            }).catch(error => {
+                console.error(error);
+                message.channel.stopTyping();
+            })
+            break;
 
         case ".github":
         case ".git":
@@ -41,7 +81,7 @@ exports.msg = async function (message, args) {
 
         case ".strawpoll":
         case ".straw":
-        case ".poll":
+        case ".sp":
             message.channel.startTyping();
             strawpoll(message, args.slice(1)).then(response => {
                 message.channel.send(response);
@@ -73,6 +113,42 @@ exports.msg = async function (message, args) {
             break;
 
     }
+}
+
+const convert = async function(args) {
+
+    if (args.length < 1) {
+        return "\\⚠ Please provide units to convert!";
+    }
+
+    let match = args.slice(1).join(' ').match(/([0-9,\.]+)([A-z ]+)\s*(?:to|-)\s*([A-z ]+)/i);
+    if (!match) {
+        return `\\⚠ Please format conversions like this \`${args[0]} {number}[unit] to [unit]\`, for example \`${args[0]} 100cm to inches\``
+    }
+
+    let input = parseInt(match[1], 10);
+    let source = match[2].trim();
+    let target = match[3].trim();
+
+    for (abbrv in units) {
+        if (abbrv == source || units[abbrv].includes(source)) source = abbrv;
+    }
+    for (abbrv in units) {
+        if (abbrv == target || units[abbrv].includes(target)) target = abbrv;
+    }
+
+    let result = Math.round((input * meter_const[source] * meter_const[target] ** -1) * 100) / 100;
+    
+    let output;
+    let alt;
+    if (target == 'ft') {
+        let feet = Math.floor(input * meter_const[source] * meter_const['ft'] ** -1);
+        let inches = Math.round((input * meter_const[source] * meter_const['in'] ** -1) % 12);
+        alt = `${feet}ft ${Math.round((inches * 10) / 10)}in`;
+    }
+
+    return new Discord.RichEmbed().setAuthor(`${input}${source} = ${result}${target}${alt ? ` (${alt})`:``}`);
+
 }
 
 const translate = async function (args) {
@@ -202,28 +278,44 @@ const strawpoll = async function (message, args) {
 
 const help = async function (message, args) {
 
-    if (args.length < 1) {            
-        let embed = new Discord.RichEmbed()
-        .setAuthor(`Help`, `https://i.imgur.com/p9n0Y0C.png`)
-        .setColor(0xfe4971);
-        let pages = [];
-        let page = ["To get help, type `.help <module name>`. Here you will see the module's commands and how to use them.\n\n**Modules**"];
-        let length = page[0].length;
+    if (args.length < 1) {
 
-        for (let module_name in helpmodules) {
-            if (length + (module_name.length + 1) > 2048 || page.length > 19) { // + 1 = line break
-                pages.push(page.join("\n"));
-                page = [module_name];
-                length = module_name.length + 1;
-            } else {
-                page.push(module_name);
-                length += module_name.length + 1;
+        let moduleString = Object.keys(helpmodules).sort((a,b) => a.localeCompare(b)).map(name => name[0].toUpperCase() + name.slice(1).toLowerCase()).join('\n');
+
+        let descriptions = [];
+        while (moduleString.length > 2048 || moduleString.split('\n').length > 20) {
+            let currString = moduleString.slice(0, 2048);
+
+            let lastIndex = 0;
+            for (let i = 0; i < 20; i++) {
+                let index = currString.indexOf('\n', lastIndex) + 1;
+                if (index) lastIndex = index; else break;
             }
-        }
-        pages.push(page.join("\n"));
+            currString   = currString.slice(0, lastIndex);
+            moduleString = moduleString.slice(lastIndex);
 
-        functions.embedPages(message.channel, embed, pages, 600000);
-        return;
+            descriptions.push(currString);
+        } 
+        descriptions.push(moduleString);
+
+        let pages = descriptions.map((desc, i) => {
+            return {
+                content: "To get help, type `.help <module name>`. Here you will see the module's commands and how to use them.",
+                attachments: {embed: {
+                    author: {
+                        name: 'Modules', icon_url: 'https://i.imgur.com/p9n0Y0C.png'
+                    },
+                    description: desc,
+                    color: 0xfe4971,
+                    footer: {
+                        text: `Page ${i+1} of ${descriptions.length}`
+                    }
+                }}
+            }
+        })
+    
+        functions.pages(message, pages);
+        return
     }
 
     let module_name;
@@ -248,7 +340,19 @@ const help = async function (message, args) {
         case "notification":
         case "notif":
         case "noti":
-            module_name = "notification"
+            module_name = "notification";
+            break;
+        
+        case "commands":
+        case "command":
+        case "cmds":
+        case "cmd":
+            module_name = "commands";
+            break;
+        
+        case "emojis":
+        case "emoji":
+            module_name = "emoji";
             break;
         
         default:
@@ -258,26 +362,38 @@ const help = async function (message, args) {
     let module_obj = helpmodules[module_name];
     
     let commands = module_obj.commands;
-    let pages = [];
-    let page = [];
+    let fieldPages = [];
+    let fieldPage = [];
     let field_count = 0;
     for (i=0; i < commands.length; i++) {
         if (field_count > 4) {
-            pages.push(page);
-            page = [commands[i]];
+            fieldPages.push(fieldPage);
+            fieldPage = [commands[i]];
             field_count = 1;
         } else {
-            page.push(commands[i]);
+            fieldPage.push(commands[i]);
             field_count += 1;
         }
     }
-    pages.push(page);
+    fieldPages.push(fieldPage);
 
-    let embed = new Discord.RichEmbed()
-    .setAuthor(module_obj.name, module_obj.image)
-    .setColor(+module_obj.colour)
-    .setDescription(module_obj.description)
+    let pages = fieldPages.map((page, i) => {
+        return {
+            content: undefined,
+            attachments: {embed: {
+                author: {
+                    name: module_obj.name, icon_url: module_obj.image
+                },
+                description: module_obj.description,
+                fields: page,
+                color: +module_obj.colour,
+                footer: {
+                    text: `Page ${i+1} of ${fieldPages.length}`
+                }
+            }}
+        }
+    });
 
-    functions.embedPagesFields(message.channel, embed, pages, 600000);
+    functions.pages(message, pages);
 
 }

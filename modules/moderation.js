@@ -1,17 +1,17 @@
-//Require modules
+// Require modules
 
+const database = require("../db_queries/mod_db.js");
 const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 const serverSettings = require("./server_settings.js");
 
-//Functions
+// Functions
 
 poll = async (message) => {
     let pollOn = await serverSettings.get(message.guild.id, "pollOn");
     if (!pollOn) return;
-    let pollChannelID = await serverSettings.get(message.guild.id, "pollChannel");
-    if (!message.guild.channels.has(pollChannelID)) return;
-    if (message.channel.id == pollChannelID) {
+    let pollChannelIDs = await database.get_poll_channels(message.guild.id, "pollChannel");
+    if (pollChannelIDs.map(x => x.channelID).includes(message.channel.id)) {
         await message.react('✅');
         await message.react('❌');
     }
@@ -19,13 +19,13 @@ poll = async (message) => {
 
 exports.msg = async function (message, args) {
 
-    //Check if poll channel
+    // Check if poll channel
     
     poll(message);
 
-    //Handle commands
+    // Handle commands
 
-    let perms = ["ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG"];
+    let perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
     if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
     if (!perms.some(p => message.member.hasPermission(p))) return;
 
@@ -33,7 +33,7 @@ exports.msg = async function (message, args) {
 
         case ".say":
             message.channel.startTyping();
-            say(message, args.slice(1), false).then(response => {
+            say(message, message.content.split(' ').slice(1), false).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -44,7 +44,7 @@ exports.msg = async function (message, args) {
 
         case ".sayraw":
             message.channel.startTyping();
-            say(message, args.slice(1), true).then(response => {
+            say(message, message.content.split(' ').slice(1), true).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -55,7 +55,7 @@ exports.msg = async function (message, args) {
         
         case ".edit":
             message.channel.startTyping();
-            edit(message, args.slice(1), false).then(response => {
+            edit(message, message.content.split(' ').slice(1), false).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -66,7 +66,7 @@ exports.msg = async function (message, args) {
 
         case ".editraw":
             message.channel.startTyping();
-            edit(message, args.slice(1), true).then(response => {
+            edit(message, message.content.split(' ').slice(1), true).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -75,6 +75,18 @@ exports.msg = async function (message, args) {
             })
             break;
 
+        case ".get":
+            message.channel.startTyping();
+            get(message, args.slice(1), true).then(response => {
+                message.channel.send(response);
+                message.channel.stopTyping();
+            }).catch(error => {
+                console.error(error);
+                message.channel.stopTyping();
+            })
+            break;
+
+
         case ".poll":
             switch (args[1]) {
 
@@ -82,9 +94,21 @@ exports.msg = async function (message, args) {
 
                     switch (args[2]) {
 
-                        case "set":
+                        case "add":
                             message.channel.startTyping();
-                            setPollChannel(message, args.slice(3)).then(response => {
+                            addPollChannel(message, args.slice(3)).then(response => {
+                                message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+
+                        case "remove":
+                        case "delete":
+                            message.channel.startTyping();
+                            delPollChannel(message, args.slice(3)).then(response => {
                                 message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -149,7 +173,7 @@ exports.msg = async function (message, args) {
     }
 }
 
-//Commands
+// Commands
 
 say = async function (message, args, raw) {
 
@@ -189,12 +213,12 @@ say = async function (message, args, raw) {
 edit = async function (message, args, raw) {
 
     if (args.length < 1) {
-        return `\\⚠ No content provided to be sent.`;
+        return "\\⚠ No content provided to be sent.";
     }
 
     let channel_id = args[0].match(/<?#?!?(\d+)>?/);        
     if (!channel_id) {
-        return "\\⚠ Please provide a message to edit.\nUsage: `.say {channel id} {message id} <new message content>`";
+        return "\\⚠ Please provide a message's channel to edit.\nUsage: `.say {channel id} {message id} <new message content>`";
     }
     channel_id = channel_id[1];
     
@@ -225,7 +249,34 @@ edit = async function (message, args, raw) {
 
 }
 
-setPollChannel = async function (message, args) {
+get = async function (message, args) {
+
+    if (args.length < 1) {
+        return "\\⚠ Please provide a message ID to be fetched.";
+    }
+
+    let channel_id = args[0].match(/<?#?!?(\d+)>?/);        
+    if (!channel_id) {
+        return "\\⚠ Please provide a message's channel to fetch.\nUsage: `.get {channel id} {message id}`";
+    }
+    channel_id = channel_id[1];
+    
+    let channel = Client.channels.get(channel_id);
+    if (!channel) {
+        return "\\⚠ Invalid channel provided.";
+    }
+
+    let message_id = args[1].match(/^\d+$/);
+    if (!message_id) {
+        return "\\⚠ No message ID provided.";
+    }
+
+    let msg = await channel.fetchMessage(message_id);
+    message.channel.send(`\`\`\`${msg.content.replace(/```/g, "'''")}\`\`\``);
+
+}
+
+addPollChannel = async function (message, args) {
 
     let channel_id;
     if (args.length < 1) {
@@ -242,8 +293,30 @@ setPollChannel = async function (message, args) {
         return "\\⚠ Channel doesn't exist in this server.";
     }
 
-    await serverSettings.set(message.guild.id, "pollChannel", channel_id);
-    return `Poll channel set to <#${channel_id}>.`;
+    added = await database.add_poll_channel(message.guild.id, channel_id);
+    return added ? `Poll channel added.` : `Poll channel already added.`;
+
+}
+
+delPollChannel = async function (message, args) {
+
+    let channel_id;
+    if (args.length < 1) {
+        channel_id = message.channel.id;
+    } 
+    else {
+        channel_id = args[0].match(/<?#?!?(\d+)>?/);
+        if (!channel_id) {
+            return "\\⚠ Invalid channel or channel ID.";
+        }
+        channel_id = channel_id[1];
+    }
+    if (!message.guild.channels.has(channel_id)) {
+        return "\\⚠ Channel doesn't exist in this server.";
+    }
+
+    removed = await database.del_poll_channel(message.guild.id, channel_id);
+    return removed ? `Poll channel removed.` : `Poll channel doesn't exist.`;
 
 }
 

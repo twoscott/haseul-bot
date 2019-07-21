@@ -1,4 +1,5 @@
 config*.json
 node_modules/
 haseul_data/*.db
+resources/JSON/countries.json
 .vscode/

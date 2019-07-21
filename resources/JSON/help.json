@@ -1,0 +1,148 @@
+
+{
+    "lastfm": {
+        "name": "lastfm | fm",
+        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "image": "https://i.imgur.com/YbZ52lN.png",
+        "colour": "0xc1222a",
+        "commands": [
+            {
+                "name": "fm set",
+                "value": "`.fm set [lastfm username]` this links your Discord account to your Last.fm account, meaning when you use other commands such as fm or fmyt you won't need to define a username."
+            },
+            {
+                "name": "fm remove | delete",
+                "value": "`.fm remove` this unlinks your Discord account from your Last.fm."
+            },
+            {
+                "name": "fm recent | recents",
+                "value": "`.fm recent <track count> <lastfm user>` this displays a defined amount of recent tracks you have listened to recently, displayed differently depending on if you request 1, 2, or more than 2 tracks to be displayed."
+            },
+            {
+                "name": "fm np",
+                "value": "`.fm np <lastfm user>` this is shorthand for `.fm recent 1`"
+            },
+            {
+                "name": "fm",
+                "value": "`.fm <lastfm user>` this is shorthand for `.fm recent 2`"
+            },
+            {
+                "name": "fmyt",
+                "value": "`.fmyt` this searches YouTube for the song you're listening to/last listened to on Last.fm and returns it."
+            },
+            {
+                "name": "fm topartists | ta",
+                "value": "`.fm topartists <time period> <lastfm user>` this shows your most listened to artists for a given time period."
+            },
+            {
+                "name": "fm topalbums | tal | tab",
+                "value": "`.fm topalbums <time period> <lastfm user>` this shows your most listened to albums for a given time period."
+            },
+            {
+                "name": "fm toptracks | tt",
+                "value": "`.fm toptracks <time period> <lastfm user>` this shows your most listened to tracks for a given time period."
+            },
+            {
+                "name": "fm profile",
+                "value": "`.fm profile <lastfm user>` this displays some information about your last.fm profile."
+            },
+            {
+                "name": "chart",
+                "value": "`.chart artists? <time period> <grid size (e.g. 3x3)>` this displays a chart of your most listened to albums (or artists if \"artists\" is included) for the given time period."
+            }
+        ]
+    },
+    "youtube": {
+        "name": "youtube | yt",
+        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "image": "https://i.imgur.com/U3xey80.png",
+        "colour": "0xe35556",
+        "commands": [
+            {
+                "name": "youtube | yt",
+                "value": "`.youtube <query>` this searches YouTube for your query and returns the top result."
+            }
+        ]
+    },
+    "utility": {
+        "name": "utility",
+        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "image": "https://i.imgur.com/UCXza9B.png",
+        "colour": "0x4965fe",
+        "commands": [
+            {
+                "name": "translate | tr",
+                "value": "`.translate <source language code>-?<target language code> <text>` this translates text either from a given source language or the auto-detected language of your text to your desired language and returns it (uses Bing translate :/)"
+            },
+            {
+                "name": "help",
+                "value": "`.help <module name>` displays the commands under a given module and how to use them."
+            }
+        ]
+    },
+    "notification": {
+        "name": "notification | notif | noti",
+        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "image": "https://i.imgur.com/UCXza9B.png",
+        "colour": "0x4965fe",
+        "commands": [
+            {
+                "name": "notification add",
+                "value": "`.notification global? add <type> [key word/phrase]` this adds a notification with they key word or phrase entered, meaning you will then be notified when a user mentions that word either in the server you add the notification to or in any server you and haseul bot are both in if you pass the global argument. You can also specify a type, determining whether it will be `strict`, `normal`, or `lenient` in deciding whether or not to match the key word/phrase."
+            },
+            {
+                "name": "notification remove",
+                "value": "`.notification remove [key word/phrase]` this removes a notification based on the key word or phrase you specify."
+            },
+            {
+                "name": "notification list",
+                "value": "`.notification list` this sends you a dm with a list of all your notifications, their type, and whether they are global or local notifications."
+            }
+
+        ]
+    },
+    "commands": {
+        "name": "command | cmd",
+        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "image": "https://i.imgur.com/gzL6uIE.png",
+        "colour": "0x1a1a1a",
+        "commands": [
+            {
+                "name": "command add",
+                "value": "`.command add [command name] <response>` + `<file upload>` this adds a custom command with the command name you choose. This means that when your command name is typed with a . in front of it, the response you provided is returned by the bot, this also includes files you upload with the command."
+            },
+            {
+                "name": "command edit",
+                "value": "`.command edit [command name] <new response>` + `<new file upload>` this edits a previously added command using the same format as `.command add`."
+            },
+            {
+                "name": "command remove | delete",
+                "value": "`.command remove [commandName]` this removes a command based on the command name you provide."
+            },
+            {
+                "name": "command list",
+                "value": "`.command list` this lists out all of the commands currently added to the server."
+            },
+            {
+                "name": "command search",
+                "value": "`.command search [query]` this searches for commands on the server matching the provided query."
+            }
+        ]
+    },
+    "emoji": {
+        "name": "emoji",
+        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "image": "https://i.imgur.com/hIpmRU2.png",
+        "colour": "0xffcc4d",
+        "commands": [
+            {
+                "name": "emoji list",
+                "value": "`.emoji list` this lists out all of the emojis currently added to the server."
+            },
+            {
+                "name": "emoji search",
+                "value": "`.emoji search [query]` this searches for emojis on the server matching the provided query."
+            }
+        ]
+    }
+}

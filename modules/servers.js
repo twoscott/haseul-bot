@@ -1,13 +1,13 @@
-//Require modules
+// Require modules
 
 const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 
-//Functions
+// Functions
 
 exports.msg = async function (message, args) {
 
-    //Handle commands
+    // Handle commands
     switch (args[0]) {
 
         case ".serverinfo":
