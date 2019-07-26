@@ -44,7 +44,8 @@ const profile_temp = async function (message, args) {
     } else {
         let match = target.match(/^<?@?!?(\d{8,})>?$/);
         if (!match) {
-            target = args.join(' ').toLowerCase();
+            let textStart = message.content.match(new RegExp(args.slice(0, 1).join('\\s+')))[0].length;
+            target = message.content.slice(textStart).trim();
             guild = await guild.fetchMembers();
 
             member = await functions.searchMembers(guild, target)
@@ -70,7 +71,7 @@ const profile_temp = async function (message, args) {
     let colour = member ? member.displayColor || 0x6d5ffb : 0x6d5ffb;
 
     let embed = {
-        author: { name: `Temp Profile for ${user.username}`, icon_url: user.avatarURL },
+        author: { name: `Temp Profile for ${user.username}`, icon_url: user.displayAvatarURL },
         color: colour,
         fields: [
             { name: 'Rep', value: userReps ? userReps.rep: 0, inline: false },
@@ -79,7 +80,7 @@ const profile_temp = async function (message, args) {
             { name: 'Server Level', value: `Level ${userGuildXp ? userGuildRank.lvl: 1}`, inline: true },
             { name: 'Server XP', value: `${userGuildXp ? (userGuildXp.xp - userGuildRank.baseXp) : 0}/${userGuildRank.nextXp - userGuildRank.baseXp}`, inline: true }
         ],
-        thumbnail: { url: user.avatarURL },
+        thumbnail: { url: user.displayAvatarURL },
         footer: { text: 'Full profiles coming soon.' }
     }
 

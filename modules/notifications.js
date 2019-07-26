@@ -27,7 +27,7 @@ const notify = async (message) => {
         let msg_url = `https://discordapp.com/channels/${guild.id}/${channel.id}/${message.id}`;
         let colour  =  member.displayColor || 0xffffff;
         return new Discord.RichEmbed()
-        .setAuthor(author.tag, author.avatarURL, author.avatarURL)
+        .setAuthor(author.tag, author.displayAvatarURL, author.displayAvatarURL)
         .setDescription(`__[View Message](${msg_url})__`)
         .addField("Content", msg)
         .setFooter(`#${channel.name}`)
@@ -100,7 +100,7 @@ exports.msg = async function (message, args) {
                         
                         case "add":
                             message.channel.startTyping();
-                            add_notification(message, args.slice(3), true).then(response => {
+                            add_notification(message, args, true).then(response => {
                                 if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -112,7 +112,7 @@ exports.msg = async function (message, args) {
                         case "remove":
                         case "delete":
                             message.channel.startTyping();
-                            remove_notification(message, args.slice(3), true).then(response => {
+                            remove_notification(message, args, true).then(response => {
                                 if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -136,41 +136,10 @@ exports.msg = async function (message, args) {
                     }
                     break;
 
-                case "blacklist":
-                    let perms = ["ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG"];
-                    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                    if (!perms.some(p => message.member.hasPermission(p))) break;
-                    switch (args[2]) {
-
-                        case "add":
-                            message.channel.stopTyping();
-                            add_server_blacklist_channel(message, args.slice(3)).then(response => {
-                                if (response) message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-
-                        case "remove":
-                            message.channel.stopTyping();
-                            remove_server_blacklist_channel(message, args.slice(3)).then(response => {
-                                if (response) message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-                        
-                    }
-                    break;
-
                 // Local
                 case "add":
                     message.channel.startTyping();
-                    add_notification(message, args.slice(2)).then(response => {
+                    add_notification(message, args).then(response => {
                         if (response) message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
@@ -182,7 +151,7 @@ exports.msg = async function (message, args) {
                 case "remove":
                 case "delete":
                     message.channel.startTyping();
-                    remove_notification(message, args.slice(2)).then(response => {
+                    remove_notification(message, args).then(response => {
                         if (response) message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
@@ -230,6 +199,37 @@ exports.msg = async function (message, args) {
                     })
                     break;
 
+                case "blacklist":
+                    let perms = ["ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG"];
+                    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+                    if (!perms.some(p => message.member.hasPermission(p))) break;
+                    switch (args[2]) {
+
+                        case "add":
+                            message.channel.stopTyping();
+                            add_server_blacklist_channel(message, args.slice(3)).then(response => {
+                                if (response) message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+
+                        case "remove":
+                            message.channel.stopTyping();
+                            remove_server_blacklist_channel(message, args.slice(3)).then(response => {
+                                if (response) message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+                        
+                    }
+                    break;
+
             }
             break;
 
@@ -239,20 +239,24 @@ exports.msg = async function (message, args) {
 
 const add_notification = async function (message, args, global) {
 
-    if (args.length < 1) {
+    if (args.length < (global ? 4 : 3)) {
         return "\\⚠ Please specify a key word or phrase to add."
     }
 
     message.delete(500);
     
     let type;
+    let typeArg = global ? args[3] : args[2];
+    let keyword;
     let keyphrase;
-    if (["STRICT", "NORMAL", "LENIENT"].includes(args[0].toUpperCase()) && args.length > 1) {
-        type = args[0].toUpperCase();
-        keyword = args.slice(1).join(" ").trim();
+    if (["STRICT", "NORMAL", "LENIENT"].includes(typeArg.toUpperCase()) && args.length > (global ? 4 : 3)) {
+        type = typeArg.toUpperCase();
+        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 4 : 3).join('\\s+')))[0].length;
+        keyword = message.content.slice(keyStart).trim().toLowerCase();
     } else {
         type = "NORMAL";
-        keyword = args.join(" ").trim();
+        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).join('\\s+')))[0].length;
+        keyword = message.content.slice(keyStart).trim().toLowerCase();
     }
 
     let rgxChars = new RegExp(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/, 'g');
@@ -293,11 +297,12 @@ const add_notification = async function (message, args, global) {
 
 const remove_notification = async function (message, args, global) {
 
-    if (args.length < 1) {
-        return "\\⚠ Please specify a key word or phrase to add."
+    if (args.length < (global ? 4 : 3)) {
+        return "\\⚠ Please specify a key word or phrase to remove."
     }
 
-    let keyphrase = args.join(" ");
+    let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).join('\\s+')))[0].length;
+    keyphrase = message.content.slice(keyStart).trim().toLowerCase();
 
     message.delete(500);
 

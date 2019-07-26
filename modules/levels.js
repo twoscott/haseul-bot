@@ -22,7 +22,7 @@ const globalRank = (xp) => {
     return { lvl, baseXp, nextXp };
 }
 
-const updateUserLvls = async function (message) {
+const updateUserXp = async function (message) {
     
     let { author, guild, channel, createdTimestamp } = message;
     
@@ -62,7 +62,7 @@ const updateUserLvls = async function (message) {
 
 exports.msg = async function (message, args) {
 
-    updateUserLvls(message);
+    updateUserXp(message);
 
     // Handle commands
 

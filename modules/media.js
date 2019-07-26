@@ -18,7 +18,7 @@ exports.msg = async function (message, args) {
         case ".youtube":
         case ".yt":
             message.channel.startTyping();
-            yt_pages(message, args.slice(1).join(' ')).then(response => {
+            yt_pages(message, args.slice(1).join(" ")).then(response => {
                 if (response) message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -30,7 +30,7 @@ exports.msg = async function (message, args) {
         case ".letterboxd":
         case ".lb":
             message.channel.startTyping();
-            lb_movie_query(args.slice(1).join(' ')).then(response => {
+            lb_movie_query(args.slice(1).join(" ")).then(response => {
                 if (response) message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {

@@ -1,19 +1,33 @@
 {
   "name": "haseul-bot",
-  "version": "1.0.0",
-  "description": "A General purpose Disord bot.",
+  "version": "1.1.0",
+  "description": "A general purpose Discord bot aimed at K-pop servers.",
   "main": "haseul.js",
   "dependencies": {
-    "axios": "^0.18.0",
-    "discord.js": "^11.4.2",
+    "axios": "^0.18.1",
+    "discord.js": "^11.5.1",
     "hashset": "^0.0.6",
-    "sqlite3": "^4.0.6"
+    "jsdom": "^15.1.1",
+    "sqlite3": "^4.0.9"
   },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haseul/haseul-bot.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "haseul",
+    "k-pop"
+  ],
   "author": "Scotto",
-  "license": "ISC"
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/haseul/haseul-bot/issues"
+  },
+  "homepage": "https://github.com/haseul/haseul-bot#readme"
 }

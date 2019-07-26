@@ -106,20 +106,24 @@ exports.update_streak = (timestamp, sender_id, recipient_id) => {
 
 exports.update_streaks = (timestamp) => {
     return new Promise((resolve, reject) => {
-        db.serialize(() => {
-            db.each("SELECT * FROM repStreaks", (err, streak) => {
-                if (err) return reject(err);
-                if (timestamp - Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep)  > 36*60*60*1000/*36 Hours*/) {
-                    db.run(`DELETE FROM repStreaks WHERE user1 = ? AND user2 = ?`, [streak.user1, streak.user2], err => {
-                        if (err) return reject(err);
-                    })
-                } else {
-                    let currentStreakDays = Math.floor((timestamp - streak.firstRep)/(24*60*60*1000/*24 Hours*/));
-                    db.run(`UPDATE repStreaks SET streak = ? WHERE user1 = ? AND user2 = ?`, [currentStreakDays, streak.user1, streak.user2], err => {
-                        if (err) return reject(err);
-                    })
-                }
-            })
+        db.all("SELECT * FROM repStreaks", async (err, streaks) => {
+            if (err) return reject(err);
+            for (let streak of streaks) {
+                await new Promise((resolve, reject) => {
+                    if (timestamp - Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) > 36*60*60*1000/*36 Hours*/) {
+                        db.run(`DELETE FROM repStreaks WHERE user1 = ? AND user2 = ?`, [streak.user1, streak.user2], err => {
+                            if (err) return reject(err);
+                            return resolve();
+                        })
+                    } else {
+                        let currentStreakDays = Math.floor((timestamp - streak.firstRep)/(24*60*60*1000/*24 Hours*/));
+                        db.run(`UPDATE repStreaks SET streak = ? WHERE user1 = ? AND user2 = ?`, [currentStreakDays, streak.user1, streak.user2], err => {
+                            if (err) return reject(err);
+                            return resolve();
+                        })
+                    }
+                })
+            }
             return resolve();
         })
     })

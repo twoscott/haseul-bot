@@ -7,7 +7,23 @@ const serverSettings = require("../modules/server_settings.js")
 
 // Functions
 
-roles = async (message) => {
+const autorole = async (member) => {
+
+    let autoroleOn = await serverSettings.get(member.guild.id, "autoroleOn");
+    if (!autoroleOn) return;
+    let role = await serverSettings.get(member.guild.id, "autoroleID");
+    if (!member.guild.roles.has(role)) return;
+    if (role) member.addRole(role);
+
+}
+
+exports.join = async function (member) {
+
+    autorole(member)
+
+}
+
+const roles = async (message) => {
     let rolesOn = await serverSettings.get(message.guild.id, "rolesOn");
     if (!rolesOn) return;
     let rolesChannelID = await serverSettings.get(message.guild.id, "rolesChannel");
@@ -22,13 +38,41 @@ exports.msg = async function (message, args) {
 
     // Handle commands
 
-    let perms = ["ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG"];
+    let perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
     if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
     if (!perms.some(p => message.member.hasPermission(p))) return;
 
     switch (args[0]) {
 
         // Role pairs
+
+        case ".autorole":
+            switch (args[1]) {
+
+                case "set":
+                    message.channel.startTyping();
+                    setAutorole(message, args).then(response => {
+                        message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
+
+                case "toggle":
+                    message.channel.startTyping();
+                    toggleAutorole(message).then(response => {
+                        message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
+
+            }
+            break;
 
         case ".roles":
             switch (args[1]) {
@@ -47,7 +91,7 @@ exports.msg = async function (message, args) {
 
                 case "add":
                     message.channel.startTyping();
-                    add_role(message, args.slice(2)).then(response => {
+                    add_role(message, args).then(response => {
                         message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
@@ -60,7 +104,7 @@ exports.msg = async function (message, args) {
                 case "delete":
                 case "del":
                     message.channel.startTyping();
-                    remove_role(message, args.slice(2)).then(response => {
+                    remove_role(message, args).then(response => {
                         message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
@@ -87,7 +131,7 @@ exports.msg = async function (message, args) {
                     switch (args[2]) {
                         case "set":
                             message.channel.startTyping();
-                            set_roles_channel_msg(message, args.slice(3)).then(response => {
+                            set_roles_msg(message, args).then(response => {
                                 message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -135,7 +179,7 @@ exports.msg = async function (message, args) {
 
         case ".avarole":
             message.channel.startTyping();
-            toggle_available_role(message, args.slice(1)).then(response => {
+            toggle_available_role(message, args).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping();
             })    .catch(error => {
@@ -302,15 +346,17 @@ create_avarole_embed = async function (message) {
 
 add_role = async function (message, args) {
 
-    if (args.length < 2) {
+    if (args.length < 4) {
         return "\\⚠ Missing arguments.\nUsage: .roles add [role type] [role command]: [role name]";
     }
-    let type = args[0]
+    let type = args[2]
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
         return "\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
-    let roles_text = args.slice(1).join(" ");
-    let pairs = roles_text.split(",")
+
+    let textStart = message.content.match(new RegExp(args.slice(0, 3).join('\\s+')))[0].length;
+    let roles_text = message.content.slice(textStart).trim();
+    let pairs = roles_text.split(",");
     let errors = [];
     let roles_added = [];
     let roles_exist = [];
@@ -350,15 +396,16 @@ add_role = async function (message, args) {
 
 remove_role = async function (message, args) {
 
-    if (args.length < 2) {
+    if (args.length < 4) {
         return "\\⚠ Missing arguments.\nUsage: .roles remove [role type] [role command]";
     }
-    let type = args[0];
+    let type = args[2];
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
         return "\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
-    let roles_text = args.slice(1).join(" ");
-    let role_commands = roles_text.split(",")
+    let textStart = message.content.match(new RegExp(args.slice(0, 3).join('\\s+')))[0].length;
+    let roles_text = message.content.slice(textStart).trim();
+    let role_commands = roles_text.split(",");
 
     let roles_removed = [];
     let roles_nonexistent = [];
@@ -388,14 +435,15 @@ remove_role = async function (message, args) {
 
 toggle_available_role = async function (message, args) {
 
-    if (args.length < 2) {
+    if (args.length < 3) {
         return "\\⚠ Missing arguments.\nUsage: .avarole [role type] [role name]";
     }
-    let type = args[0]
+    let type = args[1]
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
         return "\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
-    let roles_text = args.slice(1).join(" ");
+    let textStart = message.content.match(new RegExp(args.slice(0, 2).join('\\s+')))[0].length;
+    let roles_text = message.content.slice(textStart).trim();
     let role_names = roles_text.split(",");
 
     let roles_added = [];
@@ -513,20 +561,47 @@ update_roles_channel = async function (message) {
 }
 
 
-set_roles_channel_msg = async function (message, args) {
+set_roles_msg = async function (message, args) {
 
-    if (args.length < 1) {
+    if (args.length < 4) {
         return "\\⚠ Please provide a message.";
     }
-    let channel_message = args.join(" ");
-    return await database.set_roles_msg(message.guild.id, channel_message);
+    let msgStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
+    let msg = message.content.slice(msgStart).trim();
+    return await database.set_roles_msg(message.guild.id, msg);
+
+}
+
+setAutorole = async function (message, args) {
+
+    if (args.length < 1) {
+        return "\\⚠ Please provide a role name.";
+    }
+
+    let roleStart = message.content.match(new RegExp(args.slice(0, 2).join('\\s+')))[0].length;
+    let roleName = message.content.slice(roleStart).trim();
+    let role = message.guild.roles.find(role => role.name == roleName);
+    if (!role) {
+        return "\\⚠ This role does not exist on the server!";
+    }
+
+    serverSettings.set(message.guild.id, "autoroleID", role.id);
+    return `Autorole set to \`${role.name}\`.`;
+    
 }
 
 // Toggle
 
+toggleAutorole = async function (message) {
+
+    let tog = await serverSettings.toggle(message.guild.id, "autoroleOn");
+    return `Autorole turned ${tog ? "on":"off"}.`;
+    
+}
+
 toggleRoles = async function (message) {
 
     let tog = await serverSettings.toggle(message.guild.id, "rolesOn");
-    let state = tog ? "on":"off";
-    return `Roles assignment turned ${state}.`;
+    return `Roles assignment turned ${tog ? "on":"off"}.`;
+
 }

@@ -3,6 +3,8 @@
 const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 
+const serverSettings = require("../modules/server_settings.js");
+
 // Functions
 
 exports.msg = async function (message, args) {
@@ -80,15 +82,17 @@ const server_embed = async (guild) => {
     let statusData = Object.values(statusObj);
     statusObj.offline.count = guild.memberCount - statusData.slice(0, 3).reduce((a, c) => a + c.count, 0);
     let statuses = statusData.map(d => d.emoji + d.count).join('  ');
+    let autoroleID = await serverSettings.get(guild.id, "autoroleID");
+    let autoroleColour = autoroleID ? guild.roles.get(autoroleID).color : null;
 
     let embed = new Discord.RichEmbed()
     .setAuthor(guild.name, guild.iconURL)
     .setThumbnail(guild.iconURL)
-    .setColor(guild.members.get(Client.user.id).displayColor || 0xffffff)
+    .setColor(autoroleColour || guild.members.get(Client.user.id).displayColor || 0xffffff)
     .setFooter(`ID #${guild.id}`)
     .setTimestamp(guild.createdAt)
-    .addField("Created On", guild.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true)
     .addField("Owner", guild.owner.user.tag, true)
+    .addField("Created On", guild.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), true)
     .addField("Text Channels", guild.channels.array().filter(c => c.type == 'text').length, true)
     .addField("Voice Channels", guild.channels.array().filter(c => c.type == 'voice').length, true)
     .addField("Members", guild.memberCount, true)

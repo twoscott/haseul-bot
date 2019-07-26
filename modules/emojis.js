@@ -42,7 +42,7 @@ exports.msg = async function (message, args) {
 
 const listEmojis = async function (message) {
 
-    let { guild, channel } = message;
+    let { guild } = message;
     let emojis = guild.emojis.array()
 
     if (emojis.length < 1) {
@@ -95,7 +95,7 @@ const searchEmojis = async function (message, query) {
         return "\\⚠ Please provide a search query.";
     }
 
-    let { guild, channel } = message;
+    let { guild } = message;
     let emojis = guild.emojis.array().filter(x => x.name.toLowerCase().includes(query.toLowerCase()));
 
     if (emojis.length < 1) {

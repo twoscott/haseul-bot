@@ -10,9 +10,9 @@ class Image {
     get type() {
         let data = this.image;
         return (
-            data.slice(0, 2).join(' ') == '255 216'                  ? 'jpg' :
-            data.slice(0, 8).join(' ') == '137 80 78 71 13 10 26 10' ? 'png' :
-            data.slice(0, 6).join(' ') == '71 73 70 56 57 97'        ? 'gif' :
+            data.slice(0, 2).join(" ") == '255 216'                  ? 'jpg' :
+            data.slice(0, 8).join(" ") == '137 80 78 71 13 10 26 10' ? 'png' :
+            data.slice(0, 6).join(" ") == '71 73 70 56 57 97'        ? 'gif' :
             null
         );
     }

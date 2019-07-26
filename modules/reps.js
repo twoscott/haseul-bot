@@ -210,8 +210,8 @@ const rep = async function(message, args) {
 
     let d = newStreak > 1 ? 's':'';
     let embed = new Discord.RichEmbed()
-        .setAuthor(`Report`, recipient.user.avatarURL)
-        .setColor(recipient ? recipient.displayColor || 0x44e389 : 0x44e389)
+        .setAuthor(`Report`, recipient.user.displayAvatarURL)
+        .setColor(functions.randomHexColor())
         .addField(`Rep`, `${recipientProfile.rep} (+1)`, true)
         .addField(`Exp`, `${recipientXp.xp} (+${addXp})`, true);
     if (newStreak) embed.addField(`Streak`, `${newStreak} day${d} :fire:`, false);
@@ -341,7 +341,10 @@ const streaks = async function(message) {
         }
     }
 
-    let streakString = streaks.sort((a,b) => a.time - b.time).sort((a,b) => b.streak - a.streak).map((data, i) => `${i+1}. **${data.name}** - ${data.streak} Day${data.streak != 1 ? 's':''} (${data.timeText.trim()} left) ${data.time < 6*60*60*1000 ? `:clock${Math.round(data.time/60*60*1000)}:`.replace('clock0','clock12'):``}`).join('\n');
+    let clocks = { 1: '\\🕐', 2:  '\\🕑', 3:  '\\🕒', 4:  '\\🕓', 
+                   5: '\\🕔', 6:  '\\🕕', 7:  '\\🕖', 8:  '\\🕗',
+                   9: '\\🕘', 10: '\\🕙', 11: '\\🕚', 12: '\\🕛' };
+    let streakString = streaks.sort((a,b) => a.time - b.time).sort((a,b) => b.streak - a.streak).map((data, i) => `${i+1}. **${data.name}** - ${data.streak} Day${data.streak != 1 ? 's':''} (${data.timeText.trim()} left) ${data.time < 12*60*60*1000 ? clocks[Math.floor(data.time/(60*60*1000))].replace('clock0','clock12'):``}`).join('\n');
 
     let descriptions = [];
     while (streakString.length > 2048 || streakString.split('\n').length > 20) {

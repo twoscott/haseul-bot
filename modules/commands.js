@@ -4,13 +4,16 @@ const Discord = require("discord.js");
 
 const functions = require("../functions/functions.js");
 const database = require("../db_queries/commands_db.js");
+const serverSettings = require("./server_settings.js");
 const reservedCommands = require("../resources/JSON/commands.json");
 
 // Functions
 
 const cmdCheck = async function (message, commandName) {
 
-    let cmd = await database.get_command(message.guild.id, commandName.toLowerCase());
+    let cmdsOn = await serverSettings.get(message.guild.id, "commandsOn");
+    if (!cmdsOn) return;
+    let cmd = await database.get_command(message.guild.id, commandName  );
     if (!cmd) return;
 
     await message.channel.send(cmd);
@@ -37,7 +40,7 @@ exports.msg = async function (message, args) {
 
                 case "add":
                         message.channel.startTyping();
-                        addCommand(message, args.slice(2)).then(response => {
+                        addCommand(message, args).then(response => {
                             if (response) message.channel.send(response);
                             message.channel.stopTyping();
                         }).catch(error => {
@@ -45,6 +48,7 @@ exports.msg = async function (message, args) {
                             message.channel.stopTyping();
                         })
                         break;
+
                 case "remove":
                 case "delete":
                         message.channel.startTyping();
@@ -56,9 +60,10 @@ exports.msg = async function (message, args) {
                             message.channel.stopTyping();
                         })
                         break;
+
                 case "edit":
                         message.channel.startTyping();
-                        editCommand(message, args.slice(2)).then(response => {
+                        editCommand(message, args).then(response => {
                             if (response) message.channel.send(response);
                             message.channel.stopTyping();
                         }).catch(error => {
@@ -66,6 +71,7 @@ exports.msg = async function (message, args) {
                             message.channel.stopTyping();
                         })
                         break;
+
                 case "list":
                     message.channel.startTyping();
                     listCommands(message).then(response => {
@@ -75,7 +81,8 @@ exports.msg = async function (message, args) {
                         console.error(error);
                         message.channel.stopTyping();
                     })
-                    break;   
+                    break;  
+
                 case "search":
                     message.channel.startTyping();
                     searchCommands(message, args[2]).then(response => {
@@ -85,7 +92,18 @@ exports.msg = async function (message, args) {
                         console.error(error);
                         message.channel.stopTyping();
                     })
-                    break; 
+                    break;
+                    
+                case "toggle":
+                    message.channel.startTyping();
+                    toggleCommands(message).then(response => {
+                        message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
 
             }
 
@@ -95,20 +113,16 @@ exports.msg = async function (message, args) {
 
 const addCommand = async function (message, args) {
 
-    if (args.length < 1) {
+    if (args.length < 3) {
         return "\\⚠ Please provide a command name and text and/or file.";
     }
 
     let files = message.attachments.array(); 
-    if (args.length < 2 && files.length < 1) {
+    if (args.length < 4 && files.length < 1) {
         return "\\⚠ Please provide text or an uploaded file for a command response.";
     }
 
-    let commandName = args[0].toLowerCase();
-    let text = args.slice(1).join(' ').trim() || '';
-    let fileUrl = files[0] ? files[0].url : '';
-    text = [text, fileUrl].join('\n');
-
+    let commandName = args[2].toLowerCase();
     if (commandName.length > 30) {
         return "\\⚠ Command names may not exceed 20 characters in length.";
     }
@@ -120,6 +134,12 @@ const addCommand = async function (message, args) {
     if (reservedCommands.list.includes(commandName)) {
         return "\\⚠ This is a reserved command name, please use another name.";
     }
+
+    let textStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
+    let text = message.content.slice(textStart).trim();
+
+    let fileUrl = files[0] ? files[0].url : '';
+    text = [text, fileUrl].join('\n');
     
     let response = await database.add_command(message.guild.id, commandName, text);
     return response;
@@ -139,20 +159,16 @@ const delCommand = async function (message, commandName) {
 
 const editCommand = async function (message, args) {
 
-    if (args.length < 1) {
+    if (args.length < 3) {
         return "\\⚠ Please provide a command name and text and/or file.";
     }
 
     let files = message.attachments.array(); 
-    if (args.length < 2 && files.length < 1) {
+    if (args.length < 4 && files.length < 1) {
         return "\\⚠ Please provide text or an uploaded file for a command response.";
     }
 
-    let [commandName] = args;
-    let text = args.slice(1).join() || '';
-    let fileUrl = files[0] ? files[0].url : '';
-    text = [text, fileUrl].join('\n');
-
+    let commandName = args[2].toLowerCase();
     if (!/^[\x00-\x7F]+$/.test(commandName)) {
         return "\\⚠ This command name contains invalid characters, please use standard characters.";
     }
@@ -160,6 +176,12 @@ const editCommand = async function (message, args) {
     if (reservedCommands.list.includes(commandName)) {
         return "\\⚠ This is a reserved command name, please use another name.";
     }
+
+    let textStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
+    let text = message.content.slice(textStart).trim();
+
+    let fileUrl = files[0] ? files[0].url : '';
+    text = [text, fileUrl].join('\n');
     
     let response = await database.edit_command(message.guild.id, commandName, text);
     return response;
@@ -168,7 +190,7 @@ const editCommand = async function (message, args) {
 
 const listCommands = async function (message) {
 
-    let { guild, channel } = message;
+    let { guild } = message;
     let commandNames = await database.get_commands(guild.id);
     if (commandNames.length < 1) {
         return "\\⚠ There are no commands added to this server.";
@@ -221,7 +243,7 @@ const searchCommands = async function (message, query) {
         return "\\⚠ Command names may not exceed 30 characters in length.";
     }
 
-    let { guild, channel } = message;
+    let { guild } = message;
     let commandNames = await database.get_commands(guild.id);
 
     if (commandNames.length < 1) {
@@ -273,5 +295,12 @@ const searchCommands = async function (message, query) {
     })
 
     functions.pages(message, pages);
+
+}
+
+toggleCommands = async function (message) {
+
+    let tog = await serverSettings.toggle(message.guild.id, "commandsOn");
+    return `Custom commands turned ${tog ? "on":"off"}.`;
 
 }

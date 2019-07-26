@@ -10,18 +10,18 @@ const Image = require("../functions/images.js");
 
 // Functions
 
-log = async (member, logEvent) => {
+const log = async (member, colour, logEvent) => {
 
     // Check if logs on
     let logsOn = await serverSettings.get(member.guild.id, "joinLogsOn");
     if (!logsOn) return;
     let logChannelID = await serverSettings.get(member.guild.id, "joinLogsChan");
     if (!member.guild.channels.has(logChannelID)) return;
-    if (logChannelID) logEvent(member, logChannelID); //Log
+    if (logChannelID) logEvent(member, logChannelID, colour); //Log
 
 }
 
-getMemberNo = async (member) => {
+const getMemberNo = async (member) => {
 
     let guild = await member.guild.fetchMembers();
 
@@ -33,30 +33,13 @@ getMemberNo = async (member) => {
 
 }
 
-// getUserPosts = async (guild, user) => {
-
-//     let user = await user_db.getPosts(guild.id, user.id);
-//     if (!user) {
-//         return [0, null];   
-//     }
-
-//     let posts = userPosts[user.id].postCount;
-//     let lastMsg = {
-//         channel: {
-//             id: userPosts[user.id].lastMsgChanID
-//         },
-//         id: userPosts[user.id].lastMsgID
-//     }
-//     return [posts, lastMsg];
-
-// }
-
 // Join
 
 exports.join = async function (member) {
 
-    // welcome(member);
-    log(member, logJoin);
+    let colour = functions.randomHexColor();
+    welcome(member, colour);
+    log(member, colour, logJoin);
 
 }
 
@@ -64,13 +47,47 @@ exports.join = async function (member) {
 
 exports.leave = async function (member) {
 
-    log(member, logLeave);
+    let colour = functions.randomHexColor();
+    log(member, colour, logLeave);
+
+}
+
+// Welcome 
+
+const welcome = async function (member, colour) {
+    
+    let {
+        user,
+        guild
+    } = member;
+
+    if (user.bot) return;
+    let welcomeOn = await serverSettings.get(member.guild.id, "welcomeOn");
+    if (!welcomeOn) return;
+    let welcomeChannelID = await serverSettings.get(member.guild.id, "welcomeChan");
+    if (!member.guild.channels.has(welcomeChannelID)) return;
+    if (!welcomeChannelID) return;
+
+    let memNo = await getMemberNo(member);
+    let defaultMsg = `**{username}**#{discriminator} has ${['arrived', 'joined', 'appeared'][Math.floor(Math.random() * 3)]}!`;
+    let welcomeMsg = await serverSettings.get(member.guild.id, "welcomeMsg");
+
+    let embed = new Discord.RichEmbed()
+    .setAuthor(`New Member!`, null, user.displayAvatarURL)
+    .setThumbnail(user.displayAvatarURL)
+    .setDescription((welcomeMsg || defaultMsg).replace('{default}', defaultMsg).replace('{user}', user).replace('{username}', user.username).replace('{discriminator}', user.discriminator).replace('{usertag}', user.tag).replace('{server}', guild.name).replace('{memberno}', memNo))
+    .setColor(colour)
+    .setFooter(`Member #${memNo} 🎐`)
+    .setTimestamp(member.joinedTimestamp);
+
+    let channel = Client.channels.get(welcomeChannelID) || guild.channels.get(welcomeChannelID);
+    channel.send(embed);
 
 }
 
 // Logs
 
-logJoin = async function (member, destination) {
+const logJoin = async function (member, destination, colour) {
     
     let memNo = await getMemberNo(member);
     let {
@@ -80,18 +97,19 @@ logJoin = async function (member, destination) {
     let embed = new Discord.RichEmbed()
     .setAuthor("Member joined!")
     .setTitle(user.tag)
-    .setThumbnail(user.avatarURL)
+    .setThumbnail(user.displayAvatarURL)
     .setDescription(`${user} joined ${guild}!`)
-    .addField("Joined On", member.joinedAt.toGMTString(), true)
-    .addField("Account Created On", user.createdAt.toGMTString(), true)
+    .addField("Joined On", member.joinedAt.toGMTString().replace(' GMT', ' UTC'), true)
+    .addField("Account Created On", user.createdAt.toGMTString().replace(' GMT', ' UTC'), true)
     .addField("User ID", user.id)   
     .setFooter(`Member #${memNo}`)
-    .setColor(0x13ef67);
-    Client.channels.get(destination).send(embed);
-
+    .setColor(colour);
+    
+    let channel = Client.channels.get(destination) || guild.channels.get(destination);
+    channel.send(embed);
 }
 
-logLeave = async function (member, destination) {
+const logLeave = async function (member, destination, colour) {
 
     member.leftAt = new Date(Date.now());
     let {
@@ -101,19 +119,23 @@ logLeave = async function (member, destination) {
     let embed = new Discord.RichEmbed()
     .setAuthor("Member left!")
     .setTitle(user.tag)
-    .setThumbnail(user.avatarURL)
+    .setThumbnail(user.displayAvatarURL)
     .setDescription(`${user} left ${guild}!`)
-    .addField("Left On", member.leftAt.toGMTString(), true)
-    .addField("Account Created On", user.createdAt.toGMTString(), true)
+    .addField("Left On", member.leftAt.toGMTString().replace(' GMT', ' UTC'), true)
+    .addField("Account Created On", user.createdAt.toGMTString().replace(' GMT', ' UTC'), true)
     .addField("User ID", user.id)
-    .setColor(0xef1354);
-    Client.channels.get(destination).send(embed);
+    .setColor(colour);
+    
+    let channel = Client.channels.get(destination) || guild.channels.get(destination);
+    channel.send(embed);
 
 }
 
 // Message
 
 exports.msg = async function (message, args) {
+
+    let perms;
 
     // Handle commands
     switch (args[0]) {
@@ -123,7 +145,7 @@ exports.msg = async function (message, args) {
         case ".memberinfo":
         case ".meminfo":
             message.channel.startTyping();
-            userinfo(message, args.slice(1)).then(response => {
+            userinfo(message, args).then(response => {
                 if (response) message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -135,13 +157,107 @@ exports.msg = async function (message, args) {
         case ".avatar":
         case ".dp":
             message.channel.startTyping();
-            user_dp(message, args.slice(1)).then(response => {
+            user_dp(message, args).then(response => {
                 if (response) message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
                 console.error(error);
                 message.channel.stopTyping();
             })
+            break;
+
+        case ".join":
+        case ".joins":
+        case ".joinlogs":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!perms.some(p => message.member.hasPermission(p))) return;
+            switch (args[1]) {
+
+                case "channel":
+                    switch (args[2]) {
+
+                        case "set":
+                            message.channel.startTyping();
+                            setJoinChannel(message, args.slice(3)).then(response => {
+                                message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+
+                    }
+                    break;
+                
+                case "toggle":
+                    message.channel.startTyping();
+                    toggleJoin(message).then(response => {
+                        message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
+
+            }
+            break;
+
+        case ".welcome":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!perms.some(p => message.member.hasPermission(p))) return;
+            switch (args[1]) {
+
+                case "channel":
+                    switch (args[2]) {
+
+                        case "set":
+                            message.channel.startTyping();
+                            setWelcomeChannel(message, args.slice(3)).then(response => {
+                                message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+
+                    }
+                    break;
+
+                case "message":
+                case "msg":
+                    switch(args[2]) {
+
+                        case "set":
+                            message.channel.startTyping();
+                            setWelcomeMsg(message, args).then(response => {
+                                message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+
+                    }
+                    break;
+                
+                case "toggle":
+                    message.channel.startTyping();
+                    toggleWelcome(message).then(response => {
+                        message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
+
+            }
             break;
 
     }
@@ -154,7 +270,7 @@ exports.msg = async function (message, args) {
 const userinfo = async function (message, args) {
 
     let { author, guild } = message;
-    let target = args[0];
+    let target = args[1];
     let user_id;
 
     if (!target) {
@@ -162,7 +278,8 @@ const userinfo = async function (message, args) {
     } else {
         let match = target.match(/^<?@?!?(\d{8,})>?$/);
         if (!match) {
-            target = args.join(' ').toLowerCase();
+            let textStart = message.content.match(new RegExp(args.slice(0, 1).join('\\s+')))[0].length;
+            target = message.content.slice(textStart).trim();
             guild = await guild.fetchMembers();
 
             let member = await functions.searchMembers(guild, target)
@@ -213,9 +330,9 @@ const member_embed = async (author, member) => {
     .setFooter(`Member #${await getMemberNo(member)}`)
     .setTimestamp(member.joinedAt)
     .addField("Status", status[user.presence.status], true)
-    .addField("Joined On",  member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true)
     .addField("User ID", user.id, true)
-    .addField("Account Created", user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true);
+    .addField("Joined On",  member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), true)
+    .addField("Account Created", user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), true);
 
     if (lastMsg && user.id != author.id) {
         embed.addField("Last Seen", `[View Message](https://discordapp.com/channels/${guild.id}/${lastMsg.channel.id}/${lastMsg.id} "Go To User's Last Message")`, true);
@@ -237,7 +354,7 @@ const member_embed = async (author, member) => {
             }
         }
         if (modRoles.length > 0) {
-            modRoles = modRoles.join(' ');
+            modRoles = modRoles.join(" ");
             if (modRoles.length > 1024) {
                 modRoles = modRoles.substring(0, 1024);
                 modRoles = modRoles.substring(0, modRoles.lastIndexOf('>')+1);
@@ -246,7 +363,7 @@ const member_embed = async (author, member) => {
             embed.addField("Mod Roles", modRoles, true);
         }
         if (roles.length > 0) {
-            roles = roles.join(' ');
+            roles = roles.join(" ");
             if (roles.length > 1024) {
                 roles = roles.substring(0, 1024);
                 roles = roles.substring(0, roles.lastIndexOf('>')+1);
@@ -279,17 +396,17 @@ const user_embed = async (user) => {
     .setTimestamp(user.createdAt)
     .addField("Status", status[user.presence.status], true)
     .addField("User ID", user.id, true)
-    .addField("Account Created", user.createdAt.toUTCString(), true);
+    .addField("Account Created", user.createdAt.toUTCString().replace(' GMT', ' UTC'), true);
 
     return embed;
     
 }
 
 //User's avatar
-user_dp = async function (message, args) {
+const user_dp = async function (message, args) {
 
     let { author, guild } = message;
-    let target = args[0];
+    let target = args[1];
     let user_id;
 
     if (!target) {
@@ -297,7 +414,8 @@ user_dp = async function (message, args) {
     } else {
         let match = target.match(/^<?@?!?(\d{8,})>?$/);
         if (!match) {
-            target = args.join(' ').toLowerCase();
+            let textStart = message.content.match(new RegExp(args.slice(0, 1).join('\\s+')))[0].length;
+            target = message.content.slice(textStart).trim();
             guild = await guild.fetchMembers();
 
             let member = await functions.searchMembers(guild, target)
@@ -339,4 +457,76 @@ user_dp = async function (message, args) {
     .setImage(user.displayAvatarURL.split('?')[0] + '?size=2048')
     .setColor(member ? member.displayColor || 0xffffff : 0xffffff)
     .setFooter(`Type: ${img_type.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${img_size}MB`);
+}
+
+setJoinChannel = async function (message, args) {
+
+    let channel_id;
+    if (args.length < 1) {
+        channel_id = message.channel.id;
+    } 
+    else {
+        channel_id = args[0].match(/<?#?!?(\d+)>?/);
+        if (!channel_id) {
+            return "\\⚠ Invalid channel or channel ID.";
+        }
+        channel_id = channel_id[1];
+    }
+    if (!message.guild.channels.has(channel_id)) {
+        return "\\⚠ Channel doesn't exist in this server.";
+    }
+    
+    await serverSettings.set(message.guild.id, "joinLogsChan", channel_id)
+    return `Join logs channel set to <#${channel_id}>.`;
+
+}
+
+toggleJoin = async function (message) {
+
+    let tog = await serverSettings.toggle(message.guild.id, "joinLogsOn");
+    return `Join logs turned ${tog ? "on":"off"}.`;
+    
+}
+
+
+
+setWelcomeChannel = async function (message, args) {
+
+    let channel_id;
+    if (args.length < 1) {
+        channel_id = message.channel.id;
+    } 
+    else {
+        channel_id = args[0].match(/<?#?!?(\d+)>?/);
+        if (!channel_id) {
+            return "\\⚠ Invalid channel or channel ID.";
+        }
+        channel_id = channel_id[1];
+    }
+    if (!message.guild.channels.has(channel_id)) {
+        return "\\⚠ Channel doesn't exist in this server.";
+    }
+    
+    await serverSettings.set(message.guild.id, "welcomeChan", channel_id)
+    return `Welcome channel set to <#${channel_id}>.`;
+
+}
+
+setWelcomeMsg = async function (message, args) {
+
+    if (args.length < 4) {
+        return "\\⚠ Please provide a message.";
+    }
+    let msgStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
+    let msg = message.content.slice(msgStart).trim();   
+    await serverSettings.set(message.guild.id, "welcomeMsg", msg)
+    return `Welcome message set to\`\`\`${msg}\`\`\``;
+
+}
+
+toggleWelcome = async function (message) {
+
+    let tog = await serverSettings.toggle(message.guild.id, "welcomeOn");
+    return `Welcome turned ${tog ? "on":"off"}.`;
+
 }

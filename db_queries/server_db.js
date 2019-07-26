@@ -5,36 +5,25 @@ const db = new sql.Database('./haseul_data/servers.db');
 
 // Init
 
-const columns = [
-    "pollOn", "pollChannel", "joinLogsOn", 
-    "joinLogsChan", "rolesOn", "rolesChannel"
-];
-
 db.run(
     `CREATE TABLE IF NOT EXISTS serverSettings (
-    guildID TEXT NOT NULL, 
+    guildID TEXT NOT NULL,
+    autoroleOn INT NOT NULL DEFAULT 0,
+    autoroleID TEXT,
+    commandsOn INT NOT NULL DEFAULT 1, 
     pollOn INT NOT NULL DEFAULT 0,
     joinLogsOn INT NOT NULL DEFAULT 0, 
     joinLogsChan TEXT,
     welcomeOn INT NOT NULL DEFAULT 0,
     welcomeChan TEXT,
+    welcomeMsg TEXT,
     rolesOn INT NOT NULL DEFAULT 0,
     rolesChannel TEXT
 )`);
 
-// db.run(`CREATE TABLE IF NOT EXISTS msgIndex (
-//     guildID TEXT NOT NULL,
-//     postCount INT,
-//     lastMsgTimestamp INT,
-//     lastMsgID TEXT,
-//     firstMsgTimestamp INT,
-//     firstMsgID TEXT
-// )`);
-
 // Server Settings
 
 exports.setVal = (guildID, col, val) => {
-    if (!columns.includes(col)) return;
     return new Promise((resolve, reject) => {
         db.get("SELECT * FROM serverSettings WHERE guildID = ?", [guildID], (err, row) => {
             if (err) return reject(err);
@@ -57,7 +46,6 @@ exports.setVal = (guildID, col, val) => {
 //
 
 exports.toggle = (guildID, col) => {
-    if (!columns.includes(col)) return;
     return new Promise((resolve, reject) => {
         db.get("SELECT * FROM serverSettings WHERE guildID = ?", [guildID], (err, row) => {
             if (err) return reject(err);

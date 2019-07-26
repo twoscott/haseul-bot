@@ -33,18 +33,7 @@ exports.msg = async function (message, args) {
 
         case ".say":
             message.channel.startTyping();
-            say(message, message.content.split(' ').slice(1), false).then(response => {
-                message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
-            break;
-
-        case ".sayraw":
-            message.channel.startTyping();
-            say(message, message.content.split(' ').slice(1), true).then(response => {
+            say(message, args).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -55,18 +44,7 @@ exports.msg = async function (message, args) {
         
         case ".edit":
             message.channel.startTyping();
-            edit(message, message.content.split(' ').slice(1), false).then(response => {
-                message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
-            break;
-
-        case ".editraw":
-            message.channel.startTyping();
-            edit(message, message.content.split(' ').slice(1), true).then(response => {
+            edit(message, args).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -77,7 +55,7 @@ exports.msg = async function (message, args) {
 
         case ".get":
             message.channel.startTyping();
-            get(message, args.slice(1), true).then(response => {
+            get(message, args.slice(1)).then(response => {
                 message.channel.send(response);
                 message.channel.stopTyping();
             }).catch(error => {
@@ -134,54 +112,18 @@ exports.msg = async function (message, args) {
             }
             break;
 
-        case ".join":
-        case ".joins":
-        case ".joinlogs":
-            switch (args[1]) {
-
-                case "channel":
-                    switch (args[2]) {
-
-                        case "set":
-                            message.channel.startTyping();
-                            setJoinChannel(message, args.slice(3)).then(response => {
-                                message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-
-                    }
-                    break;
-                
-                case "toggle":
-                    message.channel.startTyping();
-                    toggleJoin(message).then(response => {
-                        message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-            }
-
-
     }
 }
 
 // Commands
 
-say = async function (message, args, raw) {
+say = async function (message, args) {
 
-    if (args.length < 1) {
-        return `\\⚠ No content provided to be sent.`;
+    if (args.length < 2) {
+        return "\\⚠ No channel provided to send a message to.\nUsage: `.say {channel} {message}`";
     }
 
-    let channel_id = args[0].match(/<?#?!?(\d+)>?/);
+    let channel_id = args[1].match(/<?#?!?(\d+)>?/);
     if (!channel_id) {
         return "\\⚠ Please provide a channel to send the message to.\nUsage: `.say {channel} {message}`";
     }
@@ -192,7 +134,6 @@ say = async function (message, args, raw) {
         return "\\⚠ Invalid channel provided.";
     }
     
-    channel.startTyping();
     let attachments = message.attachments.array();
     let files = [];
     for (i=0; i < attachments.length; i++) {
@@ -201,8 +142,13 @@ say = async function (message, args, raw) {
         files.push(file);
     }
 
-    let content = args.slice(1).join(" ");
-    if (raw) content = content.replace(/^`+|`+$/g, '');
+    if (args.length < 3 && files.length < 1) {
+        return "\\⚠ No message provided to be send.\nUsage: `.say {channel} {message}`";
+    }
+
+    channel.startTyping();
+    let contentStart = message.content.match(new RegExp(args.slice(0,2).join('\\s+')))[0].length;
+    let content = message.content.slice(contentStart).trim();
 
     await channel.send(content, {files: files});
     channel.stopTyping();
@@ -210,15 +156,15 @@ say = async function (message, args, raw) {
 
 }
 
-edit = async function (message, args, raw) {
+edit = async function (message, args) {
 
-    if (args.length < 1) {
-        return "\\⚠ No content provided to be sent.";
+    if (args.length < 2) {
+        return "\\⚠ No channel provided to edit a message from.\nUsage: `.edit {channel id} {message id} <new message content>`";
     }
 
-    let channel_id = args[0].match(/<?#?!?(\d+)>?/);        
+    let channel_id = args[1].match(/<?#?!?(\d+)>?/);        
     if (!channel_id) {
-        return "\\⚠ Please provide a message's channel to edit.\nUsage: `.say {channel id} {message id} <new message content>`";
+        return "\\⚠ No channel provided to edit a message from.\nUsage: `.edit {channel id} {message id} <new message content>`";
     }
     channel_id = channel_id[1];
     
@@ -227,25 +173,33 @@ edit = async function (message, args, raw) {
         return "\\⚠ Invalid channel provided.";
     }
 
-    let message_id = args[1].match(/^\d+$/);
+    if (args.length < 3) {
+        return "\\⚠ No message ID provided to edit.\nUsage: `.edit {channel id} {message id} <new message content>`";
+    }
+
+    let message_id = args[2].match(/^\d+$/);
     if (!message_id) {
         return "\\⚠ No message ID provided.";
     }
 
-    let attachments = message.attachments.array();
-    let files = [];
-    for (i=0; i < attachments.length; i++) {
-        let attachment = attachments[i];
-        let file = {attachment: attachment.url, name: attachment.filename};
-        files.push(file);
+    let msg = channel.messages.get(message_id);
+    if (!msg) {
+        try {
+            msg = await channel.fetchMessage(message_id);
+        } catch (e) {
+            return "\\⚠ Invalid message ID provided.";
+        }
     }
 
-    let content = args.slice(2).join(" ");
-    if (raw) content = content.replace(/^`{0,3}|`{0,3}$/g, '');
+    if (args.length < 4) {
+        return "\\⚠ No content provided to edit the message with.\nUsage: `.edit {channel id} {message id} <new message content>`";
+    }
 
-    let msg = await channel.fetchMessage(message_id);
-    await msg.edit(content, {files: files});
-    return `Message edited.`;
+    let contentStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
+    let content = message.content.slice(contentStart).trim();
+
+    await msg.edit(content);
+    return "Message edited.";
 
 }
 
@@ -323,36 +277,5 @@ delPollChannel = async function (message, args) {
 togglePoll = async function (message) {
 
     let tog = await serverSettings.toggle(message.guild.id, "pollOn");
-    let state = tog ? "on":"off";
-    return `Poll setting turned ${state}.`;
-}
-
-setJoinChannel = async function (message, args) {
-
-    let channel_id;
-    if (args.length < 1) {
-        channel_id = message.channel.id;
-    } 
-    else {
-        channel_id = args[0].match(/<?#?!?(\d+)>?/);
-        if (!channel_id) {
-            return "\\⚠ Invalid channel or channel ID.";
-        }
-        channel_id = channel_id[1];
-    }
-    if (!message.guild.channels.has(channel_id)) {
-        return "\\⚠ Channel doesn't exist in this server.";
-    }
-    
-    await serverSettings.set(message.guild.id, "joinLogsChan", channel_id)
-    return `Join logs channel set to <#${channel_id}>.`;
-
-}
-
-toggleJoin = async function (message) {
-
-    let tog = await serverSettings.toggle(message.guild.id, "joinLogsOn");
-    let state = tog ? "on":"off";
-    return `Join logs turned ${state}.`;
-    
+    return `Poll setting turned ${tog ? "on":"off"}.`;
 }

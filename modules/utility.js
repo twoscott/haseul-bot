@@ -49,17 +49,17 @@ exports.msg = async function (message, args) {
 
     switch (args[0]) {
 
-        case ".convert":
-        case ".cv":
-            message.channel.startTyping();
-            convert(args).then(response => {
-                message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
-            break;
+        // case ".convert":
+        // case ".cv":
+        //     message.channel.startTyping();
+        //     convert(args).then(response => {
+        //         message.channel.send(response);
+        //         message.channel.stopTyping();
+        //     }).catch(error => {
+        //         console.error(error);
+        //         message.channel.stopTyping();
+        //     })
+        //     break;
 
         case ".github":
         case ".git":
@@ -79,18 +79,18 @@ exports.msg = async function (message, args) {
             })
             break;
 
-        case ".strawpoll":
-        case ".straw":
-        case ".sp":
-            message.channel.startTyping();
-            strawpoll(message, args.slice(1)).then(response => {
-                message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
-            break;
+        // case ".strawpoll":
+        // case ".straw":
+        // case ".sp":
+        //     message.channel.startTyping();
+        //     strawpoll(message, args.slice(1)).then(response => {
+        //         message.channel.send(response);
+        //         message.channel.stopTyping();
+        //     }).catch(error => {
+        //         console.error(error);
+        //         message.channel.stopTyping();
+        //     })
+        //     break;
 
         case ".help":
             message.channel.startTyping();
@@ -121,7 +121,7 @@ const convert = async function(args) {
         return "\\⚠ Please provide units to convert!";
     }
 
-    let match = args.slice(1).join(' ').match(/([0-9,\.]+)([A-z ]+)\s*(?:to|-)\s*([A-z ]+)/i);
+    let match = args.slice(1).join(" ").match(/([0-9,\.]+)([A-z ]+)\s*(?:to|-)\s*([A-z ]+)/i);
     if (!match) {
         return `\\⚠ Please format conversions like this \`${args[0]} {number}[unit] to [unit]\`, for example \`${args[0]} 100cm to inches\``
     }
@@ -222,59 +222,59 @@ const translate = async function (args) {
 
 }
 
-const strawpoll = async function (message, args) {
+// const strawpoll = async function (message, args) {
 
-    if (args.length < 1) {
-        return "\\⚠ Please provide a question and at least 2 options.\nUsage: `.strawpoll Question | option#1, option#2, optio...`";
-    }
+//     if (args.length < 1) {
+//         return "\\⚠ Please provide a question and at least 2 options.\nUsage: `.strawpoll Question | option#1, option#2, optio...`";
+//     }
 
-    let { author } = message;
+//     let { author } = message;
 
-    let timeout = strawpoll_timeouts.get(author.id);
-    if (timeout && author.id != '125414437229297664') {
-        let timeElapsed = Date.now() - timeout;
-        if (timeElapsed < 600000) {
-            let mins = Math.ceil(10 - timeElapsed / 60000);
-            return `\\⚠ You're making strawpolls too fast! Please wait another ${mins == 1 ? 'minute' : `${mins} minutes`}.`;
-        }
-    } 
+//     let timeout = strawpoll_timeouts.get(author.id);
+//     if (timeout && author.id != '125414437229297664') {
+//         let timeElapsed = Date.now() - timeout;
+//         if (timeElapsed < 600000) {
+//             let mins = Math.ceil(10 - timeElapsed / 60000);
+//             return `\\⚠ You're making strawpolls too fast! Please wait another ${mins == 1 ? 'minute' : `${mins} minutes`}.`;
+//         }
+//     } 
 
-    let multi = false;
-    if (args[0] == 'multi') {
-        multi = true;
-        args.shift();
-    }
-    if (args[0] == 'single') {
-        multi = false;
-        args.shift();
-    }
+//     let multi = false;
+//     if (args[0] == 'multi') {
+//         multi = true;
+//         args.shift();
+//     }
+//     if (args[0] == 'single') {
+//         multi = false;
+//         args.shift();
+//     }
 
-    args = args.join(' ');
+//     args = args.join(" ");
 
-    let sep = new RegExp(/[^\\]\|/);
-    let [ question, options ] = args.split(sep, 2);
-    question = question.replace(/\\\|/g, '|').trim();
-    options  = options.split(',').map(o => o.replace(/\\\|/g, '|').trim());
+//     let sep = new RegExp(/[^\\]\|/);
+//     let [ question, options ] = args.split(sep, 2);
+//     question = question.replace(/\\\|/g, '|').trim();
+//     options  = options.split(',').map(o => o.replace(/\\\|/g, '|').trim());
 
-    if (options.length < 2) {
-        return "\\⚠ Please provide at least 2 options.";
-    }
+//     if (options.length < 2) {
+//         return "\\⚠ Please provide at least 2 options.";
+//     }
 
-    try {
-        let { data } = await axios.post('https://www.strawpoll.me/api/v2/polls', 
-            { title: question,
-              options: options,
-              multi: multi }, 
-            { headers: { 'Content-Type': 'application/json' } }
-        )
-        strawpoll_timeouts.set(author.id, Date.now())
-        return `https://www.strawpoll.me/${data.id}`;
-    } catch (e) {
-        console.error(Error(e));
-        return "\\⚠ Error occurred.";
-    }
+//     try {
+//         let { data } = await axios.post('https://www.strawpoll.me/api/v2/polls', 
+//             { title: question,
+//               options: options,
+//               multi: multi }, 
+//             { headers: { 'Content-Type': 'application/json' } }
+//         )
+//         strawpoll_timeouts.set(author.id, Date.now())
+//         return `https://www.strawpoll.me/${data.id}`;
+//     } catch (e) {
+//         console.error(Error(e));
+//         return "\\⚠ Error occurred.";
+//     }
 
-}
+// }
 
 const help = async function (message, args) {
 
