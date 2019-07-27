@@ -284,7 +284,7 @@ const userinfo = async function (message, args) {
 
             let member = await functions.searchMembers(guild, target)
             if (!member) {
-                return "\\⚠ Invalid user or user ID.";
+                return "⚠ Invalid user or user ID.";
             }
                 
             user_id = member.id;
@@ -302,7 +302,7 @@ const userinfo = async function (message, args) {
             return user_embed(user);
         } catch (e) {
             console.error(e);
-            return "\\⚠ Invalid user.";
+            return "⚠ Invalid user.";
         }
 
     }
@@ -420,7 +420,7 @@ const user_dp = async function (message, args) {
 
             let member = await functions.searchMembers(guild, target)
             if (!member) {
-                return "\\⚠ Invalid user or user ID.";
+                return "⚠ Invalid user or user ID.";
             }
                 
             user_id = member.id;
@@ -439,7 +439,7 @@ const user_dp = async function (message, args) {
             user = await Client.fetchUser(user_id)  
         } catch (e) {
             console.error(e);
-            return "\\⚠ Invalid user.";
+            return "⚠ Invalid user.";
         }
     }
 
@@ -468,12 +468,12 @@ setJoinChannel = async function (message, args) {
     else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return "\\⚠ Invalid channel or channel ID.";
+            return "⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
     }
     if (!message.guild.channels.has(channel_id)) {
-        return "\\⚠ Channel doesn't exist in this server.";
+        return "⚠ Channel doesn't exist in this server.";
     }
     
     await serverSettings.set(message.guild.id, "joinLogsChan", channel_id)
@@ -499,12 +499,12 @@ setWelcomeChannel = async function (message, args) {
     else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return "\\⚠ Invalid channel or channel ID.";
+            return "⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
     }
     if (!message.guild.channels.has(channel_id)) {
-        return "\\⚠ Channel doesn't exist in this server.";
+        return "⚠ Channel doesn't exist in this server.";
     }
     
     await serverSettings.set(message.guild.id, "welcomeChan", channel_id)
@@ -515,7 +515,7 @@ setWelcomeChannel = async function (message, args) {
 setWelcomeMsg = async function (message, args) {
 
     if (args.length < 4) {
-        return "\\⚠ Please provide a message.";
+        return "⚠ Please provide a message.";
     }
     let msgStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
     let msg = message.content.slice(msgStart).trim();   

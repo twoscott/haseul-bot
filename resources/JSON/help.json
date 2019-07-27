@@ -2,7 +2,7 @@
 {
     "lastfm": {
         "name": "lastfm | fm",
-        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "description": "⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
         "image": "https://i.imgur.com/YbZ52lN.png",
         "colour": "0xc1222a",
         "commands": [
@@ -54,7 +54,7 @@
     },
     "youtube": {
         "name": "youtube | yt",
-        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "description": "⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
         "image": "https://i.imgur.com/U3xey80.png",
         "colour": "0xe35556",
         "commands": [
@@ -66,7 +66,7 @@
     },
     "utility": {
         "name": "utility",
-        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "description": "⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
         "image": "https://i.imgur.com/UCXza9B.png",
         "colour": "0x4965fe",
         "commands": [
@@ -82,7 +82,7 @@
     },
     "notification": {
         "name": "notification | notif | noti",
-        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "description": "⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
         "image": "https://i.imgur.com/UCXza9B.png",
         "colour": "0x4965fe",
         "commands": [
@@ -103,7 +103,7 @@
     },
     "commands": {
         "name": "command | cmd",
-        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "description": "⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
         "image": "https://i.imgur.com/gzL6uIE.png",
         "colour": "0x1a1a1a",
         "commands": [
@@ -131,7 +131,7 @@
     },
     "emoji": {
         "name": "emoji",
-        "description": "\\⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
+        "description": "⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
         "image": "https://i.imgur.com/hIpmRU2.png",
         "colour": "0xffcc4d",
         "commands": [

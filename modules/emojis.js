@@ -46,7 +46,7 @@ const listEmojis = async function (message) {
     let emojis = guild.emojis.array()
 
     if (emojis.length < 1) {
-        return "\\⚠ There are no emojis added to this server.";    
+        return "⚠ There are no emojis added to this server.";    
     }
 
     let staticEmojis = emojis.filter(x => !x.animated).sort((a,b) => a.name.localeCompare(b.name));
@@ -92,14 +92,14 @@ const listEmojis = async function (message) {
 const searchEmojis = async function (message, query) {
 
     if (!query) {
-        return "\\⚠ Please provide a search query.";
+        return "⚠ Please provide a search query.";
     }
 
     let { guild } = message;
     let emojis = guild.emojis.array().filter(x => x.name.toLowerCase().includes(query.toLowerCase()));
 
     if (emojis.length < 1) {
-        return `\\⚠ No results were found searching for "${query}".`;
+        return `⚠ No results were found searching for "${query}".`;
     }
     
     let emojiString = emojis.sort((a,b) => a.name.localeCompare(b.name)).sort((a, b)=> {

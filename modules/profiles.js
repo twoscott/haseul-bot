@@ -50,7 +50,7 @@ const profile_temp = async function (message, args) {
 
             member = await functions.searchMembers(guild, target)
             if (!member) {
-                return "\\⚠ Invalid user or user ID.";
+                return "⚠ Invalid user or user ID.";
             }
                 
             user_id = member.id;

@@ -118,12 +118,12 @@ exports.msg = async function (message, args) {
 const convert = async function(args) {
 
     if (args.length < 1) {
-        return "\\⚠ Please provide units to convert!";
+        return "⚠ Please provide units to convert!";
     }
 
     let match = args.slice(1).join(" ").match(/([0-9,\.]+)([A-z ]+)\s*(?:to|-)\s*([A-z ]+)/i);
     if (!match) {
-        return `\\⚠ Please format conversions like this \`${args[0]} {number}[unit] to [unit]\`, for example \`${args[0]} 100cm to inches\``
+        return `⚠ Please format conversions like this \`${args[0]} {number}[unit] to [unit]\`, for example \`${args[0]} 100cm to inches\``
     }
 
     let input = parseInt(match[1], 10);
@@ -154,7 +154,7 @@ const convert = async function(args) {
 const translate = async function (args) {
 
     if (args.length < 1) {
-        return "\\⚠ Please provide a language and text to translate to.";
+        return "⚠ Please provide a language and text to translate to.";
     }
     let response = await axios.get(`https://api.cognitive.microsofttranslator.com/languages?api-version=3.0`);
     let langs = response.data.translation;
@@ -203,8 +203,8 @@ const translate = async function (args) {
         }
     }
 
-    if (!target_lang_code) return `\\⚠ Invalid language or language code given.`;
-    if (!text) return `\\⚠ No text given to be translated.`;
+    if (!target_lang_code) return `⚠ Invalid language or language code given.`;
+    if (!text) return `⚠ No text given to be translated.`;
 
     let url = `https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=${encodeURIComponent(target_lang_code)}`;
     if (source_lang_code) {
@@ -225,7 +225,7 @@ const translate = async function (args) {
 // const strawpoll = async function (message, args) {
 
 //     if (args.length < 1) {
-//         return "\\⚠ Please provide a question and at least 2 options.\nUsage: `.strawpoll Question | option#1, option#2, optio...`";
+//         return "⚠ Please provide a question and at least 2 options.\nUsage: `.strawpoll Question | option#1, option#2, optio...`";
 //     }
 
 //     let { author } = message;
@@ -235,7 +235,7 @@ const translate = async function (args) {
 //         let timeElapsed = Date.now() - timeout;
 //         if (timeElapsed < 600000) {
 //             let mins = Math.ceil(10 - timeElapsed / 60000);
-//             return `\\⚠ You're making strawpolls too fast! Please wait another ${mins == 1 ? 'minute' : `${mins} minutes`}.`;
+//             return `⚠ You're making strawpolls too fast! Please wait another ${mins == 1 ? 'minute' : `${mins} minutes`}.`;
 //         }
 //     } 
 
@@ -257,7 +257,7 @@ const translate = async function (args) {
 //     options  = options.split(',').map(o => o.replace(/\\\|/g, '|').trim());
 
 //     if (options.length < 2) {
-//         return "\\⚠ Please provide at least 2 options.";
+//         return "⚠ Please provide at least 2 options.";
 //     }
 
 //     try {
@@ -271,7 +271,7 @@ const translate = async function (args) {
 //         return `https://www.strawpoll.me/${data.id}`;
 //     } catch (e) {
 //         console.error(Error(e));
-//         return "\\⚠ Error occurred.";
+//         return "⚠ Error occurred.";
 //     }
 
 // }
@@ -356,7 +356,7 @@ const help = async function (message, args) {
             break;
         
         default:
-            return "\\⚠ Invalid module name provided.";
+            return "⚠ Invalid module name provided.";
     }
 
     let module_obj = helpmodules[module_name];

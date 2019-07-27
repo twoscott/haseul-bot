@@ -135,7 +135,7 @@ const exclude_channel = async function (message, args) {
 
     let perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
     if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-    if (!perms.some(p => message.member.hasPermission(p))) return `\\⚠ You are not authorised to do this!`;
+    if (!perms.some(p => message.member.hasPermission(p))) return `⚠ You are not authorised to do this!`;
 
     let { guild, channel } = message;
     let channel_id;
@@ -144,25 +144,25 @@ const exclude_channel = async function (message, args) {
     } else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return"\\⚠ Invalid channel or channel ID.";
+            return"⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
     }
     
     channel = guild.channels.get(channel_id);
     if (!channel) {
-        return "\\⚠ Channel doesn't exist in this server.";
+        return "⚠ Channel doesn't exist in this server.";
     }
 
     switch (channel.type) {
         case "text":
             let added = await database.add_xp_exclusion(guild.id, channel_id);
             if (!added) {
-                return `\\⚠ <#${channel_id}> is already excluded from awarding users with xp.`;
+                return `⚠ <#${channel_id}> is already excluded from awarding users with xp.`;
             }
             return `<#${channel_id}> is now excluded from awarding users with xp.`;
         case "category":
-            if (channel.children.size == 0) return `\\⚠ There are no channels in ${channel.name}`;
+            if (channel.children.size == 0) return `⚠ There are no channels in ${channel.name}`;
             
             let textChans = 0;
             let addedTotal = 0;
@@ -175,15 +175,15 @@ const exclude_channel = async function (message, args) {
             }
 
             if (textChans <= 0) {
-                return `\\⚠ There are no text channels belonging to \`${channel.name}\`.`;
+                return `⚠ There are no text channels belonging to \`${channel.name}\`.`;
             } else if (addedTotal <= 0) {
-                return `\\⚠ All text channels in \`${channel.name}\` are already excluded from awarding users with xp.`;
+                return `⚠ All text channels in \`${channel.name}\` are already excluded from awarding users with xp.`;
             } else if (addedTotal == channel.children.size) {
                 return `All text channels in \`${channel.name}\` are now excluded from awarding users with xp.`;
             }
             return `${addedTotal} channel${addedTotal != 1 ? 's':''} in \`${channel.name}\` are now excluded from awarding users with xp.`;
         default:
-            return `\\⚠ \`${channel.name}\` is not a text chanel.`;
+            return `⚠ \`${channel.name}\` is not a text chanel.`;
     }
 
 }
@@ -192,7 +192,7 @@ const include_channel = async function (message, args) {
 
     let perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
     if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-    if (!perms.some(p => message.member.hasPermission(p))) return `\\⚠ You are not authorised to do this!`;
+    if (!perms.some(p => message.member.hasPermission(p))) return `⚠ You are not authorised to do this!`;
 
     let { guild, channel } = message;
     let channel_id;
@@ -201,25 +201,25 @@ const include_channel = async function (message, args) {
     } else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return"\\⚠ Invalid channel or channel ID.";
+            return"⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
     }
     
     channel = guild.channels.get(channel_id);
     if (!channel) {
-        return "\\⚠ Channel doesn't exist in this server.";
+        return "⚠ Channel doesn't exist in this server.";
     }
 
     switch (channel.type) {
         case "text":
             let added = database.del_xp_exclusion(guild.id, channel_id);
             if (!added) {
-                return `\\⚠ <#${channel_id}> is not excluded from awarding users with xp.`;
+                return `⚠ <#${channel_id}> is not excluded from awarding users with xp.`;
             }
             return `<#${channel_id}> is now included in awarding users with xp.`;
         case "category":
-            if (channel.children.size == 0) return `\\⚠ There are no channels in ${channel.name}`;
+            if (channel.children.size == 0) return `⚠ There are no channels in ${channel.name}`;
             
             let textChans = 0;
             let addedTotal = 0;
@@ -232,15 +232,15 @@ const include_channel = async function (message, args) {
             }
 
             if (textChans <= 0) {
-                return `\\⚠ There are no text channels belonging to \`${channel.name}\`.`;
+                return `⚠ There are no text channels belonging to \`${channel.name}\`.`;
             } else if (addedTotal <= 0) {
-                return `\\⚠ All text channels in \`${channel.name}\` are already included in awarding users with xp.`;
+                return `⚠ All text channels in \`${channel.name}\` are already included in awarding users with xp.`;
             } else if (addedTotal == channel.children.size) {
                 return `All text channels in \`${channel.name}\` are now included from awarding users with xp.`;
             }
             return `${addedTotal} channel${addedTotal != 1 ? 's':''} in \`${channel.name}\` are now included from awarding users with xp.`;
         default:
-            return `\\⚠ \`${channel.name}\` is not a text chanel.`;
+            return `⚠ \`${channel.name}\` is not a text chanel.`;
     }
 
 }

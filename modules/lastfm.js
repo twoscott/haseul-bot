@@ -27,7 +27,7 @@ scrapeArtistImage = async function (artist) {
         response = await axios.get(`https://www.last.fm/music/${encodeURIComponent(artist)}/+images`);
     } catch (e) {
         let { message } = e.response.data;
-        return `\\⚠ ${message}.`;
+        return `⚠ ${message}.`;
     }
     
     let doc = new JSDOM(response.data).window.document;
@@ -272,7 +272,7 @@ exports.msg = async function (message, args) {
 const set_lf_user = async function (message, username) {
     
     if (!username) {
-        return "\\⚠ Please provide a Last.fm username: `.fm set <username>`.";
+        return "⚠ Please provide a Last.fm username: `.fm set <username>`.";
     }
 
     try {
@@ -280,7 +280,7 @@ const set_lf_user = async function (message, username) {
     } catch (e) {
         let { message, error } = e.response.data;
         if (error != 6) console.error(new Error(message));
-        return `\\⚠ ${message}.`;
+        return `⚠ ${message}.`;
     }
     
     let response = await database.set_lf_user(message.author.id, username);
@@ -314,7 +314,7 @@ const lf_recents = async function (message, args, limit) {
         username = await database.get_lf_user(message.author.id);
     }
     if (!username) {
-        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`.";
+        return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`.";
     }
 
     limit = Math.min(limit, 1000);
@@ -324,12 +324,12 @@ const lf_recents = async function (message, args, limit) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=${limit}`);
     } catch (e) {
         let { message } = e.response.data;
-        return `\\⚠ ${message}.`;
+        return `⚠ ${message}.`;
     }
 
     let tracks = response.data.recenttracks.track
     if (!tracks || tracks.length < 1) {
-        return `\\⚠ ${username} hasn't listened to any music.`;
+        return `⚠ ${username} hasn't listened to any music.`;
     }
     if (!Array.isArray(tracks)) {
         tracks = [ tracks ];
@@ -517,7 +517,7 @@ const lf_top_media = async function (message, args, type) {
         username = await database.get_lf_user(message.author.id);
     }
     if (!username) {
-        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
+        return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
     }
 
     let {
@@ -531,13 +531,13 @@ const lf_top_media = async function (message, args, type) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${limit}`);
     } catch (e) {
         let { message } = e.response.data;
-        return `\\⚠ ${message}.`;
+        return `⚠ ${message}.`;
     }
 
     let lf_user = response.data[`top${type}s`]["@attr"].user;
     let collection = response.data[`top${type}s`][type];
     if (!collection || collection.length < 1) {
-        return `\\⚠ ${lf_user} hasn't listened to any music during this time.`;
+        return `⚠ ${lf_user} hasn't listened to any music during this time.`;
     }
 
     let rowString;
@@ -601,7 +601,7 @@ const lf_profile = async function (message, username) {
         username = await database.get_lf_user(message.author.id);
     }
     if (!username) {
-        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm profile <username>` to see the Last.fm profile of a specific user.";
+        return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm profile <username>` to see the Last.fm profile of a specific user.";
     }
 
     let response;
@@ -609,7 +609,7 @@ const lf_profile = async function (message, username) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
     } catch (e) {
         let { message } = e.response.data;
-        return `\\⚠ ${message}.`;
+        return `⚠ ${message}.`;
     }
 
     let user = response.data.user;
@@ -651,7 +651,7 @@ const lf_avatar = async function (message, username) {
         username = await database.get_lf_user(message.author.id);
     }
     if (!username) {
-        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.";
+        return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.";
     }
 
     let response;
@@ -659,7 +659,7 @@ const lf_avatar = async function (message, username) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
     } catch (e) {
         let { message } = e.response.data;
-        return `\\⚠ ${message}.`;
+        return `⚠ ${message}.`;
     }
 
     let { name, image } = response.data.user;
@@ -688,7 +688,7 @@ const lf_youtube = async function (message, username) {
         username = await database.get_lf_user(message.author.id);
     }
     if (!username) {
-        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.";
+        return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.";
     }
 
     let response;
@@ -696,19 +696,19 @@ const lf_youtube = async function (message, username) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=1`);
     } catch (e) {
         let { message } = e.response.data;
-        return `\\⚠ ${message}.`;
+        return `⚠ ${message}.`;
     }
 
     let track = response.data.recenttracks.track[0];
     if (!track.artist) {
-        return `\\⚠ ${username} hasn't listened to any music.`;
+        return `⚠ ${username} hasn't listened to any music.`;
     }
     let query = `${track.artist["#text"]} - ${track.name}`;
     let np = track["@attr"] && track["@attr"].nowplaying;
 
     let video = await media.yt_vid_query(query);
     if (!video) {
-        return `\\⚠ Couldn't find a YouTube video for \`${query}\``;
+        return `⚠ Couldn't find a YouTube video for \`${query}\``;
     }
     return `${np ? "Now Playing" : "Last Played"}: https://youtu.be/${video}`;
 
@@ -718,7 +718,7 @@ const lf_chart = async function (message, args, type="album") {
 
     let username = await database.get_lf_user(message.author.id);
     if (!username) {
-        return "\\⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
+        return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
     }
 
     let grid;
@@ -751,7 +751,7 @@ const lf_chart = async function (message, args, type="album") {
             response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type.toLowerCase()}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${dimension ** 2}`);
         } catch (e) {
             let { message } = e.response.data;
-            return `\\⚠ ${message}.`;
+            return `⚠ ${message}.`;
         }
         collection = response.data[`top${type}s`][type];
 
@@ -764,7 +764,7 @@ const lf_chart = async function (message, args, type="album") {
                 response = await axios.get(`https://www.last.fm/user/${username}/library/artists?date_preset=${date_preset}&page=${i+1}`);
             } catch (e) {
                 let { message } = e.response.data;
-                return `\\⚠ ${message}.`;
+                return `⚠ ${message}.`;
             }
 
             let doc = new JSDOM(response.data).window.document;
@@ -784,7 +784,7 @@ const lf_chart = async function (message, args, type="album") {
     }
 
     if (!collection || collection.length < 1) {
-        return `\\⚠ ${username} hasn't listened to any music during this time.`;
+        return `⚠ ${username} hasn't listened to any music during this time.`;
     }
     while (Math.sqrt(collection.length) <= dimension-1) {
         dimension--;

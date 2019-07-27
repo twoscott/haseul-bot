@@ -14,7 +14,7 @@ exports.add_command = (guild_id, command_name, text) => {
         db.get("SELECT commandName FROM commands WHERE commandName = ? AND guildID = ?", [command_name, guild_id], (err, row) => {
             if (err) return reject(err);
             if (row) {
-                return resolve(`\\⚠ A command with the name \`${command_name}\` already exists.`);
+                return resolve(`⚠ A command with the name \`${command_name}\` already exists.`);
             } else {
                 db.run("INSERT INTO commands VALUES (?,?,?)", [guild_id, command_name, text], err => {
                     if (err) return reject(err);
@@ -31,7 +31,7 @@ exports.remove_command = (guild_id, command_name) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT commandName FROM commands WHERE commandName = ? AND guildID = ?", [command_name, guild_id], (err, row) => {
             if (err) return reject(err);
-            if (!row) return resolve(`\\⚠ No command with the name \`${command_name}\` was found.`);
+            if (!row) return resolve(`⚠ No command with the name \`${command_name}\` was found.`);
             db.run("DELETE FROM commands WHERE commandName = ? AND guildID = ?", [command_name, guild_id], err => {
                 if (err) return reject(err);
                 return resolve(`Command \`.${command_name}\` was removed.`);
@@ -47,7 +47,7 @@ exports.edit_command = (guild_id, command_name, text) => {
         db.get("SELECT commandName FROM commands WHERE commandName = ? AND guildID = ?", [command_name, guild_id], (err, row) => {
             if (err) return reject(err);
             if (!row) {
-                return resolve(`\\⚠ No command with the name \`${command_name}\` was found.`);
+                return resolve(`⚠ No command with the name \`${command_name}\` was found.`);
             } else {
                 db.run("UPDATE commands SET text = ? WHERE commandName = ? AND guildID = ?", [text, command_name, guild_id], err => {
                     if (err) return reject(err);

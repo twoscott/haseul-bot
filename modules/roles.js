@@ -347,11 +347,11 @@ create_avarole_embed = async function (message) {
 add_role = async function (message, args) {
 
     if (args.length < 4) {
-        return "\\⚠ Missing arguments.\nUsage: .roles add [role type] [role command]: [role name]";
+        return "⚠ Missing arguments.\nUsage: .roles add [role type] [role command]: [role name]";
     }
     let type = args[2]
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
-        return "\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
+        return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
 
     let textStart = message.content.match(new RegExp(args.slice(0, 3).join('\\s+')))[0].length;
@@ -397,11 +397,11 @@ add_role = async function (message, args) {
 remove_role = async function (message, args) {
 
     if (args.length < 4) {
-        return "\\⚠ Missing arguments.\nUsage: .roles remove [role type] [role command]";
+        return "⚠ Missing arguments.\nUsage: .roles remove [role type] [role command]";
     }
     let type = args[2];
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
-        return "\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
+        return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
     let textStart = message.content.match(new RegExp(args.slice(0, 3).join('\\s+')))[0].length;
     let roles_text = message.content.slice(textStart).trim();
@@ -436,11 +436,11 @@ remove_role = async function (message, args) {
 toggle_available_role = async function (message, args) {
 
     if (args.length < 3) {
-        return "\\⚠ Missing arguments.\nUsage: .avarole [role type] [role name]";
+        return "⚠ Missing arguments.\nUsage: .avarole [role type] [role name]";
     }
     let type = args[1]
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
-        return "\\⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
+        return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
     let textStart = message.content.match(new RegExp(args.slice(0, 2).join('\\s+')))[0].length;
     let roles_text = message.content.slice(textStart).trim();
@@ -509,17 +509,17 @@ set_roles_channel = async function (message, args) {
     } else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return "\\⚠ Invalid channel or channel ID.";
+            return "⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
     }
     if (!message.guild.channels.has(channel_id)) {
-        return "\\⚠ Channel doesn't exist in this server.";
+        return "⚠ Channel doesn't exist in this server.";
     }
     
     let data = await database.get_roles_msg(message.guild.id);
     if (!data || !data.msg) {
-        return "\\⚠ No roles channel message assigned.";
+        return "⚠ No roles channel message assigned.";
     }
 
     let channel = Client.channels.get(channel_id);
@@ -543,7 +543,7 @@ update_roles_channel = async function (message) {
 
     let data = await database.get_roles_msg(message.guild.id);
     if (!data || !data.msg) {
-        return "\\⚠ No roles channel message assigned.";
+        return "⚠ No roles channel message assigned.";
     }
 
     let message_id = data.messageID;
@@ -564,7 +564,7 @@ update_roles_channel = async function (message) {
 set_roles_msg = async function (message, args) {
 
     if (args.length < 4) {
-        return "\\⚠ Please provide a message.";
+        return "⚠ Please provide a message.";
     }
     let msgStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
     let msg = message.content.slice(msgStart).trim();
@@ -575,14 +575,14 @@ set_roles_msg = async function (message, args) {
 setAutorole = async function (message, args) {
 
     if (args.length < 1) {
-        return "\\⚠ Please provide a role name.";
+        return "⚠ Please provide a role name.";
     }
 
     let roleStart = message.content.match(new RegExp(args.slice(0, 2).join('\\s+')))[0].length;
     let roleName = message.content.slice(roleStart).trim();
     let role = message.guild.roles.find(role => role.name == roleName);
     if (!role) {
-        return "\\⚠ This role does not exist on the server!";
+        return "⚠ This role does not exist on the server!";
     }
 
     serverSettings.set(message.guild.id, "autoroleID", role.id);

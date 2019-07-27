@@ -120,18 +120,18 @@ exports.msg = async function (message, args) {
 say = async function (message, args) {
 
     if (args.length < 2) {
-        return "\\⚠ No channel provided to send a message to.\nUsage: `.say {channel} {message}`";
+        return "⚠ No channel provided to send a message to.\nUsage: `.say {channel} {message}`";
     }
 
     let channel_id = args[1].match(/<?#?!?(\d+)>?/);
     if (!channel_id) {
-        return "\\⚠ Please provide a channel to send the message to.\nUsage: `.say {channel} {message}`";
+        return "⚠ Please provide a channel to send the message to.\nUsage: `.say {channel} {message}`";
     }
     channel_id = channel_id[1];
 
     let channel = Client.channels.get(channel_id);
     if (!channel) {
-        return "\\⚠ Invalid channel provided.";
+        return "⚠ Invalid channel provided.";
     }
     
     let attachments = message.attachments.array();
@@ -143,7 +143,7 @@ say = async function (message, args) {
     }
 
     if (args.length < 3 && files.length < 1) {
-        return "\\⚠ No message provided to be send.\nUsage: `.say {channel} {message}`";
+        return "⚠ No message provided to be send.\nUsage: `.say {channel} {message}`";
     }
 
     channel.startTyping();
@@ -159,27 +159,27 @@ say = async function (message, args) {
 edit = async function (message, args) {
 
     if (args.length < 2) {
-        return "\\⚠ No channel provided to edit a message from.\nUsage: `.edit {channel id} {message id} <new message content>`";
+        return "⚠ No channel provided to edit a message from.\nUsage: `.edit {channel id} {message id} <new message content>`";
     }
 
     let channel_id = args[1].match(/<?#?!?(\d+)>?/);        
     if (!channel_id) {
-        return "\\⚠ No channel provided to edit a message from.\nUsage: `.edit {channel id} {message id} <new message content>`";
+        return "⚠ No channel provided to edit a message from.\nUsage: `.edit {channel id} {message id} <new message content>`";
     }
     channel_id = channel_id[1];
     
     let channel = Client.channels.get(channel_id);
     if (!channel) {
-        return "\\⚠ Invalid channel provided.";
+        return "⚠ Invalid channel provided.";
     }
 
     if (args.length < 3) {
-        return "\\⚠ No message ID provided to edit.\nUsage: `.edit {channel id} {message id} <new message content>`";
+        return "⚠ No message ID provided to edit.\nUsage: `.edit {channel id} {message id} <new message content>`";
     }
 
     let message_id = args[2].match(/^\d+$/);
     if (!message_id) {
-        return "\\⚠ No message ID provided.";
+        return "⚠ No message ID provided.";
     }
 
     let msg = channel.messages.get(message_id);
@@ -187,12 +187,12 @@ edit = async function (message, args) {
         try {
             msg = await channel.fetchMessage(message_id);
         } catch (e) {
-            return "\\⚠ Invalid message ID provided.";
+            return "⚠ Invalid message ID provided.";
         }
     }
 
     if (args.length < 4) {
-        return "\\⚠ No content provided to edit the message with.\nUsage: `.edit {channel id} {message id} <new message content>`";
+        return "⚠ No content provided to edit the message with.\nUsage: `.edit {channel id} {message id} <new message content>`";
     }
 
     let contentStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
@@ -206,23 +206,23 @@ edit = async function (message, args) {
 get = async function (message, args) {
 
     if (args.length < 1) {
-        return "\\⚠ Please provide a message ID to be fetched.";
+        return "⚠ Please provide a message ID to be fetched.";
     }
 
     let channel_id = args[0].match(/<?#?!?(\d+)>?/);        
     if (!channel_id) {
-        return "\\⚠ Please provide a message's channel to fetch.\nUsage: `.get {channel id} {message id}`";
+        return "⚠ Please provide a message's channel to fetch.\nUsage: `.get {channel id} {message id}`";
     }
     channel_id = channel_id[1];
     
     let channel = Client.channels.get(channel_id);
     if (!channel) {
-        return "\\⚠ Invalid channel provided.";
+        return "⚠ Invalid channel provided.";
     }
 
     let message_id = args[1].match(/^\d+$/);
     if (!message_id) {
-        return "\\⚠ No message ID provided.";
+        return "⚠ No message ID provided.";
     }
 
     let msg = await channel.fetchMessage(message_id);
@@ -239,12 +239,12 @@ addPollChannel = async function (message, args) {
     else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return "\\⚠ Invalid channel or channel ID.";
+            return "⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
     }
     if (!message.guild.channels.has(channel_id)) {
-        return "\\⚠ Channel doesn't exist in this server.";
+        return "⚠ Channel doesn't exist in this server.";
     }
 
     added = await database.add_poll_channel(message.guild.id, channel_id);
@@ -261,12 +261,12 @@ delPollChannel = async function (message, args) {
     else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return "\\⚠ Invalid channel or channel ID.";
+            return "⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
     }
     if (!message.guild.channels.has(channel_id)) {
-        return "\\⚠ Channel doesn't exist in this server.";
+        return "⚠ Channel doesn't exist in this server.";
     }
 
     removed = await database.del_poll_channel(message.guild.id, channel_id);

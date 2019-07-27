@@ -114,25 +114,25 @@ exports.msg = async function (message, args) {
 const addCommand = async function (message, args) {
 
     if (args.length < 3) {
-        return "\\⚠ Please provide a command name and text and/or file.";
+        return "⚠ Please provide a command name and text and/or file.";
     }
 
     let files = message.attachments.array(); 
     if (args.length < 4 && files.length < 1) {
-        return "\\⚠ Please provide text or an uploaded file for a command response.";
+        return "⚠ Please provide text or an uploaded file for a command response.";
     }
 
     let commandName = args[2].toLowerCase();
     if (commandName.length > 30) {
-        return "\\⚠ Command names may not exceed 20 characters in length.";
+        return "⚠ Command names may not exceed 20 characters in length.";
     }
 
     if (!/^[\x00-\x7F]+$/.test(commandName)) {
-        return "\\⚠ This command name contains invalid characters, please use standard characters.";
+        return "⚠ This command name contains invalid characters, please use standard characters.";
     }
 
     if (reservedCommands.list.includes(commandName)) {
-        return "\\⚠ This is a reserved command name, please use another name.";
+        return "⚠ This is a reserved command name, please use another name.";
     }
 
     let textStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
@@ -149,7 +149,7 @@ const addCommand = async function (message, args) {
 const delCommand = async function (message, commandName) {
 
     if (!commandName) {
-        return "\\⚠ Please provide a command name to remove.";
+        return "⚠ Please provide a command name to remove.";
     }
 
     let response = await database.remove_command(message.guild.id, commandName);
@@ -160,21 +160,21 @@ const delCommand = async function (message, commandName) {
 const editCommand = async function (message, args) {
 
     if (args.length < 3) {
-        return "\\⚠ Please provide a command name and text and/or file.";
+        return "⚠ Please provide a command name and text and/or file.";
     }
 
     let files = message.attachments.array(); 
     if (args.length < 4 && files.length < 1) {
-        return "\\⚠ Please provide text or an uploaded file for a command response.";
+        return "⚠ Please provide text or an uploaded file for a command response.";
     }
 
     let commandName = args[2].toLowerCase();
     if (!/^[\x00-\x7F]+$/.test(commandName)) {
-        return "\\⚠ This command name contains invalid characters, please use standard characters.";
+        return "⚠ This command name contains invalid characters, please use standard characters.";
     }
 
     if (reservedCommands.list.includes(commandName)) {
-        return "\\⚠ This is a reserved command name, please use another name.";
+        return "⚠ This is a reserved command name, please use another name.";
     }
 
     let textStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
@@ -193,7 +193,7 @@ const listCommands = async function (message) {
     let { guild } = message;
     let commandNames = await database.get_commands(guild.id);
     if (commandNames.length < 1) {
-        return "\\⚠ There are no commands added to this server.";
+        return "⚠ There are no commands added to this server.";
     }
     commandString = commandNames.sort((a,b) => a.localeCompare(b)).map(x => '.'+x).join('\n');
 
@@ -236,24 +236,24 @@ const listCommands = async function (message) {
 const searchCommands = async function (message, query) {
 
     if (!query) {
-        return "\\⚠ Please provide a search query.";
+        return "⚠ Please provide a search query.";
     }
 
     if (query.length > 30) {
-        return "\\⚠ Command names may not exceed 30 characters in length.";
+        return "⚠ Command names may not exceed 30 characters in length.";
     }
 
     let { guild } = message;
     let commandNames = await database.get_commands(guild.id);
 
     if (commandNames.length < 1) {
-        return "\\⚠ There are no commands added to this server.";
+        return "⚠ There are no commands added to this server.";
     }
 
     commandNames = commandNames.filter(x => x.toLowerCase().includes(query.toLowerCase()));
     
     if (commandNames.length < 1) {
-        return `\\⚠ No results were found searching for "${query}".`;
+        return `⚠ No results were found searching for "${query}".`;
     }
     
     let commandString = commandNames.sort((a,b) => a.localeCompare(b)).sort((a,b)=> {

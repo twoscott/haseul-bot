@@ -153,7 +153,7 @@ const rep = async function(message, args) {
                 if (timeFromNow.hours) fromNowText += `${timeFromNow.hours}h `;
                 if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
                 if (timeFromNow.seconds) fromNowText += `${timeFromNow.seconds}s `;
-                return `\\⚠ You have no reps remaining today! Your reps will be replenished in ${fromNowText.trim()}.`; 
+                return `⚠ You have no reps remaining today! Your reps will be replenished in ${fromNowText.trim()}.`; 
             } // else 0 < reps < 3 
 
         }
@@ -161,29 +161,29 @@ const rep = async function(message, args) {
     }
 
     if (args.length < 1) {
-        return `\\⚠ Please provide a user to rep!`;
+        return `⚠ Please provide a user to rep!`;
     }
 
     let target = args[0];
     let match = target.match(/^<?@?!?(\d{8,})>?$/);
     if (!match) {
-        return `\\⚠ Please provide a valid user to rep!`;
+        return `⚠ Please provide a valid user to rep!`;
     }
 
     let userId = match[1];
     if (userId === author.id) {
-        return `\\⚠ You may not rep yourself!`;
+        return `⚠ You may not rep yourself!`;
     }
     if (userId === Client.user.id) {
-        return `\\⚠ I'm delighted but you cannot rep me!`;
+        return `⚠ I'm delighted but you cannot rep me!`;
     }
 
     let recipient = await guild.fetchMember(userId);
     if (!recipient) {
-        return `\\⚠ The user provided is not in this server or does not exist.`;
+        return `⚠ The user provided is not in this server or does not exist.`;
     }
     if (recipient.user.bot) {
-        return `\\⚠ You may not rep a bot!`;
+        return `⚠ You may not rep a bot!`;
     }
 
     let repStreak = await database.get_streak(author.id, recipient.id);
@@ -191,7 +191,7 @@ const rep = async function(message, args) {
         let sendingUser = Object.keys(repStreak).find(key => repStreak[key] == author.id);
         let lastUserRepDate = new Date(repStreak[`${sendingUser}LastRep`]).getUTCDate();
         if (lastUserRepDate == todayDate) {
-            return `\\⚠ You may not rep the same user twice in one day!`;
+            return `⚠ You may not rep the same user twice in one day!`;
         }
     }
 
@@ -330,7 +330,7 @@ const streaks = async function(message) {
         if (!user) user = await Client.fetchUser(userID);
         let name = user ? user.username.replace(/([\`\*\~\_])/g, "\\$&") : userID;
 
-        let time = functions.getTimeFrom(createdTimestamp, Math.max(streak.user1LastRep, streak.user2LastRep) + 36*60*60*1000);
+        let time = functions.getTimeFrom(createdTimestamp, Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) + 36*60*60*1000);
         let timeText = ''
         if (time.hours) timeText += `${time.hours}h `;
         if (time.minutes) timeText += `${time.minutes}m `;

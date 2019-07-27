@@ -37,11 +37,11 @@ const guildinfo = async function (message, target) {
     } else {
         let match = target.match(/^\d+$/);
         if (!match) {
-            return "\\⚠ Invalid guild or guild ID.";
+            return "⚠ Invalid guild or guild ID.";
         }
         guild = Client.guilds.get(match[0])
         if (!guild) {
-            return "\\⚠ Invalid guild or guild ID.";
+            return "⚠ Invalid guild or guild ID.";
         }
     }
 

@@ -240,7 +240,7 @@ exports.msg = async function (message, args) {
 const add_notification = async function (message, args, global) {
 
     if (args.length < (global ? 4 : 3)) {
-        return "\\⚠ Please specify a key word or phrase to add."
+        return "⚠ Please specify a key word or phrase to add."
     }
 
     message.delete(500);
@@ -287,7 +287,7 @@ const add_notification = async function (message, args, global) {
     let addedNotif = global ? await database.add_global_notif(author.id, keyword, keyrgx, type)
                             : await database.add_local_notif(guild.id, author.id, keyword, keyrgx, type);
     if (!addedNotif) {
-        return "\\⚠ Notification with this key word already added.";
+        return "⚠ Notification with this key word already added.";
     }
 
     author.send(`You will now be notified when \`${keyword}\` is mentioned ${global ? `globally` : `in \`${guild.name}\``}.`);
@@ -298,7 +298,7 @@ const add_notification = async function (message, args, global) {
 const remove_notification = async function (message, args, global) {
 
     if (args.length < (global ? 4 : 3)) {
-        return "\\⚠ Please specify a key word or phrase to remove."
+        return "⚠ Please specify a key word or phrase to remove."
     }
 
     let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).join('\\s+')))[0].length;
@@ -311,7 +311,7 @@ const remove_notification = async function (message, args, global) {
                           : await database.remove_local_notif(guild.id, author.id, keyphrase);
     if (!removed) {
         author.send(`Notification \`${keyphrase}\` does not exist. Please check for spelling errors.`);
-        return `\\⚠ Notification does not exist.`;
+        return `⚠ Notification does not exist.`;
     }
 
     author.send(`You will no longer be notified when \`${keyphrase}\` is mentioned${!global ? ` in \`${guild.name}\`.` : `.`}`)
@@ -324,7 +324,7 @@ const clear_notifications = async function (message, global) {
     let { author, guild } = message;
     let cleared = global  ? database.clear_global_notifs(author.id) : database.clear_local_notifs(guild.id, author.id);
     if (!cleared) {
-        return global ? `\\⚠ No notifications to clear.` : `\\⚠ No notifications in \`${guild.name}\` to clear.`;
+        return global ? `⚠ No notifications to clear.` : `⚠ No notifications in \`${guild.name}\` to clear.`;
     } else {
         return global ? `All global notifications cleared.` : `All notifications in \`${guild.name}\` cleared.`;
     }
@@ -339,7 +339,7 @@ const list_notifications = async function (message) {
     let notifs  = globals.concat(locals).filter(n => n.userID == author.id);
 
     if (notifs.length < 1) {
-        return "\\⚠ You don't have any notifications!";
+        return "⚠ You don't have any notifications!";
     }
 
     let embed = new Discord.RichEmbed()
@@ -384,25 +384,25 @@ const add_server_blacklist_channel = async function (message, args) {
     } else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return"\\⚠ Invalid channel or channel ID.";
+            return"⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
     }
     
     channel = guild.channels.get(channel_id);
     if (!channel) {
-        return "\\⚠ Channel doesn't exist in this server.";
+        return "⚠ Channel doesn't exist in this server.";
     }
 
     switch (channel.type) {
         case "text":
             let added = database.add_server_blacklist_channel(guild.id, channel_id);
             if (!added) {
-                return `\\⚠ <#${channel_id}> is already blacklisted from notifying users.`;
+                return `⚠ <#${channel_id}> is already blacklisted from notifying users.`;
             }
             return `<#${channel_id}> is now blacklisted from notifying users.`;
         case "category":
-            if (channel.children.size == 0) return `\\⚠ There are no channels in ${channel.name}`;
+            if (channel.children.size == 0) return `⚠ There are no channels in ${channel.name}`;
             
             let textChans = 0;
             let addedTotal = 0;
@@ -415,15 +415,15 @@ const add_server_blacklist_channel = async function (message, args) {
             }
 
             if (textChans <= 0) {
-                return `\\⚠ There are no text channels belonging to \`${channel.name}\`.`;
+                return `⚠ There are no text channels belonging to \`${channel.name}\`.`;
             } else if (addedTotal <= 0) {
-                return `\\⚠ All text channels in \`${channel.name}\` are already blacklisted from notifying users.`;
+                return `⚠ All text channels in \`${channel.name}\` are already blacklisted from notifying users.`;
             } else if (addedTotal == channel.children.size) {
                 return `All text channels in \`${channel.name}\` are now blacklisted from notifying users.`;
             }
             return `${addedTotal} channel${addedTotal != 1 ? 's':''} in \`${channel.name}\` are now blacklisted from notifying users.`;
         default:
-            return `\\⚠ \`${channel.name}\` is not a text chanel.`;
+            return `⚠ \`${channel.name}\` is not a text chanel.`;
     }
 
 }
@@ -437,24 +437,24 @@ const remove_server_blacklist_channel = async function (message, args) {
     } else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return"\\⚠ Invalid channel or channel ID.";
+            return"⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
     }
     channel = guild.channels.get(channel_id);
     if (!channel) {
-        return "\\⚠ Channel doesn't exist in this server.";
+        return "⚠ Channel doesn't exist in this server.";
     }
 
     switch (channel.type) {
         case "text":
             let added = database.remove_server_blacklist_channel(guild.id, channel_id);
             if (!added) {
-                return `\\⚠ <#${channel_id}> is not blacklisted from notifying users.`;
+                return `⚠ <#${channel_id}> is not blacklisted from notifying users.`;
             }
             return `<#${channel_id}> is no longer blacklisted from notifying users.`;
         case "category":
-            if (channel.children.size == 0) return `\\⚠ There are no channels in ${channel.name}`;
+            if (channel.children.size == 0) return `⚠ There are no channels in ${channel.name}`;
             
             let textChans = 0;
             let addedTotal = 0;
@@ -467,15 +467,15 @@ const remove_server_blacklist_channel = async function (message, args) {
             }
 
             if (textChans <= 0) {
-                return `\\⚠ There are no text channels belonging to \`${channel.name}\`.`;
+                return `⚠ There are no text channels belonging to \`${channel.name}\`.`;
             } else if (addedTotal <= 0) {
-                return `\\⚠ No text channels in \`${channel.name}\` are blacklisted from notifying users.`;
+                return `⚠ No text channels in \`${channel.name}\` are blacklisted from notifying users.`;
             } else if (addedTotal == channel.children.size) {
                 return `All text channels in \`${channel.name}\` are no longer blacklisted from notifying users.`;
             }
             return `${addedTotal} channel${addedTotal != 1 ? 's':''} in \`${channel.name}\` are no longer blacklisted from notifying users.`;
         default:
-            return `\\⚠ \`${channel.name}\` is not a text chanel.`;
+            return `⚠ \`${channel.name}\` is not a text chanel.`;
     }
 
 }
