@@ -1,14 +1,12 @@
 // Require modules
 
-const Discord = require("discord.js");
-
-const axios = require("axios")
+const axios = require("axios");
 
 const functions = require("../functions/functions");
 
 // Functions
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
 
     // Handle commands
 
@@ -42,7 +40,7 @@ exports.msg = async function (message, args) {
     }
 }
 
-yt_vid_query = async function (query) {
+async function yt_vid_query(query) {
 
     if (!query) {
         resolve("⚠ Please provide a query to search for!");
@@ -58,7 +56,7 @@ yt_vid_query = async function (query) {
 
 }
 
-yt_pages = async function (message, query) {
+async function yt_pages(message, query) {
 
     if (!query) {
         return "⚠ Please provide a query to search for!";
@@ -80,7 +78,7 @@ yt_pages = async function (message, query) {
     
 }
 
-lb_movie_query = async function (query) {
+async function lb_movie_query(query) {
     
     if (!query) {
         return "⚠ Please provide a query to search for!";

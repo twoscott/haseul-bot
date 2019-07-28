@@ -1,12 +1,10 @@
 // Require modules
 
-const Discord = require("discord.js");
-
 const functions = require("../functions/functions.js");
 
 // Functions 
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
     
     switch (args[0]) {
 
@@ -40,7 +38,7 @@ exports.msg = async function (message, args) {
 
 }
 
-const listEmojis = async function (message) {
+async function listEmojis(message) {
 
     let { guild } = message;
     let emojis = guild.emojis.array()
@@ -89,7 +87,7 @@ const listEmojis = async function (message) {
 
 }
 
-const searchEmojis = async function (message, query) {
+async function searchEmojis(message, query) {
 
     if (!query) {
         return "⚠ Please provide a search query.";

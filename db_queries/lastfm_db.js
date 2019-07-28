@@ -16,12 +16,12 @@ exports.set_lf_user = (user_id, lastfm_user) => {
             if (row) {
                 db.run("UPDATE lastfm SET lfUser = ? WHERE userID = ?", [lastfm_user, user_id], err => {
                     if (err) return reject(err);
-                    return resolve(`Last.fm username set to ${lastfm_user}.`);
+                    return resolve();
                 })
             } else {
                 db.run("INSERT INTO lastfm VALUES (?, ?)", [user_id, lastfm_user], err => {
                     if (err) return reject(err);
-                    return resolve(`Last.fm username set to ${lastfm_user}.`);
+                    return resolve();
                 })
             }
         })
@@ -34,10 +34,10 @@ exports.remove_lf_user = (user_id) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT lfUser FROM lastfm WHERE userID = ?", [user_id], (err, row) => {
             if (err) return reject(err);
-            if (!row) return resolve("No Last.fm username found.");
+            if (!row) return resolve(false);
             db.run("DELETE FROM lastfm WHERE userID = ?", [user_id], err => {
                 if (err) return reject(err);
-                return resolve("Last.fm username removed.");
+                return resolve(true);
             })
         })
     })

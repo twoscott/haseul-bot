@@ -7,10 +7,11 @@ const fs = require("fs");
 const { JSDOM } = require("jsdom");
 
 const config = require("../config.json");
-const database = require("../db_queries/lastfm_db.js");
 const functions = require("../functions/functions.js");
 const html = require("../functions/html.js");
 const media = require("./media.js");
+
+const database = require("../db_queries/lastfm_db.js");
 
 const Image = require("../functions/images.js");
 
@@ -20,7 +21,7 @@ const api_key = config.lastfm_key;
 
 // Functions
 
-scrapeArtistImage = async function (artist) {
+async function scrapeArtistImage(artist) {
 
     let response;
     try {
@@ -40,7 +41,7 @@ scrapeArtistImage = async function (artist) {
     
 }
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
 
     // Handle commands
 
@@ -269,32 +270,34 @@ exports.msg = async function (message, args) {
     }
 }
 
-const set_lf_user = async function (message, username) {
+async function set_lf_user(message, username) {
     
     if (!username) {
         return "⚠ Please provide a Last.fm username: `.fm set <username>`.";
     }
 
     try {
-        await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`);
+        let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`);
+        username = response.data.user.name;
     } catch (e) {
         let { message, error } = e.response.data;
         if (error != 6) console.error(new Error(message));
         return `⚠ ${message}.`;
     }
     
-    let response = await database.set_lf_user(message.author.id, username);
-    return response;
+    await database.set_lf_user(message.author.id, username);
+    return `Last.fm username set to ${username}.`;
 
 }
 
-const remove_lf_user = async function (message) {
+async function remove_lf_user(message) {
     
-    return await database.remove_lf_user(message.author.id);
+    let removed = await database.remove_lf_user(message.author.id);
+    return removed ? `Last.fm username removed.` : `⚠ No Last.fm username found.`
 
 }
 
-const lf_recents = async function (message, args, limit) {
+async function lf_recents(message, args, limit) {
 
     let username;
     if (args) {
@@ -365,7 +368,7 @@ const lf_recents = async function (message, args, limit) {
 
 }
 
-recent1Embed = (track, lfUser, totalPlays, playCount, loved) => {
+async function recent1Embed(track, lfUser, totalPlays, playCount, loved) {
 
     let field = `${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")})`;
     if (track.album) field += ` | **${track.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`;
@@ -398,7 +401,7 @@ recent1Embed = (track, lfUser, totalPlays, playCount, loved) => {
 
 }
 
-recent2Embed = (tracks, lfUser, totalPlays, playCount) => {
+async function recent2Embed (tracks, lfUser, totalPlays, playCount) {
 
     let field1 = `${tracks[0].artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${tracks[0].name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(tracks[0].artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(tracks[0].name).replace(/\)/g, "\\)")})`;
     if (tracks[0].album) field1 += ` | **${tracks[0].album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`;
@@ -428,7 +431,7 @@ recent2Embed = (tracks, lfUser, totalPlays, playCount) => {
 
 }
 
-recentListPages = (message, tracks, lfUser) => {
+async function recentListPages (message, tracks, lfUser) {
 
     let thumbnail = tracks[0].image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
     if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
@@ -477,7 +480,7 @@ recentListPages = (message, tracks, lfUser) => {
 
 }
 
-const lf_top_media = async function (message, args, type) {
+async function lf_top_media(message, args, type) {
 
     let embeds = {
         'artist': { 
@@ -595,7 +598,7 @@ const lf_top_media = async function (message, args, type) {
 
 }
 
-const lf_profile = async function (message, username) {
+async function lf_profile(message, username) {
 
     if (!username) {
         username = await database.get_lf_user(message.author.id);
@@ -645,7 +648,7 @@ const lf_profile = async function (message, username) {
 
 }
 
-const lf_avatar = async function (message, username) {
+async function lf_avatar(message, username) {
 
     if (!username) {
         username = await database.get_lf_user(message.author.id);
@@ -682,7 +685,7 @@ const lf_avatar = async function (message, username) {
 
 }
 
-const lf_youtube = async function (message, username) {
+async function lf_youtube(message, username) {
 
     if (!username) {
         username = await database.get_lf_user(message.author.id);
@@ -714,7 +717,7 @@ const lf_youtube = async function (message, username) {
 
 }
 
-const lf_chart = async function (message, args, type="album") {
+async function lf_chart(message, args, type = "album") {
 
     let username = await database.get_lf_user(message.author.id);
     if (!username) {
@@ -853,7 +856,7 @@ const lf_chart = async function (message, args, type="album") {
 
 //Util Functions
 
-getTimeFrame = (timeframe) => {
+function getTimeFrame(timeframe) {
     
     let display_time;
     let date_preset;

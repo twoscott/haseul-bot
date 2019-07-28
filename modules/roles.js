@@ -2,12 +2,14 @@
 
 const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
+
+const serverSettings = require("../modules/server_settings.js");
+
 const database = require("../db_queries/roles_db.js");
-const serverSettings = require("../modules/server_settings.js")
 
 // Functions
 
-const autorole = async (member) => {
+async function autorole(member) {
 
     let autoroleOn = await serverSettings.get(member.guild.id, "autoroleOn");
     if (!autoroleOn) return;
@@ -17,20 +19,20 @@ const autorole = async (member) => {
 
 }
 
-exports.join = async function (member) {
+exports.join = async function(member) {
 
     autorole(member)
 
 }
 
-const roles = async (message) => {
+async function roles(message) {
     let rolesOn = await serverSettings.get(message.guild.id, "rolesOn");
     if (!rolesOn) return;
     let rolesChannelID = await serverSettings.get(message.guild.id, "rolesChannel");
     if (rolesChannelID == message.channel.id) assign_roles(message); //Assign roles if in roles channel
 }
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
 
     // Check if roles on
     
@@ -189,7 +191,7 @@ exports.msg = async function (message, args) {
     }
 }
 
-roles_response = (responses) => {
+function roles_response(responses) {
     let list = [];
     for (let [key, val] of Object.entries(responses)) {
         if (val.length > 0) list.push(`**${key}**: ${val.join(", ")}`)
@@ -197,7 +199,7 @@ roles_response = (responses) => {
     return list.join("\n");
 }
 
-roles_embed = (responses) => {
+function roles_embed(responses) {
     let embed = new Discord.RichEmbed();
     for (let [key, val] of Object.entries(responses)) {
         if (val.length > 0) embed.addField(key, val.join(", "), false);
@@ -207,7 +209,7 @@ roles_embed = (responses) => {
 
 // Allows members to self-assign roles
 
-assign_roles = async function (message) {
+async function assign_roles(message) {
 
     // Safety net
     
@@ -314,7 +316,7 @@ assign_roles = async function (message) {
 
 //-----------------------------------------------
 
-create_avarole_embed = async function (message) {
+async function create_avarole_embed(message) {
 
     let guild = Client.guilds.get(message.guild.id);
     let sender = await guild.fetchMember(Client.user.id);
@@ -344,7 +346,7 @@ create_avarole_embed = async function (message) {
 }
 
 
-add_role = async function (message, args) {
+async function add_role(message, args) {
 
     if (args.length < 4) {
         return "⚠ Missing arguments.\nUsage: .roles add [role type] [role command]: [role name]";
@@ -394,7 +396,7 @@ add_role = async function (message, args) {
 
 }
 
-remove_role = async function (message, args) {
+async function remove_role(message, args) {
 
     if (args.length < 4) {
         return "⚠ Missing arguments.\nUsage: .roles remove [role type] [role command]";
@@ -433,7 +435,7 @@ remove_role = async function (message, args) {
 
 }
 
-toggle_available_role = async function (message, args) {
+async function toggle_available_role(message, args) {
 
     if (args.length < 3) {
         return "⚠ Missing arguments.\nUsage: .avarole [role type] [role name]";
@@ -474,7 +476,7 @@ toggle_available_role = async function (message, args) {
 
 }
 
-list_roles = async function (message) {
+async function list_roles(message) {
 
     let rows = await database.get_all_roles(message.guild.id);
     let guild = message.guild
@@ -501,7 +503,7 @@ list_roles = async function (message) {
 }
 
 
-set_roles_channel = async function (message, args) {
+async function set_roles_channel(message, args) {
 
     let channel_id;
     if (args.length < 1) {
@@ -539,7 +541,7 @@ set_roles_channel = async function (message, args) {
 
 }
 
-update_roles_channel = async function (message) {
+async function update_roles_channel(message) {
 
     let data = await database.get_roles_msg(message.guild.id);
     if (!data || !data.msg) {
@@ -561,18 +563,19 @@ update_roles_channel = async function (message) {
 }
 
 
-set_roles_msg = async function (message, args) {
+async function set_roles_msg(message, args) {
 
     if (args.length < 4) {
         return "⚠ Please provide a message.";
     }
     let msgStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
     let msg = message.content.slice(msgStart).trim();
-    return await database.set_roles_msg(message.guild.id, msg);
+    await database.set_roles_msg(message.guild.id, msg);
+    return "Roles message set.";
 
 }
 
-setAutorole = async function (message, args) {
+async function setAutorole(message, args) {
 
     if (args.length < 1) {
         return "⚠ Please provide a role name.";
@@ -592,14 +595,14 @@ setAutorole = async function (message, args) {
 
 // Toggle
 
-toggleAutorole = async function (message) {
+async function toggleAutorole(message) {
 
     let tog = await serverSettings.toggle(message.guild.id, "autoroleOn");
     return `Autorole turned ${tog ? "on":"off"}.`;
     
 }
 
-toggleRoles = async function (message) {
+async function toggleRoles(message) {
 
     let tog = await serverSettings.toggle(message.guild.id, "rolesOn");
     return `Roles assignment turned ${tog ? "on":"off"}.`;

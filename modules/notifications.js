@@ -1,13 +1,14 @@
 // Require modules
 
 const Discord = require("discord.js");
+
 const HashSet = require("hashset");
 
 const database = require("../db_queries/notifications_db.js");
 
 // Functions
 
-const notify = async (message) => {
+async function notify(message) {
 
     // Fetch stored notifications
     let { guild, channel, author, content, member } = message;
@@ -77,7 +78,7 @@ const notify = async (message) => {
 
 }
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
 
     // Notify
 
@@ -237,7 +238,7 @@ exports.msg = async function (message, args) {
 
 }
 
-const add_notification = async function (message, args, global) {
+async function add_notification(message, args, global) {
 
     if (args.length < (global ? 4 : 3)) {
         return "⚠ Please specify a key word or phrase to add."
@@ -295,7 +296,7 @@ const add_notification = async function (message, args, global) {
     
 }
 
-const remove_notification = async function (message, args, global) {
+async function remove_notification(message, args, global) {
 
     if (args.length < (global ? 4 : 3)) {
         return "⚠ Please specify a key word or phrase to remove."
@@ -319,7 +320,7 @@ const remove_notification = async function (message, args, global) {
 
 }
 
-const clear_notifications = async function (message, global) {
+async function clear_notifications(message, global) {
 
     let { author, guild } = message;
     let cleared = global  ? database.clear_global_notifs(author.id) : database.clear_local_notifs(guild.id, author.id);
@@ -331,7 +332,7 @@ const clear_notifications = async function (message, global) {
 
 }
 
-const list_notifications = async function (message) {
+async function list_notifications(message) {
 
     let { author } = message;
     let globals = await database.get_global_notifs();
@@ -375,7 +376,7 @@ const list_notifications = async function (message) {
     return "A list of your notifications has been sent to your DMs."
 }
 
-const add_server_blacklist_channel = async function (message, args) {
+async function add_server_blacklist_channel(message, args) {
 
     let { guild, channel } = message;
     let channel_id;
@@ -428,7 +429,7 @@ const add_server_blacklist_channel = async function (message, args) {
 
 }
 
-const remove_server_blacklist_channel = async function (message, args) {
+async function remove_server_blacklist_channel(message, args) {
 
     let { guild, channel } = message;
     let channel_id;
@@ -480,7 +481,7 @@ const remove_server_blacklist_channel = async function (message, args) {
 
 }
 
-const toggle_dnd = async function (message) {
+async function toggle_dnd(message) {
 
     let dnd = await database.toggle_dnd(message.author.id);
     return `Do not disturb turned ${dnd ? 'on':'off'}.`

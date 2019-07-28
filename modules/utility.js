@@ -39,11 +39,11 @@ const meter_const = {
 // Init
 
 const translate_key = config.trans_key;
-const strawpoll_timeouts = new Map();
+// const strawpoll_timeouts = new Map();
 
 // Functions
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
 
     // Handle commands
 
@@ -115,7 +115,7 @@ exports.msg = async function (message, args) {
     }
 }
 
-const convert = async function(args) {
+async function convert(args) {
 
     if (args.length < 1) {
         return "⚠ Please provide units to convert!";
@@ -151,7 +151,7 @@ const convert = async function(args) {
 
 }
 
-const translate = async function (args) {
+async function translate(args) {
 
     if (args.length < 1) {
         return "⚠ Please provide a language and text to translate to.";
@@ -276,7 +276,7 @@ const translate = async function (args) {
 
 // }
 
-const help = async function (message, args) {
+async function help(message, args) {
 
     if (args.length < 1) {
 

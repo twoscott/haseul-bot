@@ -5,7 +5,7 @@ let servers = new Object();
 
 // Init
 
-init = async () => {
+async function init() {
     let rows = await database.getServers();
     for (let i=0; i<rows.length; i++) {
         let row = rows[i];
@@ -17,11 +17,11 @@ init();
 
 // Functions
 
-exports.get = async (guildID, setting) => {
+exports.get = async function(guildID, setting) {
     return servers[guildID] ? servers[guildID][setting] : undefined;
 }
 
-exports.set = async (guildID, setting, value) => {
+exports.set = async function(guildID, setting, value) {
 
     await database.setVal(guildID, setting, value)
     if (servers[guildID]) {
@@ -33,7 +33,7 @@ exports.set = async (guildID, setting, value) => {
 
 }
 
-exports.toggle = async (guildID, toggle) => {
+exports.toggle = async function(guildID, toggle) {
 
     let tog = await database.toggle(guildID, toggle)
     if (servers[guildID]) {

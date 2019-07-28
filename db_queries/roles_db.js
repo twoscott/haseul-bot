@@ -29,12 +29,12 @@ exports.set_roles_msg = (guild_id, msg) => {
             if (!row) {
                 db.run("INSERT INTO rolesMessages (guildID, msg) VALUES (?,?)", [guild_id, msg], err => {
                     if (err) return reject(err);
-                    return resolve("Roles channel message assigned.");
+                    return resolve(false);
                 })
             } else {
                 db.run("UPDATE rolesMessages SET msg = ? WHERE guildID = ?", [msg, guild_id], err => {
                     if (err) return reject(err);
-                    return resolve("Roles channel message updated.");
+                    return resolve(true);
                 })
             }
         })

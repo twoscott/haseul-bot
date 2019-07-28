@@ -7,7 +7,7 @@ const serverSettings = require("../modules/server_settings.js");
 
 // Functions
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
 
     // Handle commands
     switch (args[0]) {
@@ -29,7 +29,7 @@ exports.msg = async function (message, args) {
 
 }
 
-const guildinfo = async function (message, target) {
+async function guildinfo(message, target) {
 
     let guild;
     if (!target) {
@@ -49,7 +49,7 @@ const guildinfo = async function (message, target) {
 
 }
 
-const server_embed = async (guild) => {
+async function server_embed(guild) {
 
     guild = await guild.fetchMembers();
 

@@ -1,13 +1,14 @@
 // Require modules
 
-const database = require("../db_queries/mod_db.js");
-const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
+
 const serverSettings = require("./server_settings.js");
+
+const database = require("../db_queries/mod_db.js");
 
 // Functions
 
-poll = async (message) => {
+async function poll(message) {
     let pollOn = await serverSettings.get(message.guild.id, "pollOn");
     if (!pollOn) return;
     let pollChannelIDs = await database.get_poll_channels(message.guild.id, "pollChannel");
@@ -17,7 +18,7 @@ poll = async (message) => {
     }
 }
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
 
     // Check if poll channel
     
@@ -117,7 +118,7 @@ exports.msg = async function (message, args) {
 
 // Commands
 
-say = async function (message, args) {
+async function say(message, args) {
 
     if (args.length < 2) {
         return "⚠ No channel provided to send a message to.\nUsage: `.say {channel} {message}`";
@@ -156,7 +157,7 @@ say = async function (message, args) {
 
 }
 
-edit = async function (message, args) {
+async function edit(message, args) {
 
     if (args.length < 2) {
         return "⚠ No channel provided to edit a message from.\nUsage: `.edit {channel id} {message id} <new message content>`";
@@ -203,7 +204,7 @@ edit = async function (message, args) {
 
 }
 
-get = async function (message, args) {
+async function get(message, args) {
 
     if (args.length < 1) {
         return "⚠ Please provide a message ID to be fetched.";
@@ -230,7 +231,7 @@ get = async function (message, args) {
 
 }
 
-addPollChannel = async function (message, args) {
+async function addPollChannel(message, args) {
 
     let channel_id;
     if (args.length < 1) {
@@ -252,7 +253,7 @@ addPollChannel = async function (message, args) {
 
 }
 
-delPollChannel = async function (message, args) {
+async function delPollChannel(message, args) {
 
     let channel_id;
     if (args.length < 1) {
@@ -274,8 +275,9 @@ delPollChannel = async function (message, args) {
 
 }
 
-togglePoll = async function (message) {
+async function togglePoll(message) {
 
     let tog = await serverSettings.toggle(message.guild.id, "pollOn");
     return `Poll setting turned ${tog ? "on":"off"}.`;
+
 }

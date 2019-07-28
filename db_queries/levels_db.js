@@ -172,7 +172,7 @@ exports.add_xp_exclusion = (guild_id, channel_id) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT * FROM exclusions WHERE guildID = ? AND channelID = ?", [guild_id, channel_id], (err, row) => {
             if (err) return reject(err);
-            if (row) return resolve(null);
+            if (row) return resolve(false);
             db.run("INSERT INTO exclusions VALUES (?, ?)", [guild_id, channel_id], err => {
                 if (err) return reject(err);
                 return resolve(true);
@@ -185,7 +185,7 @@ exports.del_xp_exclusion = (guild_id, channel_id) => {
     return new Promise((resolve, reject) => {
         db.get("SELECT * FROM exclusions WHERE guildID = ? AND channelID = ?", [guild_id, channel_id], (err, row) => {
             if (err) return reject(err);
-            if (!row) return resolve(null);
+            if (!row) return resolve(false);
             db.run("DELETE FROM exclusions WHERE guildID = ? AND channelID = ?", [guild_id, channel_id], err => {
                 if (err) return reject(err);
                 return resolve(true);

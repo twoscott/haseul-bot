@@ -10,7 +10,7 @@ const Image = require("../functions/images.js");
 
 // Functions
 
-const log = async (member, colour, logEvent) => {
+async function log(member, colour, logEvent) {
 
     // Check if logs on
     let logsOn = await serverSettings.get(member.guild.id, "joinLogsOn");
@@ -21,7 +21,7 @@ const log = async (member, colour, logEvent) => {
 
 }
 
-const getMemberNo = async (member) => {
+async function getMemberNo(member) {
 
     let guild = await member.guild.fetchMembers();
 
@@ -35,7 +35,7 @@ const getMemberNo = async (member) => {
 
 // Join
 
-exports.join = async function (member) {
+exports.join = async function(member) {
 
     let colour = functions.randomHexColor();
     welcome(member, colour);
@@ -45,7 +45,7 @@ exports.join = async function (member) {
 
 // Leave
 
-exports.leave = async function (member) {
+exports.leave = async function(member) {
 
     let colour = functions.randomHexColor();
     log(member, colour, logLeave);
@@ -54,7 +54,7 @@ exports.leave = async function (member) {
 
 // Welcome 
 
-const welcome = async function (member, colour) {
+async function welcome(member, colour) {
     
     let {
         user,
@@ -87,7 +87,7 @@ const welcome = async function (member, colour) {
 
 // Logs
 
-const logJoin = async function (member, destination, colour) {
+async function logJoin(member, destination, colour) {
     
     let memNo = await getMemberNo(member);
     let {
@@ -133,7 +133,7 @@ const logLeave = async function (member, destination, colour) {
 
 // Message
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
 
     let perms;
 
@@ -267,7 +267,7 @@ exports.msg = async function (message, args) {
 
 
 // Userinfo
-const userinfo = async function (message, args) {
+async function userinfo(message, args) {
 
     let { author, guild } = message;
     let target = args[1];
@@ -309,7 +309,7 @@ const userinfo = async function (message, args) {
 
 }
 
-const member_embed = async (author, member) => {
+async function member_embed(author, member) {
 
     let { user, guild } = member;
     let lastMsg = member.lastMessage
@@ -377,7 +377,7 @@ const member_embed = async (author, member) => {
 
 }
 
-const user_embed = async (user) => {
+async function user_embed(user) {
 
     let status = {
         "online" : "<:online:532078078063673355>Online",
@@ -403,7 +403,7 @@ const user_embed = async (user) => {
 }
 
 //User's avatar
-const user_dp = async function (message, args) {
+async function user_dp(message, args) {
 
     let { author, guild } = message;
     let target = args[1];
@@ -459,7 +459,7 @@ const user_dp = async function (message, args) {
     .setFooter(`Type: ${img_type.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${img_size}MB`);
 }
 
-setJoinChannel = async function (message, args) {
+async function setJoinChannel(message, args) {
 
     let channel_id;
     if (args.length < 1) {
@@ -481,7 +481,7 @@ setJoinChannel = async function (message, args) {
 
 }
 
-toggleJoin = async function (message) {
+async function toggleJoin(message) {
 
     let tog = await serverSettings.toggle(message.guild.id, "joinLogsOn");
     return `Join logs turned ${tog ? "on":"off"}.`;
@@ -490,7 +490,7 @@ toggleJoin = async function (message) {
 
 
 
-setWelcomeChannel = async function (message, args) {
+async function setWelcomeChannel(message, args) {
 
     let channel_id;
     if (args.length < 1) {
@@ -512,7 +512,7 @@ setWelcomeChannel = async function (message, args) {
 
 }
 
-setWelcomeMsg = async function (message, args) {
+async function setWelcomeMsg(message, args) {
 
     if (args.length < 4) {
         return "⚠ Please provide a message.";
@@ -520,11 +520,11 @@ setWelcomeMsg = async function (message, args) {
     let msgStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
     let msg = message.content.slice(msgStart).trim();   
     await serverSettings.set(message.guild.id, "welcomeMsg", msg)
-    return `Welcome message set to\`\`\`${msg}\`\`\``;
+    return "Welcome message set.";
 
 }
 
-toggleWelcome = async function (message) {
+async function toggleWelcome(message) {
 
     let tog = await serverSettings.toggle(message.guild.id, "welcomeOn");
     return `Welcome turned ${tog ? "on":"off"}.`;

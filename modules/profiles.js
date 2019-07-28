@@ -1,6 +1,5 @@
 // Require modules
 
-const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 
 const functions = require("../functions/functions.js");
@@ -8,9 +7,9 @@ const levels = require("../modules/levels.js");
 
 // const database = require("../db_queries/profiles_db.js");
 const repsdb = require("../db_queries/reps_db.js");
-const levelsdb = require("../db_queries/levels_db.js")
+const levelsdb = require("../db_queries/levels_db.js");
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
     // Handle commands
 
     switch (args[0]) {
@@ -32,7 +31,7 @@ exports.msg = async function (message, args) {
 
 }
 
-const profile_temp = async function (message, args) {
+async function profile_temp(message, args) {
 
     let { author, guild } = message;
     let target = args[0];

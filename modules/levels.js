@@ -1,28 +1,28 @@
 // Require modules
 
-const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 
 const functions = require("../functions/functions.js");
+
 const database = require("../db_queries/levels_db.js");
 
 // Functions
 
-const guildRank = (xp) => {
+function guildRank(xp) {
     let lvl = Math.floor(Math.log(xp/1000+100)/Math.log(10) * 200 - 399);
     let baseXp = Math.ceil(((10**((lvl+399)/200))-100)*1000);
     let nextXp = Math.ceil(((10**((lvl+400)/200))-100)*1000);
     return { lvl, baseXp, nextXp };
 }
 
-const globalRank = (xp) => {
+function globalRank(xp) {
     let lvl = Math.floor(Math.log(xp/1000+100)/Math.log(10) * 150 - 299);
     let baseXp = Math.ceil(((10**((lvl+299)/150))-100)*1000);
     let nextXp = Math.ceil(((10**((lvl+1+300)/150))-100)*1000);
     return { lvl, baseXp, nextXp };
 }
 
-const updateUserXp = async function (message) {
+async function updateUserXp(message) {
     
     let { author, guild, channel, createdTimestamp } = message;
     
@@ -40,12 +40,11 @@ const updateUserXp = async function (message) {
 
     let addXp = 5;
     let wordcount = message.content.split(/\s+/).length;
-    if (wordcount > 3) {
-        if (wordcount < 12) {
-            addXp += 10;
-        } else {
-            addXp += 10;
-        }
+    if (wordcount > 12) {
+        addXp += 10;
+    } 
+    else if (wordcount > 3) {
+        addXp += 5;
     }
     if (message.attachments.size > 0) {
         addXp += 10;
@@ -60,7 +59,7 @@ const updateUserXp = async function (message) {
 
 }
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
 
     updateUserXp(message);
 
@@ -131,7 +130,7 @@ exports.msg = async function (message, args) {
 
 }
 
-const exclude_channel = async function (message, args) {
+async function exclude_channel(message, args) {
 
     let perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
     if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
@@ -188,7 +187,7 @@ const exclude_channel = async function (message, args) {
 
 }
 
-const include_channel = async function (message, args) {
+async function include_channel(message, args) {
 
     let perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
     if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
@@ -245,7 +244,7 @@ const include_channel = async function (message, args) {
 
 }
 
-const leaderboard = async function(message, local) {
+async function leaderboard(message, local) {
 
     let { guild } = message;
     let ranks = local ? await database.get_all_guild_xp(guild.id) :

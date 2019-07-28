@@ -4,12 +4,11 @@ const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 
 const functions = require("../functions/functions.js");
-const levels = require("../modules/levels.js");
 
 const database = require("../db_queries/reps_db.js");
 const levelsdb = require("../db_queries/levels_db.js");
 
-exports.msg = async function (message, args) {
+exports.msg = async function(message, args) {
     // Handle commands
 
     switch (args[0]) {
@@ -126,7 +125,7 @@ exports.msg = async function (message, args) {
 
 }
 
-const rep = async function(message, args) {
+async function rep(message, args) {
 
     let { guild, author, createdTimestamp } = message;
     let todayDate = new Date(createdTimestamp).getUTCDate();
@@ -221,7 +220,7 @@ const rep = async function(message, args) {
 
 }
 
-const repStatus = async function (message) {
+async function repStatus(message) {
 
     let { author, createdTimestamp } = message;
 
@@ -258,7 +257,7 @@ const repStatus = async function (message) {
 
 }
 
-const repboard = async function(message, local) {
+async function repboard(message, local) {
 
     let guild = await message.guild.fetchMembers();
     let reps = await database.get_reps();
@@ -316,7 +315,7 @@ const repboard = async function(message, local) {
 
 }
 
-const streaks = async function(message) {
+async function streaks(message) {
 
     let { author, createdTimestamp } = message;
 
@@ -382,7 +381,7 @@ const streaks = async function(message) {
 
 }
 
-const streakboard = async function(message, local) {
+async function streakboard(message, local) {
 
     let { createdTimestamp } = message;
     let guild = await message.guild.fetchMembers();
