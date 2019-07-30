@@ -88,10 +88,18 @@ exports.update_streak = (timestamp, sender_id, recipient_id) => {
                 let sendingUser = Object.keys(streak).find(key => streak[key] == sender_id);
                 let receivingUser = Object.keys(streak).find(key => streak[key] == recipient_id);
                 if (timestamp - Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) > 36*60*60*1000/*36 Hours*/) {
-                    db.run(`UPDATE repStreaks SET firstRep = ?, ${sendingUser}LastRep = ?, ${receivingUser}LastRep = NULL, streak = 0 WHERE user1 = ? AND user2 = ?`, [timestamp, timestamp, streak.user1, streak.user2], err => {
-                        if (err) return reject(err);
-                        return resolve(0);
-                    })
+                    if (timestamp - Math.max(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) > 36*60*60*1000/*36 Hours*/) {
+                        db.run(`UPDATE repStreaks SET firstRep = ?, ${sendingUser}LastRep = ?, ${receivingUser}LastRep = NULL, streak = 0 WHERE user1 = ? AND user2 = ?`, [timestamp, timestamp, streak.user1, streak.user2], err => {
+                            if (err) return reject(err);
+                            return resolve(0);
+                        })
+                    } else {
+                        let leadingUser = streak.user1LastRep > streak.user2LastRep ? "user1" : "user2";
+                        db.run(`UPDATE repStreaks SET firstRep = ${leadingUser}LastRep, ${sendingUser}LastRep = ?, ${receivingUser}LastRep = ?, streak = 0 WHERE user1 = ? AND user2 = ?`, [timestamp, (receivingUser == leadingUser ? streak[`${leadingUser}LastRep`] : null), streak.user1, streak.user2], err => {
+                            if (err) return reject(err);
+                            return resolve(0);
+                        })
+                    }
                 } else {
                     let currentStreakDays = Math.floor((timestamp - streak.firstRep)/(24*60*60*1000/*24 Hours*/));
                     db.run(`UPDATE repStreaks SET ${sendingUser}LastRep = ?, streak = ? WHERE user1 = ? AND user2 = ?`, [timestamp, currentStreakDays, streak.user1, streak.user2], err => {
@@ -111,10 +119,18 @@ exports.update_streaks = (timestamp) => {
             for (let streak of streaks) {
                 await new Promise((resolve, reject) => {
                     if (timestamp - Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) > 36*60*60*1000/*36 Hours*/) {
-                        db.run(`DELETE FROM repStreaks WHERE user1 = ? AND user2 = ?`, [streak.user1, streak.user2], err => {
-                            if (err) return reject(err);
-                            return resolve();
-                        })
+                        if (timestamp - Math.max(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) > 36*60*60*1000/*36 Hours*/) {
+                            db.run(`DELETE FROM repStreaks WHERE user1 = ? AND user2 = ?`, [streak.user1, streak.user2], err => {
+                                if (err) return reject(err);
+                                return resolve();
+                            })
+                        } else {
+                            let [ leadingUser, fallingUser ] = streak.user1LastRep > streak.user2LastRep ? [ "user1", "user2" ] : [ "user2", "user1" ];
+                            db.run(`UPDATE repStreaks SET firstRep = ${leadingUser}LastRep, ${fallingUser}LastRep = NULL, streak = 0 WHERE user1 = ? AND user2 = ?`, [streak.user1, streak.user2], err => {
+                                if (err) return reject(err);
+                                return resolve();
+                            })
+                        }
                     } else {
                         let currentStreakDays = Math.floor((timestamp - streak.firstRep)/(24*60*60*1000/*24 Hours*/));
                         db.run(`UPDATE repStreaks SET streak = ? WHERE user1 = ? AND user2 = ?`, [currentStreakDays, streak.user1, streak.user2], err => {
