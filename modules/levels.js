@@ -250,6 +250,7 @@ async function leaderboard(message, local) {
     let ranks = local ? await database.get_all_guild_xp(guild.id) :
                         await database.get_all_global_xp();
 
+    ranks = ranks.slice(0,100); // show only top 100
     for (let i = 0; i < ranks.length; i++) {
         let rank = ranks[i]
         let user = Client.users.get(rank.userID);
