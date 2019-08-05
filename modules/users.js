@@ -461,10 +461,9 @@ async function user_dp(message, args) {
         embed.thumbnail = { url: user.displayAvatarURL };
         embed.description = `Type: ${img_type.toUpperCase()}\nSize: ${img_size}MB\nDimensions: ${dims.join('x')}\nUploaded: ${timestamp.toLocaleString('en-GB', { timeZone: 'UTC' }).split(',')[0]}`
     } else {
-        embed.description = `Uploaded: ${timestamp.toLocaleString('en-GB', { timeZone: 'UTC' })}`;
         embed.image = { url: user.displayAvatarURL.split('?')[0] + '?size=2048' };
         embed.footer = { text: `Type: ${img_type.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${img_size}MB` }
-        // embed.timestamp = timestamp;
+        embed.timestamp = timestamp;
     }
 
     return {embed};

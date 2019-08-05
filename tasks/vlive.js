@@ -83,12 +83,11 @@ async function vliveLoop() {
             }
 
             await database.add_video(videoSeq, channelSeq);
-
-            if (releaseTimestamp < lastVliveCheck) {
-                continue;
-            }
-
             let videoLive = videoType == 'LIVE';
+
+            if (!videoLive && releaseTimestamp < lastVliveCheck) {
+                continue;
+            }           
 
             for (let data of targetData) {
                 let { guildID, discordChanID, mentionRoleID, VPICK } = data;

@@ -227,6 +227,8 @@ async function get(message, args) {
     }
 
     let msg = await channel.fetchMessage(message_id);
+    if (!msg) return "⚠ Invalid message provided.";
+    if (msg.content.length < 1) return "⚠ Message has no content.";
     message.channel.send(`\`\`\`${msg.content.replace(/```/g, "'''")}\`\`\``);
 
 }

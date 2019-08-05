@@ -71,6 +71,7 @@ exports.msg = async function(message, args) {
         case ".vlive":
             switch (args[1]) {
 
+                case "noti":
                 case "notif":
                 case "notifs":
                 case "notification":
