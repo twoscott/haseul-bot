@@ -302,7 +302,6 @@ async function userinfo(message, args) {
             let user = await Client.fetchUser(user_id)
             return user_embed(user);
         } catch (e) {
-            console.error(e);
             return "⚠ Invalid user.";
         }
 
@@ -439,7 +438,6 @@ async function user_dp(message, args) {
         try {
             user = await Client.fetchUser(user_id)  
         } catch (e) {
-            console.error(e);
             return "⚠ Invalid user.";
         }
     }
@@ -447,17 +445,30 @@ async function user_dp(message, args) {
     let res = await axios.get(user.displayAvatarURL.split('?')[0] + '?size=2048', {responseType: 'arraybuffer'});
     let img_size = Math.max(Math.round(res.headers['content-length']/10000)/100, 1/100);
     let img_type = res.headers['content-type'].split('/')[1];
+    let timestamp = new Date(res.headers['last-modified']);
 
     let img  = new Image(res.data);
     let dims = img.dimensions;
     let username = user.username;
     let p = username.toLowerCase().endsWith('s') ? "'" : "'s";
 
-    return new Discord.RichEmbed()
-    .setAuthor(`${username+p} Avatar`)
-    .setImage(user.displayAvatarURL.split('?')[0] + '?size=2048')
-    .setColor(member ? member.displayColor || 0xffffff : 0xffffff)
-    .setFooter(`Type: ${img_type.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${img_size}MB`);
+    let embed = {
+        author: { name: `${username+p} Avatar`, url: user.displayAvatarURL.split('?')[0] + '?size=2048' },
+        color: member ? member.displayColor || 0xffffff : 0xffffff
+    }
+
+    if (dims[0] < 150) {
+        embed.thumbnail = { url: user.displayAvatarURL };
+        embed.description = `Type: ${img_type.toUpperCase()}\nSize: ${img_size}MB\nDimensions: ${dims.join('x')}\nUploaded: ${timestamp.toLocaleString('en-GB', { timeZone: 'UTC' }).split(',')[0]}`
+    } else {
+        embed.description = `Uploaded: ${timestamp.toLocaleString('en-GB', { timeZone: 'UTC' })}`;
+        embed.image = { url: user.displayAvatarURL.split('?')[0] + '?size=2048' };
+        embed.footer = { text: `Type: ${img_type.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${img_size}MB` }
+        // embed.timestamp = timestamp;
+    }
+
+    return {embed};
+
 }
 
 async function setJoinChannel(message, args) {
