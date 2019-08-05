@@ -8,8 +8,9 @@ exports.Client = Client;
 
 //Fetch handlers
 
-const messages = require("./handlers/msg_handler");
-const border = require("./handlers/border_handler");
+const messages = require("./handlers/msg_handler.js");
+const border = require("./handlers/border_handler.js");
+const checklist = require("./handlers/task_handler.js");
 
 // -- Events --
 
@@ -43,6 +44,8 @@ Client.on("ready", () => {
     console.log("Ready!");
     botchannel = Client.channels.get('417893349039669260');
     botchannel.send("Ready!");
+
+    checklist.handleTasks();
 })
 
 Client.on("message", message => {

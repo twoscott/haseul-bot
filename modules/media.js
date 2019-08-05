@@ -67,7 +67,7 @@ async function yt_pages(message, query) {
 
     let search = regExp.exec(data);
     for (let i = 0; search && i < 20; i++) {
-        pages.push({ content: `${i+1}. https://youtu.be/${search[1]}`, attachments: undefined });
+        pages.push({ content: `${i+1}. https://youtu.be/${search[1]}`, options: undefined });
         search = regExp.exec(data);
     }
     if (pages.length < 1) {

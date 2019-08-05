@@ -4,8 +4,6 @@ const { Client } = require("../haseul.js");
 
 const axios = require("axios");
 
-const Image = require("../functions/images.js");
-
 // Functions
 
 exports.msg = async function(message, args) {

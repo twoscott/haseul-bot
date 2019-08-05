@@ -268,6 +268,10 @@ async function repboard(message, local) {
         reps = reps.filter(rep => rep.rep > 0);
     }
 
+    if (streaks.length < 1) {
+        return `⚠ Nobody${local ? ' on this server ':' '}currently has any reps!`;
+    }
+
     for (let i = 0; i < reps.length; i++) {
         let rep = reps[i]
         let user = Client.users.get(rep.userID);
@@ -299,7 +303,7 @@ async function repboard(message, local) {
     let pages = descriptions.map((desc, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
                     name: `${local ? guild.name : `Global`} Repboard`, icon_url: 'https://i.imgur.com/OQLFaj9.png'
                 },
@@ -369,7 +373,7 @@ async function streaks(message) {
     let pages = descriptions.map((desc, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
                     name: `${author.username}${author.username[author.username.length-1] == 's' ? "'":"'s"} Rep Streaks`, icon_url: 'https://i.imgur.com/WwdqYpS.png'
                 },
@@ -400,7 +404,7 @@ async function streakboard(message, local) {
     }
 
     if (streaks.length < 1) {
-        return `⚠ Nobody ${local ? 'on this server':''} currently has any rep streaks!`;
+        return `⚠ Nobody${local ? ' on this server ':' '}currently has any rep streaks!`;
     }
 
     for (let i = 0; i < streaks.length; i++) {
@@ -440,7 +444,7 @@ async function streakboard(message, local) {
     let pages = descriptions.map((desc, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
                     name: `${local ? guild.name : `Global`} Rep Streakboard`, icon_url: 'https://i.imgur.com/WwdqYpS.png'
                 },

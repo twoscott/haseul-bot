@@ -70,7 +70,7 @@ async function listEmojis(message) {
     let pages = descriptions.map((desc, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
                     name: `${emojis.length} Emojis - ${staticEmojis.length} Static; ${animatedEmojis.length} Animated`, icon_url: 'https://i.imgur.com/hIpmRU2.png'
                 },
@@ -125,7 +125,7 @@ async function searchEmojis(message, query) {
     let pages = descriptions.map((desc, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
                     name: `${emojis.length} Results found for "${query.slice(0,30)}"`, icon_url: 'https://i.imgur.com/hIpmRU2.png'
                 },

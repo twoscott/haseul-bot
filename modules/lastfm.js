@@ -380,17 +380,17 @@ async function recent1Embed(track, lfUser, totalPlays, playCount, loved) {
     let image = track.image[track.image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
     let embed = new Discord.RichEmbed()
-    .setAuthor(`${lfUser+p} ${np ? 'Now Playing' : 'Last Track'}`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lfUser}/`)
+    .setAuthor(`${lfUser+p} ${np ? 'Now Playing' : 'Last Track'}`, `https://i.imgur.com/lQ3EqM6.png`, `https://www.last.fm/user/${lfUser}/`)
     .setThumbnail(thumbnail)
     .setURL(image)
     .addField('Track Info', field)
-    .setColor(0xc1222a)
+    .setColor(0xb90000)
     .setFooter(`${+loved ? '❤ Loved  |  ':''}Total Plays: ${totalPlays}`);
 
     if (playCount >= 0) {
         embed.addField('Track Plays', playCount);
     } else {
-        embed.addField('Track Plays', 'Unavailable');
+        embed.addField('Track Plays', 'N/A');
     }
 
     if (!np && track.date) {
@@ -415,13 +415,13 @@ async function recent2Embed (tracks, lfUser, totalPlays, playCount) {
     let image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
     let embed = new Discord.RichEmbed()
-    .setAuthor(`${lfUser+p} Recent Tracks`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${lfUser}/`)
+    .setAuthor(`${lfUser+p} Recent Tracks`, `https://i.imgur.com/lQ3EqM6.png`, `https://www.last.fm/user/${lfUser}/`)
     .setThumbnail(thumbnail)
     .setURL(image)
     .addField(np ? 'Now Playing' : 'Last Played', field1)
     .addField("Previous Track", field2)
-    .setColor(0xc1222a)
-    .setFooter(`Track Plays: ${playCount ? playCount : 'Unavailable'}  |  Total Plays: ${totalPlays}`);
+    .setColor(0xb90000)
+    .setFooter(`Track Plays: ${playCount ? playCount : 'N/A'}  |  Total Plays: ${totalPlays}`);
 
     if (!np && tracks[0].date) {
         embed.setTimestamp(new Date(0).setSeconds(tracks[0].date.uts));
@@ -460,14 +460,14 @@ async function recentListPages (message, tracks, lfUser) {
     let pages = descriptions.map((desc, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
-                    name: `${lfUser+p} Recent Tracks`, icon_url: 'https://i.imgur.com/YbZ52lN.png', url: `https://www.last.fm/user/${lfUser}/`
+                    name: `${lfUser+p} Recent Tracks`, icon_url: 'https://i.imgur.com/lQ3EqM6.png', url: `https://www.last.fm/user/${lfUser}/`
                 },
                 url: image,
                 description: desc,
                 thumbnail: { url: thumbnail },
-                color: 0xc1222a,
+                color: 0xb90000,
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
@@ -578,7 +578,7 @@ async function lf_top_media(message, args, type) {
     let pages = descriptions.map((desc, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
                     name: `${lf_user+p} Top ${type[0].toUpperCase()+type.slice(1)}s`, icon_url: embeds[type].image, url: `https://www.last.fm/user/${lf_user}/library/${type}s?date_preset=${date_preset}`
                 },
@@ -635,8 +635,8 @@ async function lf_profile(message, username) {
     let track_count = response.data.toptracks["@attr"].total;
 
     let embed = new Discord.RichEmbed()
-    .setAuthor(`${user.name}`,`https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${user.name}/`)
-    .setColor(0xc1222a)
+    .setAuthor(`${user.name}`,`https://i.imgur.com/lQ3EqM6.png`, `https://www.last.fm/user/${user.name}/`)
+    .setColor(0xb90000)
     .setFooter(`Total Scrobbles: ${user.playcount}`)
     .setThumbnail(thumbnail)
     .setURL(image)
@@ -678,9 +678,9 @@ async function lf_avatar(message, username) {
     let p = username.toLowerCase().endsWith('s') ? "'" : "'s";
 
     return new Discord.RichEmbed()
-    .setAuthor(`${name+p} Last.fm Avatar`, `https://i.imgur.com/YbZ52lN.png`, `https://www.last.fm/user/${name}/`)
+    .setAuthor(`${name+p} Last.fm Avatar`, `https://i.imgur.com/lQ3EqM6.png`, `https://www.last.fm/user/${name}/`)
     .setImage(avatar_url)
-    .setColor(0xc1222a)
+    .setColor(0xb90000)
     .setFooter(`Type: ${img_type.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${img_size}MB`);
 
 }

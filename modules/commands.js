@@ -141,7 +141,7 @@ async function addCommand(message, args) {
     text = [text, fileUrl].join('\n');
     
     let added = await database.add_command(message.guild.id, commandName, text);
-    return added ? `Command \`.${command_name}\` was added.` : `⚠ A command with the name \`${command_name}\` already exists.`;
+    return added ? `Command \`.${commandName}\` was added.` : `⚠ A command with the name \`${commandName}\` already exists.`;
 
 }
 
@@ -152,7 +152,7 @@ async function delCommand(message, commandName) {
     }
 
     let removed = await database.remove_command(message.guild.id, commandName);
-    return removed ? `Command \`.${command_name}\` was removed.` : `⚠ No command with the name \`${command_name}\` was found.`;
+    return removed ? `Command \`.${commandName}\` was removed.` : `⚠ No command with the name \`${commandName}\` was found.`;
 
 }
 
@@ -183,7 +183,7 @@ async function editCommand(message, args) {
     text = [text, fileUrl].join('\n');
     
     let edited = await database.edit_command(message.guild.id, commandName, text);
-    return edited ? `Command \`.${command_name}\` was edited.` : `⚠ No command with the name \`${command_name}\` was found.`;
+    return edited ? `Command \`.${commandName}\` was edited.` : `⚠ No command with the name \`${commandName}\` was found.`;
 
 }
 
@@ -215,7 +215,7 @@ async function listCommands(message) {
     let pages = descriptions.map((desc, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
                     name: "Custom Commands List", icon_url: 'https://i.imgur.com/gzL6uIE.png'
                 },
@@ -280,7 +280,7 @@ async function searchCommands(message, query) {
     let pages = descriptions.map((desc, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
                     name: `${commandNames.length} Results Found for "${query}"`, icon_url: 'https://i.imgur.com/gzL6uIE.png'
                 },

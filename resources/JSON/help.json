@@ -3,8 +3,8 @@
     "lastfm": {
         "name": "lastfm | fm",
         "description": "⚠ `[]` signifies the parameter is required, `<>` parameters and words ending with `?` are optional.",
-        "image": "https://i.imgur.com/YbZ52lN.png",
-        "colour": "0xc1222a",
+        "image": "https://i.imgur.com/lQ3EqM6.png",
+        "colour": "0xb90000",
         "commands": [
             {
                 "name": "fm set",

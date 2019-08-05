@@ -301,7 +301,7 @@ async function help(message, args) {
         let pages = descriptions.map((desc, i) => {
             return {
                 content: "To get help, type `.help <module name>`. Here you will see the module's commands and how to use them.",
-                attachments: {embed: {
+                options: {embed: {
                     author: {
                         name: 'Modules', icon_url: 'https://i.imgur.com/p9n0Y0C.png'
                     },
@@ -380,7 +380,7 @@ async function help(message, args) {
     let pages = fieldPages.map((page, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
                     name: module_obj.name, icon_url: module_obj.image
                 },

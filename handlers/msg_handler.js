@@ -6,6 +6,7 @@ const lastfm = require("../modules/lastfm.js");
 const levels = require("../modules/levels.js");
 const media = require("../modules/media.js");
 const moderation = require("../modules/moderation.js");
+const misc = require("../modules/misc.js");
 const notifications = require("../modules/notifications.js");
 const profiles = require("../modules/profiles.js");
 const reps = require("../modules/reps.js");
@@ -13,6 +14,7 @@ const roles = require("../modules/roles.js");
 const servers = require("../modules/servers.js");
 const users = require("../modules/users.js");
 const utility = require("../modules/utility.js");
+const vlive = require("../modules/vlive.js");
 
 //Handle message
 
@@ -33,6 +35,7 @@ exports.handleMsg = (message) => {
     levels.msg(message, args);
     moderation.msg(message, args);
     media.msg(message, args);
+    misc.msg(message, args);
     notifications.msg(message, args);
     profiles.msg(message, args);
     reps.msg(message, args);
@@ -40,6 +43,7 @@ exports.handleMsg = (message) => {
     servers.msg(message, args);
     users.msg(message, args);
     utility.msg(message, args);
+    vlive.msg(message, args);
 
 }
 

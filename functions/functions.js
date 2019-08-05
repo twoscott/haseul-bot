@@ -28,6 +28,7 @@ exports.randomHexColor = () => {
 
 exports.searchMembers = async (guild, query) => {
     
+    query = query.toLowerCase();
     members = guild.members.array();
 
     let member;
@@ -100,7 +101,7 @@ exports.getTimeFrom = (startTime, endTime) => {
 
     startTimeSec = startTime / 1000;
     endTimeSec = endTime / 1000;
-    let timeDiffSecs = endTimeSec - startTimeSec;
+    let timeDiffSecs = Math.ceil(endTimeSec - startTimeSec);
     let hours, minutes, seconds;
 
     if (timeDiffSecs > 0) { // more than 0 seconds
@@ -121,9 +122,9 @@ exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
     let p = 0;
 
     if (pages.length < 2) {
-        source.channel.send(pages[p].content, pages[p].attachments);
+        source.channel.send(pages[p].content, pages[p].options);
     } else {
-        source.channel.send(pages[p].content, pages[p].attachments).then(async reply => {
+        source.channel.send(pages[p].content, pages[p].options).then(async reply => {
 
             let listeners = [];
 
@@ -180,7 +181,7 @@ exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
                     }
                     if (p != 0) {
                         p = 0;
-                        reply.edit(pages[p].content, pages[p].attachments);
+                        reply.edit(pages[p].content, pages[p].options);
                     }
 
                     for (i=0; i < users.length; i++) {
@@ -216,7 +217,7 @@ exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
                     } else {
                         p--;
                     }
-                    reply.edit(pages[p].content, pages[p].attachments);
+                    reply.edit(pages[p].content, pages[p].options);
 
                     for (i=0; i < users.length; i++) {
                         let user = users[i];
@@ -251,7 +252,7 @@ exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
                     } else {
                         p++;
                     }
-                    reply.edit(pages[p].content, pages[p].attachments);
+                    reply.edit(pages[p].content, pages[p].options);
 
                     for (i=0; i < users.length; i++) {
                         let user = users[i];
@@ -283,7 +284,7 @@ exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
                     }
                     if (p != pages.length - 1) {
                         p = pages.length - 1;
-                        reply.edit(pages[p].content, pages[p].attachments);
+                        reply.edit(pages[p].content, pages[p].options);
                     }
 
                     for (i=0; i < users.length; i++) {

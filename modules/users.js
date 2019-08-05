@@ -138,6 +138,7 @@ exports.msg = async function(message, args) {
     let perms;
 
     // Handle commands
+    
     switch (args[0]) {
 
         case ".userinfo":

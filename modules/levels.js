@@ -261,7 +261,7 @@ async function leaderboard(message, local) {
         }
     }
 
-    let rankString = ranks.sort((a,b) => a.name.localeCompare(b.name)).sort((a,b) => b.xp - a.xp).map((data, i) => `${i+1}. **${data.name}** (Lvl **${data.lvl}** - ${data.xp} XP)`).join('\n');
+    let rankString = ranks.sort((a,b) => a.name.localeCompare(b.name)).sort((a,b) => b.xp - a.xp).map((data, i) => `${i+1}. **${data.name}** (Lvl **${data.lvl}** - ${data.xp.toLocaleString()} XP)`).join('\n');
 
     let descriptions = [];
     while (rankString.length > 2048 || rankString.split('\n').length > 20) {
@@ -276,13 +276,13 @@ async function leaderboard(message, local) {
         rankString = rankString.slice(lastIndex);
 
         descriptions.push(currString);
-    } 
+    }
     descriptions.push(rankString);
 
     let pages = descriptions.map((desc, i) => {
         return {
             content: undefined,
-            attachments: {embed: {
+            options: {embed: {
                 author: {
                     name: `${local ? guild.name : `Global`} Leaderboard`, icon_url: 'https://i.imgur.com/qfUfBps.png'
                 },
