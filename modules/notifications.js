@@ -1,6 +1,7 @@
 // Require modules
 
 const Discord = require("discord.js");
+const Client = require("../haseul.js").Client;
 
 const HashSet = require("hashset");
 
@@ -12,28 +13,26 @@ async function notify(message) {
 
     // Fetch stored notifications
     let { guild, channel, author, content, member } = message;
-    let chan_blacklist = await database.get_server_blacklist_channels(guild.id);
-    if (chan_blacklist.find(row => row.channelID == channel.id)) return;
     
     let locals = await database.get_local_notifs(guild.id);
     let globals = await database.get_global_notifs();
     let notifs = locals.concat(globals).filter(n => n.userID != author.id);
+    if (notifs.length < 1) return;
     let matches = new Map();
 
-    // Embed template
-    let notif_embed = () => {
-        let msg = content.length < 1025 ? content
-                    : content[1020] == ' '  ? content.slice(0,1020)+'...'
-                    : content.slice(0,1021) + '...';
-        let msg_url = `https://discordapp.com/channels/${guild.id}/${channel.id}/${message.id}`;
-        let colour  =  member.displayColor || 0xffffff;
-        return new Discord.RichEmbed()
-        .setAuthor(author.tag, author.displayAvatarURL, author.displayAvatarURL)
-        .setDescription(`__[View Message](${msg_url})__`)
-        .addField("Content", msg)
-        .setFooter(`#${channel.name}`)
-        .setTimestamp(message.createdAt)
-        .setColor(colour);
+    let ignored_channels = await database.get_ignored_channels();
+    let ignored_servers = await database.get_ignored_servers();
+
+    let msg_url = `https://discordapp.com/channels/${guild.id}/${channel.id}/${message.id}`;
+    let embed = {
+        author: { name: author.tag, icon_url: author.displayAvatarURL, url: msg_url},
+        description: `__[View Message](${msg_url})__`,
+        color: member.displayColor || 0xffffff,
+        fields: [
+            { name: 'Content', value: content.length < 1025 ? content : content.slice(0,1021).trim()+'...' }
+        ],
+        footer: { text: `#${channel.name}` },
+        timestamp: message.createdAt
     }
 
     // Filter notifications and notify valid users
@@ -59,6 +58,12 @@ async function notify(message) {
     }
 
     for (let userID of matches.keys()) {
+
+        let ignored_server = ignored_servers.find(x => x.userID == userID && x.guildID == guild.id);
+        if (ignored_server) continue;
+        let ignored_channel = ignored_channels.find(x => x.userID == userID && x.channelID == channel.id);
+        if (ignored_channel) continue;
+
         let member;
         try {
             member = await guild.fetchMember(userID);
@@ -73,7 +78,7 @@ async function notify(message) {
         let set = matches.get(userID);
         let keywords = set.toArray().sort().join('`, `');
         let alert = `\\💬 **${author.username}** mentioned \`${keywords}\` in ${channel}`;
-        member.send(alert, notif_embed());
+        member.send(alert, {embed});
     }
 
 }
@@ -173,7 +178,7 @@ exports.msg = async function(message, args) {
                     })
                     break;
 
-                //Do not Disturb
+                // Do not Disturb
                 case "donotdisturb":
                 case "dnd":
                 case "toggle":
@@ -199,16 +204,15 @@ exports.msg = async function(message, args) {
                         message.channel.stopTyping();
                     })
                     break;
-
+                
+                // ignore
                 case "blacklist":
-                    let perms = ["ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG"];
-                    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                    if (!perms.some(p => message.member.hasPermission(p))) break;
+                case "ignore":
                     switch (args[2]) {
 
-                        case "add":
-                            message.channel.stopTyping();
-                            add_server_blacklist_channel(message, args.slice(3)).then(response => {
+                        case "server":
+                            message.channel.startTyping();
+                            ignore_server(message).then(response => {
                                 if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -217,9 +221,9 @@ exports.msg = async function(message, args) {
                             })
                             break;
 
-                        case "remove":
-                            message.channel.stopTyping();
-                            remove_server_blacklist_channel(message, args.slice(3)).then(response => {
+                        default:
+                            message.channel.startTyping();
+                            ignore_channel(message, args.slice(2)).then(response => {
                                 if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -227,9 +231,10 @@ exports.msg = async function(message, args) {
                                 message.channel.stopTyping();
                             })
                             break;
-                        
+
                     }
-                    break;
+                    
+
 
             }
             break;
@@ -343,141 +348,72 @@ async function list_notifications(message) {
         return "⚠ You don't have any notifications!";
     }
 
-    let embed = new Discord.RichEmbed()
-    .setTitle("Keyword - Scope - Type")
-    .setColor(message.member.displayColor || 0xffffff)
-    .setFooter(`${notifs.length} Notifications`);
-    let description = [];
-    for (let notif of notifs) {
-        
-        let {
-            guildID,
-            userID,
-            keyword,
-            type
-        } = notif;
-        if (author.id != userID) continue;
+    let notifString = ['**Notifications List**\n__Scope - Type - Keyword__'].concat(notifs.map(notif => {
+        let scope;
+        if (notif.guildID) {
+            let guild = Client.guilds.get(notif.guildID);
+            scope = guild ? guild.name : notif.guildID;
+        } else {
+            scope = 'Global';
+        }
+        return `\`${scope}\` - \`${notif.type}\` - ${notif.keyword.toLowerCase()}`;
+    })).join('\n');
 
-        let row = [];
-        row.push(`**${keyword}**`);
-        row.push(guildID ? 'Local' : 'Global');
-        row.push(`\`${type}\``);
-        description.push(row.join(' - '));
+    let pages = [];
+    while (notifString.length > 2048 || notifString.split('\n').length > 20) {
+        let currString = notifString.slice(0, 2048);
 
+        let lastIndex = 0;
+        for (let i = 0; i < 20; i++) {
+            let index = currString.indexOf('\n', lastIndex) + 1;
+            if (index) lastIndex = index; else break;
+        }
+        currString = currString.slice(0, lastIndex);
+        notifString = notifString.slice(lastIndex);
+
+        pages.push(currString);
+    } 
+    pages.push(notifString);
+
+    for (let page of pages) {
+        await author.send(page);
     }
 
-    description = description.join('\n');
-
-    if (description.length > 2048) {
-        description = description.slice(0, 2045) + '...';
-    }
-
-    message.author.send('📋 Here is a list of notifications you have:', embed.setDescription(description));
-    return "A list of your notifications has been sent to your DMs."
+    return "A list of your notifications has been sent to your DMs.";
 }
 
-async function add_server_blacklist_channel(message, args) {
+async function ignore_channel(message, args) {
 
-    let { guild, channel } = message;
-    let channel_id;
-    if (args.length < 1) {
-        channel_id = channel.id;
-    } else {
-        channel_id = args[0].match(/<?#?!?(\d+)>?/);
+    let { author, guild, channel } = message;
+
+    if (args.length >= 1) {
+        let channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return"⚠ Invalid channel or channel ID.";
+            return "⚠ Invalid channel or channel ID.";
         }
         channel_id = channel_id[1];
+        channel = guild.channels.get(channel_id);
     }
-    
-    channel = guild.channels.get(channel_id);
+
     if (!channel) {
         return "⚠ Channel doesn't exist in this server.";
     }
-
-    switch (channel.type) {
-        case "text":
-            let added = database.add_server_blacklist_channel(guild.id, channel_id);
-            if (!added) {
-                return `⚠ <#${channel_id}> is already blacklisted from notifying users.`;
-            }
-            return `<#${channel_id}> is now blacklisted from notifying users.`;
-        case "category":
-            if (channel.children.size == 0) return `⚠ There are no channels in ${channel.name}`;
-            
-            let textChans = 0;
-            let addedTotal = 0;
-            let children = channel.children.array();
-            for (let i = 0; i < children.length; i++) {
-                let child = children[i];
-                if (child.type != 'text') continue;
-                let added = await database.add_server_blacklist_channel(guild.id, child.id);
-                addedTotal += +added; textChans += 1;
-            }
-
-            if (textChans <= 0) {
-                return `⚠ There are no text channels belonging to \`${channel.name}\`.`;
-            } else if (addedTotal <= 0) {
-                return `⚠ All text channels in \`${channel.name}\` are already blacklisted from notifying users.`;
-            } else if (addedTotal == channel.children.size) {
-                return `All text channels in \`${channel.name}\` are now blacklisted from notifying users.`;
-            }
-            return `${addedTotal} channel${addedTotal != 1 ? 's':''} in \`${channel.name}\` are now blacklisted from notifying users.`;
-        default:
-            return `⚠ \`${channel.name}\` is not a text chanel.`;
+    if (channel.type != "text") {
+        return "⚠ Channel must be a text channel.";
     }
+
+    let ignored = await database.ignore_channel(author.id, channel.id);
+    return ignored ? `You will no longer be sent notifications for messages in ${channel}.`:
+                     `You will now be sent notifications for messages in ${channel}.`;
 
 }
 
-async function remove_server_blacklist_channel(message, args) {
+async function ignore_server(message) {
 
-    let { guild, channel } = message;
-    let channel_id;
-    if (args.length < 1) {
-        channel_id = channel.id;
-    } else {
-        channel_id = args[0].match(/<?#?!?(\d+)>?/);
-        if (!channel_id) {
-            return"⚠ Invalid channel or channel ID.";
-        }
-        channel_id = channel_id[1];
-    }
-    channel = guild.channels.get(channel_id);
-    if (!channel) {
-        return "⚠ Channel doesn't exist in this server.";
-    }
-
-    switch (channel.type) {
-        case "text":
-            let added = database.remove_server_blacklist_channel(guild.id, channel_id);
-            if (!added) {
-                return `⚠ <#${channel_id}> is not blacklisted from notifying users.`;
-            }
-            return `<#${channel_id}> is no longer blacklisted from notifying users.`;
-        case "category":
-            if (channel.children.size == 0) return `⚠ There are no channels in ${channel.name}`;
-            
-            let textChans = 0;
-            let addedTotal = 0;
-            let children = channel.children.array();
-            for (let i = 0; i < children.length; i++) {
-                let child = children[i];
-                if (child.type != 'text') continue;
-                let added = await database.remove_server_blacklist_channel(guild.id, child.id);
-                addedTotal += +added; textChans += 1;
-            }
-
-            if (textChans <= 0) {
-                return `⚠ There are no text channels belonging to \`${channel.name}\`.`;
-            } else if (addedTotal <= 0) {
-                return `⚠ No text channels in \`${channel.name}\` are blacklisted from notifying users.`;
-            } else if (addedTotal == channel.children.size) {
-                return `All text channels in \`${channel.name}\` are no longer blacklisted from notifying users.`;
-            }
-            return `${addedTotal} channel${addedTotal != 1 ? 's':''} in \`${channel.name}\` are no longer blacklisted from notifying users.`;
-        default:
-            return `⚠ \`${channel.name}\` is not a text chanel.`;
-    }
+    let { author, guild } = message;
+    let ignored = await database.ignore_server(author.id, guild.id);
+    return ignored ? `You will no longer be sent notifications for messages in this server.`:
+                     `You will now be sent notifications for messages in this server.`;
 
 }
 

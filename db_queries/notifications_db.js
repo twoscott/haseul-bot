@@ -19,9 +19,15 @@ db.run(`CREATE TABLE IF NOT EXISTS localNotifs  (
     keyexp TEXT NOT NULL, 
     type TEXT DEFAULT "NORMAL"
 )`);
-db.run(`CREATE TABLE IF NOT EXISTS channelsBlacklist (
+db.run(`CREATE TABLE IF NOT EXISTS channelBlacklist (
+    userID TEXT NOT NULL,
+    channelID TEXT NOT NULL,
+    UNIQUE(userID, channelID)
+)`);
+db.run(`CREATE TABLE IF NOT EXISTS serverBlacklist (
+    userID TEXT NOT NULL,
     guildID TEXT NOT NULL,
-    channelID TEXT NOT NULL
+    UNIQUE(userID, guildID)
 )`);
 db.run(`CREATE TABLE IF NOT EXISTS DnD (
     userID TEXT NOT NULL,
@@ -143,40 +149,62 @@ exports.clear_local_notifs = (guild_id, user_id) => {
     })
 }
 
-// Blacklist
+// channel blacklist
 
-exports.add_server_blacklist_channel = (guild_id, channel_id) => {
+exports.ignore_channel = (user_id, channel_id) => {
     return new Promise((resolve, reject) => {
-        db.get("SELECT channelID FROM channelsBlacklist WHERE guildID = ? AND channelID = ?",
-        [guild_id, channel_id], (err, row) => {
+        db.get("SELECT channelID FROM channelBlacklist WHERE userID = ? AND channelID = ?", [user_id, channel_id], (err, row) => {
             if (err) return reject(Error(err));
-            if (row) return resolve(false);
-            db.run("INSERT INTO channelsBlacklist VALUES (?, ?)", [guild_id, channel_id], err => {
-                if (err) return reject(Error(err));
-                resolve(true);
-            })
+            if (row) {
+                db.run("DELETE FROM channelBlacklist WHERE userID = ? AND channelID = ?", [user_id, channel_id], err => {
+                    if (err) return reject(err);
+                    return resolve(false);
+                })
+            } else {
+                db.run("INSERT INTO channelBlacklist VALUES (?, ?)", [user_id, channel_id], err => {
+                    if (err) return reject(Error(err));
+                    resolve(true);
+                })
+            }
+            
         })
     })
 }
 
-exports.remove_server_blacklist_channel = (guild_id, channel_id) => {
+exports.get_ignored_channels = () => {
     return new Promise((resolve, reject) => {
-        db.get("SELECT channelID FROM channelsBlacklist WHERE guildID = ? AND channelID = ?",
-        [guild_id, channel_id], (err, row) => {
+        db.all("SELECT * FROM channelBlacklist", (err, rows) => {
             if (err) return reject(Error(err));
-            if (!row) return resolve(false);
-            db.run("DELETE FROM channelsBlacklist WHERE guildID = ? AND channelID = ?",
-            [guild_id, channel_id], err => {
-                if (err) return reject(Error(err));
-                resolve(true);
-            })
+            return resolve(rows);
         })
     })
 }
 
-exports.get_server_blacklist_channels = () => {
+// server blacklist
+
+exports.ignore_server = (user_id, guild_id) => {
     return new Promise((resolve, reject) => {
-        db.all("SELECT channelID FROM channelsBlacklist", (err, rows) => {
+        db.get("SELECT guildID FROM serverBlacklist WHERE userID = ? AND guildID = ?", [user_id, guild_id], (err, row) => {
+            if (err) return reject(Error(err));
+            if (row) {
+                db.run("DELETE FROM serverBlacklist WHERE userID = ? AND guildID = ?", [user_id, guild_id], err => {
+                    if (err) return reject(err);
+                    return resolve(false);
+                })
+            } else {
+                db.run("INSERT INTO serverBlacklist VALUES (?, ?)", [user_id, guild_id], err => {
+                    if (err) return reject(Error(err));
+                    resolve(true);
+                })
+            }
+            
+        })
+    })
+}
+
+exports.get_ignored_servers = () => {
+    return new Promise((resolve, reject) => {
+        db.all("SELECT * FROM serverBlacklist", (err, rows) => {
             if (err) return reject(Error(err));
             return resolve(rows);
         })
