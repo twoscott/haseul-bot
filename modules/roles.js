@@ -3,6 +3,7 @@
 const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 
+const functions = require("../functions/functions.js");
 const serverSettings = require("../modules/server_settings.js");
 
 const database = require("../db_queries/roles_db.js");
@@ -40,22 +41,21 @@ exports.msg = async function(message, args) {
 
     // Handle commands
 
-    let perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
-    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-    if (!perms.some(p => message.member.hasPermission(p))) return;
+    let perms;
 
     switch (args[0]) {
 
-        // Role pairs
-
         case ".autorole":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!perms.some(p => message.member.hasPermission(p))) break;
             switch (args[1]) {
 
                 case "set":
                     message.channel.startTyping();
                     setAutorole(message, args).then(response => {
-                        message.channel.send(response);
-                        message.channel.stopTyping();
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
                         message.channel.stopTyping();
@@ -65,8 +65,8 @@ exports.msg = async function(message, args) {
                 case "toggle":
                     message.channel.startTyping();
                     toggleAutorole(message).then(response => {
-                        message.channel.send(response);
-                        message.channel.stopTyping();
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
                         message.channel.stopTyping();
@@ -79,10 +79,27 @@ exports.msg = async function(message, args) {
         case ".roles":
             switch (args[1]) {
 
+                case "list":
+                    message.channel.startTyping();
+                    roleslist(message).then(response => {
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
+
+            }
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!perms.some(p => message.member.hasPermission(p))) break;
+            switch (args[1]) {
+
                 case "toggle":
                     message.channel.startTyping();
                     toggleRoles(message).then(response => {
-                        message.channel.send(response);
+                        if (response) message.channel.send(response);
                         message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
@@ -94,8 +111,8 @@ exports.msg = async function(message, args) {
                 case "add":
                     message.channel.startTyping();
                     add_role(message, args).then(response => {
-                        message.channel.send(response);
-                        message.channel.stopTyping();
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
                         message.channel.stopTyping();
@@ -107,26 +124,13 @@ exports.msg = async function(message, args) {
                 case "del":
                     message.channel.startTyping();
                     remove_role(message, args).then(response => {
-                        message.channel.send(response);
-                        message.channel.stopTyping();
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
                         message.channel.stopTyping();
                     })
                     break;
-
-                case "list":
-                    message.channel.startTyping();
-                    list_roles(message).then(response => {
-                        message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-                // Roles msg
 
                 case "message":
                 case "msg":
@@ -134,17 +138,15 @@ exports.msg = async function(message, args) {
                         case "set":
                             message.channel.startTyping();
                             set_roles_msg(message, args).then(response => {
-                                message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
+                        break;
                     }
-                    break;    
-
-                // Roles channel
+                    break;
 
                 case "channel":
                     switch (args[2]) {
@@ -152,23 +154,40 @@ exports.msg = async function(message, args) {
                         case "set":
                             message.channel.startTyping();
                             set_roles_channel(message, args.slice(3)).then(response => {
-                                message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
                             break;
 
                         case "update":
                             message.channel.startTyping();
                             update_roles_channel(message, args.slice(3)).then(response => {
-                                message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
+                            break;
+
+                    }
+                    break;
+
+                case "pairs":
+                    switch (args[2]) {
+
+                        case "list":
+                            message.channel.startTyping();
+                            list_roles(message).then(response => {
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
                             break;
 
                     }
@@ -180,6 +199,9 @@ exports.msg = async function(message, args) {
         // Available roles
 
         case ".avarole":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!perms.some(p => message.member.hasPermission(p))) break;
             message.channel.startTyping();
             toggle_available_role(message, args).then(response => {
                 message.channel.send(response);
@@ -188,6 +210,36 @@ exports.msg = async function(message, args) {
                 console.error(error);
                 message.channel.stopTyping();
             })
+            break;
+
+        case ".biaslist":
+            message.channel.startTyping();
+            biaslist(message).then(response => {
+                message.channel.send(response);
+                message.channel.stopTyping();
+            }).catch(error => {
+                console.error(error);
+                message.channel.stopTyping();
+            })
+            break;
+            
+        case ".bias":
+            switch (args[1]) {
+
+                case "list":
+                    message.channel.startTyping();
+                    biaslist(message).then(response => {
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
+
+            }
+            break;
+
     }
 }
 
@@ -356,7 +408,7 @@ async function add_role(message, args) {
         return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
 
-    let textStart = message.content.match(new RegExp(args.slice(0, 3).join('\\s+')))[0].length;
+    let textStart = message.content.match(new RegExp(args.slice(0, 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     let roles_text = message.content.slice(textStart).trim();
     let pairs = roles_text.split(",");
     let errors = [];
@@ -405,7 +457,7 @@ async function remove_role(message, args) {
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
         return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
-    let textStart = message.content.match(new RegExp(args.slice(0, 3).join('\\s+')))[0].length;
+    let textStart = message.content.match(new RegExp(args.slice(0, 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     let roles_text = message.content.slice(textStart).trim();
     let role_commands = roles_text.split(",");
 
@@ -444,7 +496,7 @@ async function toggle_available_role(message, args) {
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
         return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
-    let textStart = message.content.match(new RegExp(args.slice(0, 2).join('\\s+')))[0].length;
+    let textStart = message.content.match(new RegExp(args.slice(0, 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     let roles_text = message.content.slice(textStart).trim();
     let role_names = roles_text.split(",");
 
@@ -568,7 +620,7 @@ async function set_roles_msg(message, args) {
     if (args.length < 4) {
         return "⚠ Please provide a message.";
     }
-    let msgStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
+    let msgStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     let msg = message.content.slice(msgStart).trim();
     await database.set_roles_msg(message.guild.id, msg);
     return "Roles message set.";
@@ -581,7 +633,7 @@ async function setAutorole(message, args) {
         return "⚠ Please provide a role name.";
     }
 
-    let roleStart = message.content.match(new RegExp(args.slice(0, 2).join('\\s+')))[0].length;
+    let roleStart = message.content.match(new RegExp(args.slice(0, 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     let roleName = message.content.slice(roleStart).trim();
     let role = message.guild.roles.find(role => role.name == roleName);
     if (!role) {
@@ -606,5 +658,106 @@ async function toggleRoles(message) {
 
     let tog = await serverSettings.toggle(message.guild.id, "rolesOn");
     return `Roles assignment turned ${tog ? "on":"off"}.`;
+
+}
+
+async function biaslist(message) {
+
+    let { guild } = message;
+
+    let roleData = await database.get_all_roles(guild.id);
+    if (roleData.length < 1) {
+        return '⚠ No bias roles are set up on this server!';
+    }
+
+    let guildRoles = guild.roles.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
+    
+    let mainRoles = guildRoles.filter(role => {
+        let dataMatch = roleData.find(data => data.roleID == role.id);
+        if (!dataMatch) return false;
+        if (dataMatch.type.toUpperCase() != 'MAIN') return false;
+        return true;
+    }).map(role => `${role} - ${role.members.size} member${role.members.size != 1 ? 's':''}`).join('\n');
+    let subRoles = guildRoles.filter(role => {
+        let dataMatch = roleData.find(data => data.roleID == role.id);
+        if (!dataMatch) return false;
+        if (dataMatch.type.toUpperCase() != 'SUB') return false;
+        return true;
+    }).map(role => `${role} - ${role.members.size} member${role.members.size != 1 ? 's':''}`).join('\n');
+    
+    if (mainRoles.length < 1 && subRoles.length < 1) {
+        return '⚠ No bias roles are set up on this server!';
+    }
+    if (mainRoles.length > 1024) {
+        mainRoles = mainRoles.substring(0, 1024);
+        mainRoles = mainRoles.substring(0, roles.lastIndexOf('>')+1);
+        mainRoles += '.'.repeat(mainRoles.length > 1021 ? 1024-mainRoles.length : 3);
+    }
+    if (subRoles.length > 1024) {
+        subRoles = subRoles.substring(0, 1024);
+        subRoles = subRoles.substring(0, roles.lastIndexOf('>')+1);
+        subRoles += '.'.repeat(subRoles.length > 1021 ? 1024-subRoles.length : 3);
+    }
+
+
+    let autoroleID = await serverSettings.get(guild.id, "autoroleID");
+    let autoroleColour = autoroleID ? guild.roles.get(autoroleID).color : null;
+    let embed = {
+        author: { name: `Bias List for ${guild.name}`, icon_url: 'https://i.imgur.com/9y33GZq.png' },
+        fields: [],
+        color: autoroleColour || 0xf986ba
+    }
+
+    if (mainRoles) embed.fields.push({ name: 'Main Biases', value: mainRoles });
+    if (subRoles) embed.fields.push({ name: 'Sub Biases', value: subRoles });
+
+    return {embed};
+
+}
+
+async function roleslist(message) {
+
+    let { guild } = message;
+
+    let guildRoles = guild.roles.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
+    if (guildRoles.length < 1) {
+        return '⚠ This server has no roles to list!';
+    }
+
+    let roleString = guildRoles.map(role => `${role} - ${role.members.size} member${role.members.size != 1 ? 's':''}`).join('\n');
+
+    let descriptions = [];
+    while (roleString.length > 1024 || roleString.split('\n').length > 30) {
+        let currString = roleString.slice(0, 1024);
+
+        let lastIndex = 0;
+        for (let i = 0; i < 30; i++) {
+            let index = currString.indexOf('\n', lastIndex) + 1;
+            if (index) lastIndex = index; else break;
+        }
+        currString = currString.slice(0, lastIndex);
+        roleString = roleString.slice(lastIndex);
+
+        descriptions.push(currString);
+    } 
+    descriptions.push(roleString);
+
+    let autoroleID = await serverSettings.get(guild.id, "autoroleID");
+    let autoroleColour = autoroleID ? guild.roles.get(autoroleID).color : null;
+
+    let pages = descriptions.map((desc, i) => {
+        return {
+            content: undefined,
+            options: {embed: {
+                fields: [{ name: `Roles List for ${guild.name}`, value: desc}],
+                color: autoroleColour || 0xf986ba,
+                footer: {
+                    text: `Roles: ${guildRoles.length} | Page ${i+1} of ${descriptions.length}`
+                }
+            }}
+        }
+    })
+
+    functions.pages(message, pages);
 
 }
