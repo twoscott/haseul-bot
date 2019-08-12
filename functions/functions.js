@@ -34,7 +34,7 @@ exports.searchMembers = async (guild, query) => {
     let member;
     let memberResults = [];
     
-    memberResults = members.filter(m => m.user.tag.toLowerCase() == query.replace(/^@/, ''));
+    memberResults = members.filter(m => m.user.tag.toLowerCase() == query.toLowerCase().replace(/^@/, ''));
     if (memberResults.length < 1) {
         memberResults = members.filter(m => m.user.username.toLowerCase() == query);
     }
@@ -118,13 +118,13 @@ exports.getTimeFrom = (startTime, endTime) => {
 
 }
 
-exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
+exports.pages = async (message, pages, lock, timeout=600000/*ms*/) => {
     let p = 0;
 
     if (pages.length < 2) {
-        source.channel.send(pages[p].content, pages[p].options);
+        message.channel.send(pages[p].content, pages[p].options);
     } else {
-        source.channel.send(pages[p].content, pages[p].options).then(async reply => {
+        message.channel.send(pages[p].content, pages[p].options).then(async reply => {
 
             let listeners = [];
 
@@ -141,7 +141,7 @@ exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
 
                 lockListener.on("collect", reaction => {
                     let users = reaction.users.array();
-                    if (users[users.length - 1].id != source.author.id) {
+                    if (users[users.length - 1].id != message.author.id) {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];
                             if (user != Client.user) {
@@ -170,7 +170,7 @@ exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
                 })
                 pageBeginning.on("collect", reaction => {
                     let users = reaction.users.array();
-                    if (lock && users[users.length - 1].id != source.author.id) {
+                    if (lock && users[users.length - 1].id != message.author.id) {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];
                             if (user != Client.user) {
@@ -203,7 +203,7 @@ exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
                 })
                 pageBack.on("collect", reaction => {
                     let users = reaction.users.array();
-                    if (lock && users[users.length - 1].id != source.author.id) {
+                    if (lock && users[users.length - 1].id != message.author.id) {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];
                             if (user != Client.user) {
@@ -238,7 +238,7 @@ exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
                 })
                 pageForward.on("collect", reaction => {
                     let users = reaction.users.array();
-                    if (lock && users[users.length - 1].id != source.author.id) {
+                    if (lock && users[users.length - 1].id != message.author.id) {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];
                             if (user != Client.user) {
@@ -273,7 +273,7 @@ exports.pages = async (source, pages, lock, timeout=600000/*ms*/) => {
                 })        
                 pageEnd.on("collect", reaction => {
                     let users = reaction.users.array();
-                    if (lock && users[users.length - 1].id != source.author.id) {
+                    if (lock && users[users.length - 1].id != message.author.id) {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];
                             if (user != Client.user) {

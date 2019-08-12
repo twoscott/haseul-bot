@@ -77,7 +77,7 @@ exports.msg = async function(message, args) {
                 case "notification":
                     perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
                     if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                    if (!perms.some(p => message.member.hasPermission(p))) return;
+                    if (!perms.some(p => message.member.hasPermission(p))) break;
                     switch (args[2]) {
 
                         case "add":
@@ -138,7 +138,7 @@ exports.msg = async function(message, args) {
                     case "toggle":
                         perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
                         if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                        if (!perms.some(p => message.member.hasPermission(p))) return;
+                        if (!perms.some(p => message.member.hasPermission(p))) break;
                         message.channel.startTyping();
                         vpick_toggle(message, args.slice(2)).then(response => {
                             if (response) message.channel.send(response);
@@ -276,11 +276,11 @@ async function vlive_notif_list(message) {
     notifString = notifs.sort((a,b) => a.channelName.localeCompare(b.channelName)).map(x => `<#${x.discordChanID}> - [${x.channelName.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://channels.vlive.tv/${x.channelCode.replace(/\)/g, "\\)")}/)${x.VPICK ? `/VPICK`:``}${x.mentionRoleID ? ` <@&${x.mentionRoleID}>`:``}`).join('\n');
 
     let descriptions = [];
-    while (notifString.length > 2048 || notifString.split('\n').length > 20) {
+    while (notifString.length > 2048 || notifString.split('\n').length > 25) {
         let currString = notifString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }

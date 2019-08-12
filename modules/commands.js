@@ -96,8 +96,8 @@ exports.msg = async function(message, args) {
                 case "toggle":
                     message.channel.startTyping();
                     toggleCommands(message).then(response => {
-                        message.channel.send(response);
-                        message.channel.stopTyping();
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
                         message.channel.stopTyping();
@@ -126,15 +126,15 @@ async function addCommand(message, args) {
         return "⚠ Command names may not exceed 20 characters in length.";
     }
 
-    if (!/^[\x00-\x7F]+$/.test(commandName)) {
-        return "⚠ This command name contains invalid characters, please use standard characters.";
+    if (!/^[a-z0-9]+$/.test(commandName)) {
+        return "⚠ This command name contains invalid characters, please use characters A-Z and 0-9.";
     }
 
     if (reservedCommands.list.includes(commandName)) {
         return "⚠ This is a reserved command name, please use another name.";
     }
 
-    let textStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
+    let textStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     let text = message.content.slice(textStart).trim();
 
     let fileUrl = files[0] ? files[0].url : '';
@@ -168,15 +168,15 @@ async function editCommand(message, args) {
     }
 
     let commandName = args[2].toLowerCase();
-    if (!/^[\x00-\x7F]+$/.test(commandName)) {
-        return "⚠ This command name contains invalid characters, please use standard characters.";
+    if (!/^[a-z0-9]+$/.test(commandName)) {
+        return "⚠ This command name contains invalid characters, please use characters A-Z and 0-9.";
     }
 
     if (reservedCommands.list.includes(commandName)) {
         return "⚠ This is a reserved command name, please use another name.";
     }
 
-    let textStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
+    let textStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     let text = message.content.slice(textStart).trim();
 
     let fileUrl = files[0] ? files[0].url : '';
@@ -197,11 +197,11 @@ async function listCommands(message) {
     commandString = commandNames.sort((a,b) => a.localeCompare(b)).map(x => '.'+x).join('\n');
 
     let descriptions = [];
-    while (commandString.length > 2048 || commandString.split('\n').length > 20) {
+    while (commandString.length > 2048 || commandString.split('\n').length > 25) {
         let currString = commandString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }
@@ -262,11 +262,11 @@ async function searchCommands(message, query) {
     }).map(x => '.'+x).join('\n');
 
     let descriptions = [];
-    while (commandString.length > 2048 || commandString.split('\n').length > 20) {
+    while (commandString.length > 2048 || commandString.split('\n').length > 25) {
         let currString = commandString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }

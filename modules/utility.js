@@ -283,11 +283,11 @@ async function help(message, args) {
         let moduleString = Object.keys(helpmodules).sort((a,b) => a.localeCompare(b)).map(name => name[0].toUpperCase() + name.slice(1).toLowerCase()).join('\n');
 
         let descriptions = [];
-        while (moduleString.length > 2048 || moduleString.split('\n').length > 20) {
+        while (moduleString.length > 2048 || moduleString.split('\n').length > 25) {
             let currString = moduleString.slice(0, 2048);
 
             let lastIndex = 0;
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 25; i++) {
                 let index = currString.indexOf('\n', lastIndex) + 1;
                 if (index) lastIndex = index; else break;
             }

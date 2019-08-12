@@ -52,11 +52,11 @@ async function listEmojis(message) {
     let emojiString = staticEmojis.concat(animatedEmojis).map(x => `:${x.name}:` + (x.animated ? ` (animated)` : ``)).join('\n');
 
     let descriptions = [];
-    while (emojiString.length > 2048 || emojiString.split('\n').length > 20) {
+    while (emojiString.length > 2048 || emojiString.split('\n').length > 25) {
         let currString = emojiString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }
@@ -107,11 +107,11 @@ async function searchEmojis(message, query) {
     }).map(x => `:${x.name}:` + (x.animated ? ` (animated)` : ``)).join('\n');
 
     let descriptions = [];
-    while (emojiString.length > 2048 || emojiString.split('\n').length > 20) {
+    while (emojiString.length > 2048 || emojiString.split('\n').length > 25) {
         let currString = emojiString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }

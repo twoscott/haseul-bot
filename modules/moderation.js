@@ -76,24 +76,24 @@ exports.msg = async function(message, args) {
                         case "add":
                             message.channel.startTyping();
                             addPollChannel(message, args.slice(3)).then(response => {
-                                message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
                             break;
 
                         case "remove":
                         case "delete":
                             message.channel.startTyping();
                             delPollChannel(message, args.slice(3)).then(response => {
-                                message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
                             break;
 
                     }
@@ -102,8 +102,8 @@ exports.msg = async function(message, args) {
                 case "toggle":
                     message.channel.startTyping();
                     togglePoll(message).then(response => {
-                        message.channel.send(response);
-                        message.channel.stopTyping();
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
                         message.channel.stopTyping();
@@ -148,7 +148,7 @@ async function say(message, args) {
     }
 
     channel.startTyping();
-    let contentStart = message.content.match(new RegExp(args.slice(0,2).join('\\s+')))[0].length;
+    let contentStart = message.content.match(new RegExp(args.slice(0,2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     let content = message.content.slice(contentStart).trim();
 
     await channel.send(content, {files: files});
@@ -196,7 +196,7 @@ async function edit(message, args) {
         return "⚠ No content provided to edit the message with.\nUsage: `.edit {channel id} {message id} <new message content>`";
     }
 
-    let contentStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
+    let contentStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     let content = message.content.slice(contentStart).trim();
 
     await msg.edit(content);

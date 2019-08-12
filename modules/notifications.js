@@ -257,16 +257,15 @@ async function add_notification(message, args, global) {
     let keyphrase;
     if (["STRICT", "NORMAL", "LENIENT"].includes(typeArg.toUpperCase()) && args.length > (global ? 4 : 3)) {
         type = typeArg.toUpperCase();
-        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 4 : 3).join('\\s+')))[0].length;
+        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 4 : 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
         keyword = message.content.slice(keyStart).trim().toLowerCase();
     } else {
         type = "NORMAL";
-        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).join('\\s+')))[0].length;
+        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
         keyword = message.content.slice(keyStart).trim().toLowerCase();
     }
-
-    let rgxChars = new RegExp(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/, 'g');
-    keyphrase = keyword.replace(rgxChars, "\\$&");
+    
+    keyphrase = keyword.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&");
 
     let keyrgx;
     if (type == "STRICT")  {
@@ -307,7 +306,7 @@ async function remove_notification(message, args, global) {
         return "⚠ Please specify a key word or phrase to remove."
     }
 
-    let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).join('\\s+')))[0].length;
+    let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     keyphrase = message.content.slice(keyStart).trim().toLowerCase();
 
     message.delete(500);
@@ -360,11 +359,11 @@ async function list_notifications(message) {
     })).join('\n');
 
     let pages = [];
-    while (notifString.length > 2048 || notifString.split('\n').length > 20) {
+    while (notifString.length > 2048) {
         let currString = notifString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        while (true) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }

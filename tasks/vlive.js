@@ -1,6 +1,7 @@
 // Require modules
 
 const Client = require("../haseul.js").Client;
+const botchannel = Client.channels.get('417893349039669260');
 
 const axios = require("axios");
 
@@ -51,13 +52,18 @@ async function vliveLoop() {
             console.error(Error(e));
             return "⚠ Unknown error occurred.";
         }
-        let channelData = response.data.result;
-        if (!channelData) { //
-            console.error(channelSeq + ' has no channel data'); //
+        let channelData = response.data["result"];
+        for (let i=0; !channelData && i<10; i++) { //
+            console.error(channelSeq + ' has no channel data, attempt: ' + i+1); //             JS is drunk
             console.error(response.data); //
+            botchannel.send(channelSeq + ' has no channel data, attempt: ' + i+1 + '\n' + response.data.toString().slice(0,1900)); //
+            channelData = response.data["result"]; //
         } //
+        if (!channelData) {
+            continue;
+        }
         let { channelInfo, videoList } = channelData;
-        let { channelCode, channelName, channelProfileImage, backgroundColor } = channelInfo;
+        let { channelCode, channelProfileImage, backgroundColor } = channelInfo;
 
         let oldVideos = await database.get_channel_vlive_videos(channelSeq);
         let oldVidSeqs = oldVideos.map(vid => vid.videoSeq);
@@ -77,33 +83,29 @@ async function vliveLoop() {
             if (releaseTimestamp > Date.now()) {
                 continue;
             }
-            
-            if (![channelName, 'V PICK!'].includes(representChannelName)) {
-                continue;
-            }
 
             await database.add_video(videoSeq, channelSeq);
             let videoLive = videoType == 'LIVE';
 
-            if (!videoLive && releaseTimestamp < lastVliveCheck) {
+            if (!videoLive && releaseTimestamp < (startTime - 1000*60*60)) {
                 continue;
-            }           
+            } 
 
             for (let data of targetData) {
                 let { guildID, discordChanID, mentionRoleID, VPICK } = data;
 
-                if (!VPICK && representChannelName != channelName) {
+                if (!VPICK && representChannelName == 'V PICK!') {
                     continue;
                 }
 
                 let guild = Client.guilds.get(guildID);
                 if (!guild) {
-                    console.error(Error("Guild couldn't be retrieved to send Vlive notif to."));
+                    console.error(Error("Guild couldn't be retrieved to send VLIVE notif to."));
                     continue;
                 }
                 let discordChannel = Client.channels.get(discordChanID) || guild.channels.get(discordChanID);
                 if (!discordChannel) {
-                    console.error(Error("Channel couldn't be retrieved to send Vlive notif to."));
+                    console.error(Error("Channel couldn't be retrieved to send VLIVE notif to."));
                     continue;
                 }
 

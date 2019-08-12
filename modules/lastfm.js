@@ -442,11 +442,11 @@ async function recentListPages (message, tracks, lfUser) {
     let rowString = tracks.map((track, i) => `${np(track) ? '\\▶' : `${i + 1}.`} ${track.artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${track.name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(track.artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(track.name).replace(/\)/g, "\\)")}) (${np(track) ? 'Now' : functions.getTimeAgo(track.date.uts)})`).join('\n');
 
     let descriptions = [];
-    while (rowString.length > 2048 || rowString.split('\n').length > 20) {
+    while (rowString.length > 2048 || rowString.split('\n').length > 25) {
         let currString = rowString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }
@@ -549,11 +549,11 @@ async function lf_top_media(message, args, type) {
     if (type == 'track' ) rowString = collection.map((x, i) => `${i+1}. ${x.artist.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${x.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(x.artist.name).replace(/\)/g, "\\)")}/_/${encodeURIComponent(x.name).replace(/\)/g, "\\)")}) (${x.playcount} ${x.playcount == 1 ? 'Play' : 'Plays'})`).join('\n');
 
     let descriptions = [];
-    while (rowString.length > 2048) {
+    while (rowString.length > 2048 || rowString.split('\n').length > 25) {
         let currString = rowString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }

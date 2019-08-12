@@ -172,7 +172,7 @@ exports.msg = async function(message, args) {
         case ".joinlogs":
             perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
             if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p))) return;
+            if (!perms.some(p => message.member.hasPermission(p))) break;
             switch (args[1]) {
 
                 case "channel":
@@ -181,12 +181,12 @@ exports.msg = async function(message, args) {
                         case "set":
                             message.channel.startTyping();
                             setJoinChannel(message, args.slice(3)).then(response => {
-                                message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
                             break;
 
                     }
@@ -195,8 +195,8 @@ exports.msg = async function(message, args) {
                 case "toggle":
                     message.channel.startTyping();
                     toggleJoin(message).then(response => {
-                        message.channel.send(response);
-                        message.channel.stopTyping();
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
                         message.channel.stopTyping();
@@ -209,7 +209,7 @@ exports.msg = async function(message, args) {
         case ".welcome":
             perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
             if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p))) return;
+            if (!perms.some(p => message.member.hasPermission(p))) break;
             switch (args[1]) {
 
                 case "channel":
@@ -218,12 +218,12 @@ exports.msg = async function(message, args) {
                         case "set":
                             message.channel.startTyping();
                             setWelcomeChannel(message, args.slice(3)).then(response => {
-                                message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
                             break;
 
                     }
@@ -236,12 +236,12 @@ exports.msg = async function(message, args) {
                         case "set":
                             message.channel.startTyping();
                             setWelcomeMsg(message, args).then(response => {
-                                message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
                             break;
 
                     }
@@ -250,8 +250,8 @@ exports.msg = async function(message, args) {
                 case "toggle":
                     message.channel.startTyping();
                     toggleWelcome(message).then(response => {
-                        message.channel.send(response);
-                        message.channel.stopTyping();
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
                         message.channel.stopTyping();
@@ -279,7 +279,7 @@ async function userinfo(message, args) {
     } else {
         let match = target.match(/^<?@?!?(\d{8,})>?$/);
         if (!match) {
-            let textStart = message.content.match(new RegExp(args.slice(0, 1).join('\\s+')))[0].length;
+            let textStart = message.content.match(new RegExp(args.slice(0, 1).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
             target = message.content.slice(textStart).trim();
             guild = await guild.fetchMembers();
 
@@ -339,7 +339,7 @@ async function member_embed(author, member) {
     }
 
     if (member.roles && member.roles.size > 1) {
-        let allRoles = member.roles.array().sort((a, b) => b.comparePositionTo(a)).slice(0,-1);
+        let allRoles = member.roles.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
         let modRoles = [];
         let roles = [];
         let perms = [
@@ -414,7 +414,7 @@ async function user_dp(message, args) {
     } else {
         let match = target.match(/^<?@?!?(\d{8,})>?$/);
         if (!match) {
-            let textStart = message.content.match(new RegExp(args.slice(0, 1).join('\\s+')))[0].length;
+            let textStart = message.content.match(new RegExp(args.slice(0, 1).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
             target = message.content.slice(textStart).trim();
             guild = await guild.fetchMembers();
 
@@ -528,7 +528,7 @@ async function setWelcomeMsg(message, args) {
     if (args.length < 4) {
         return "⚠ Please provide a message.";
     }
-    let msgStart = message.content.match(new RegExp(args.slice(0,3).join('\\s+')))[0].length;
+    let msgStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
     let msg = message.content.slice(msgStart).trim();   
     await serverSettings.set(message.guild.id, "welcomeMsg", msg)
     return "Welcome message set.";

@@ -43,7 +43,7 @@ async function profile_temp(message, args) {
     } else {
         let match = target.match(/^<?@?!?(\d{8,})>?$/);
         if (!match) {
-            let textStart = message.content.match(new RegExp(args.slice(0, 1).join('\\s+')))[0].length;
+            let textStart = message.content.match(new RegExp(args.slice(0, 1).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
             target = message.content.slice(textStart).trim();
             guild = await guild.fetchMembers();
 

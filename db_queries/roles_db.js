@@ -75,7 +75,7 @@ exports.remove_role = (role_command, guild_id, type) => {
                 return resolve(true);
             })
         })
-    }) 
+    })
 }
 
 exports.get_all_roles = (guild_id) => {
@@ -84,7 +84,7 @@ exports.get_all_roles = (guild_id) => {
             if (err) return reject(err);
             return resolve(rows);
         })
-    }) 
+    })
 }
 
 exports.get_role_id = (role_command, guild_id, type) => {

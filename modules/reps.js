@@ -282,14 +282,14 @@ async function repboard(message, local) {
         }
     }
 
-    let repString = reps.sort((a,b) => a.name.localeCompare(b.name)).sort((a,b) => b.rep - a.rep).map((data, i) => `${i+1}. **${data.name}** (${data.rep})`).join('\n');
+    let repString = reps.sort((a,b) => a.name.localeCompare(b.name)).sort((a,b) => b.rep - a.rep).map((data, i) => `${i+1}. **${data.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}** (${data.rep})`).join('\n');
 
     let descriptions = [];
-    while (repString.length > 2048 || repString.split('\n').length > 20) {
+    while (repString.length > 2048 || repString.split('\n').length > 25) {
         let currString = repString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }
@@ -352,14 +352,14 @@ async function streaks(message) {
     let clocks = { 1: '\\🕐', 2:  '\\🕑', 3:  '\\🕒', 4: '\\🕓', 
                    5: '\\🕔', 6:  '\\🕕', 7:  '\\🕖', 8: '\\🕗',
                    9: '\\🕘', 10: '\\🕙', 11: '\\🕚', 0: '\\🕛' };
-    let streakString = streaks.sort((a,b) => a.time - b.time).sort((a,b) => b.streak - a.streak).map((data, i) => `${i+1}. **${data.name}** - ${data.streak} Day${data.streak != 1 ? 's':''} (${data.timeText.trim()} left) ${data.time < 12*60*60*1000 ? clocks[Math.floor(data.time/(60*60*1000))]:``}`).join('\n');
+    let streakString = streaks.sort((a,b) => a.time - b.time).sort((a,b) => b.streak - a.streak).map((data, i) => `${i+1}. **${data.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}** - ${data.streak} Day${data.streak != 1 ? 's':''} (${data.timeText.trim()} left) ${data.time < 12*60*60*1000 ? clocks[Math.floor(data.time/(60*60*1000))]:``}`).join('\n');
 
     let descriptions = [];
-    while (streakString.length > 2048 || streakString.split('\n').length > 20) {
+    while (streakString.length > 2048 || streakString.split('\n').length > 25) {
         let currString = streakString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }
@@ -423,14 +423,14 @@ async function streakboard(message, local) {
         }
     }
 
-    let streakString = streaks.sort((a,b) => b.time - a.time).map((data, i) => `${i+1}. **${data.name1}** & **${data.name2}** (${data.streak} Day${data.streak != 1 ? 's':''})`).join('\n');
+    let streakString = streaks.sort((a,b) => b.time - a.time).map((data, i) => `${i+1}. **${data.name1.replace(/([\(\)\`\*\~\_])/g, "\\$&")}** & **${data.name2.replace(/([\(\)\`\*\~\_])/g, "\\$&")}** (${data.streak} Day${data.streak != 1 ? 's':''})`).join('\n');
 
     let descriptions = [];
-    while (streakString.length > 2048 || streakString.split('\n').length > 20) {
+    while (streakString.length > 2048 || streakString.split('\n').length > 25) {
         let currString = streakString.slice(0, 2048);
 
         let lastIndex = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             let index = currString.indexOf('\n', lastIndex) + 1;
             if (index) lastIndex = index; else break;
         }

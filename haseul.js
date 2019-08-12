@@ -42,7 +42,7 @@ Client.on("warn", warning => {
 
 Client.on("ready", () => {
     console.log("Ready!");
-    botchannel = Client.channels.get('417893349039669260');
+    let botchannel = Client.channels.get('417893349039669260');
     botchannel.send("Ready!");
 
     checklist.handleTasks();
