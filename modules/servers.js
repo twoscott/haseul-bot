@@ -41,7 +41,7 @@ async function guildinfo(message, target) {
         }
         guild = Client.guilds.get(match[0])
         if (!guild) {
-            return "⚠ Invalid guild or guild ID.";
+            return "⚠ Invalid guild or bot is not in this server.";
         }
     }
 

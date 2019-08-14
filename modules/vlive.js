@@ -201,16 +201,39 @@ async function vlive_notif_add(message, args) {
         response = await vlive.get('decodeChannelCode', { params: { app_id, channelCode } });
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Unknown error occurred."
+        return "⚠ Error occurred.";
     }
     let { channelSeq } = response.data.result;
+
+    try {
+        response = await vlive.get('getChannelVideoList', { params: { app_id, channelSeq, maxNumOfRows: 10, pageNo: 1 } });
+    } catch(e) {
+        console.error(channelSeq + ' ' + Error(e));
+        return "⚠ Error occurred.";
+    }
+
+    let channelData = response.data["result"];
+    if (!channelData) {
+        return "⚠ Error occurred.";
+    }
+
+    let { videoList } = channelData;
+    let now = Date.now();
+    for (let video of videoList) {
+        let { videoSeq, onAirStartAt } = video; 
+
+        let releaseTimestamp = new Date(onAirStartAt + " UTC+9:00").getTime();
+        if (releaseTimestamp > (now - 1000*60)) continue; // don't add videos in last minute; prevent conflicts with task
+
+        await database.add_video(videoSeq, channelSeq);
+    }
 
     let added;
     try {
         added = await database.add_vlive_channel(guild.id, channel.id, channelSeq, channelCode, channelName, role ? role.id : null);
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Unknown error occurred.";
+        return "⚠ Error occurred.";
     }
     
     return added ? `${role ? `\`${role.name}\``:'You'} will now be notified when \`${channelName}\` posts a new VLIVE in ${channel}.` :

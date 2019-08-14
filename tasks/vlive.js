@@ -35,10 +35,10 @@ async function vliveLoop() {
     let startTime = Date.now();
 
     console.log("Started checking Vlives at " + new Date(startTime).toUTCString());
-    if (!lastVliveCheck) {
-        let clientData = await clientdb.get_client_data();
-        lastVliveCheck = clientData ? clientData.lastVliveCheck : 0;
-    }
+    // if (!lastVliveCheck) {
+    //     let clientData = await clientdb.get_client_data();
+    //     lastVliveCheck = clientData ? clientData.lastVliveCheck : 0;
+    // }
 
     let channelNotifs = await database.get_all_vlive_channels();
     let channelSeqs = new Set(channelNotifs.map(x => x.channelSeq));
@@ -46,12 +46,18 @@ async function vliveLoop() {
     for (let channelSeq of channelSeqs.values()) {
         
         let response;
-        try {
-            response = await vlive.get('getChannelVideoList', { params: { app_id, channelSeq, maxNumOfRows: 10, pageNo: 1 } });
-        } catch(e) {
-            console.error(Error(e));
-            return "⚠ Unknown error occurred.";
+        for (let i=0; !response && i<10; i++) {
+            try {
+                response = await vlive.get('getChannelVideoList', { params: { app_id, channelSeq, maxNumOfRows: 10, pageNo: 1 } });
+            } catch(e) {
+                console.error(channelSeq + ' ' + Error(e));
+            }
         }
+        if (!response) {
+            console.error("couldn't fetch videos for " + channelSeq);
+            continue;
+        }
+
         let channelData = response.data["result"];
         for (let i=0; !channelData && i<10; i++) { //
             console.error(channelSeq + ' has no channel data, attempt: ' + i+1); //             JS is drunk
@@ -60,6 +66,7 @@ async function vliveLoop() {
             channelData = response.data["result"]; //
         } //
         if (!channelData) {
+            console.error("couldn't resolve channelInfo or videoList for " + channelSeq);
             continue;
         }
         let { channelInfo, videoList } = channelData;
@@ -78,18 +85,16 @@ async function vliveLoop() {
         for (let video of newVideos) {
 
             let { videoSeq, videoType, onAirStartAt, title, thumbnail, representChannelName } = video;
-
             let releaseTimestamp = new Date(onAirStartAt + " UTC+9:00").getTime();
-            if (releaseTimestamp > Date.now()) {
+            
+            await database.add_video(videoSeq, channelSeq);
+            
+            if (!['VOD', 'LIVE'].includes(videoType)) {
+                console.log(videoSeq + ' was a playlist');
                 continue;
             }
 
-            await database.add_video(videoSeq, channelSeq);
             let videoLive = videoType == 'LIVE';
-
-            if (!videoLive && releaseTimestamp < (startTime - 1000*60*60)) {
-                continue;
-            } 
 
             for (let data of targetData) {
                 let { guildID, discordChanID, mentionRoleID, VPICK } = data;
@@ -134,8 +139,8 @@ async function vliveLoop() {
 
     }
 
-    lastVliveCheck = startTime;
-    await clientdb.set_last_vlive_check(lastVliveCheck);
+    // lastVliveCheck = startTime;
+    // await clientdb.set_last_vlive_check(lastVliveCheck);
     console.log("Finished checking vlives, took " + (Date.now() - startTime) / 1000 + "s");
     setTimeout(vliveLoop, Math.max(30000 - (Date.now() - startTime), 0)); // ensure runs every 30 secs unless processing time > 30 secs
 
