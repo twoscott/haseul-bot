@@ -1,5 +1,6 @@
 //Require modules
 
+const client = require("../modules/client.js");
 const commands = require("../modules/commands.js");
 const emojis = require("../modules/emojis.js");
 const lastfm = require("../modules/lastfm.js");
@@ -23,12 +24,13 @@ exports.handleMsg = (message) => {
     let { system, author, channel, content } = message
 
     if (system) return;
-    if (author.bot) return;
+    // if (author.bot) return;
     if (channel.type === "dm") return;
 
     let args = content.trim().split(/\s+/);
 
     //Pass message to modules
+    client.msg(message, args);
     commands.msg(message, args);
     emojis.msg(message, args);
     lastfm.msg(message, args);
