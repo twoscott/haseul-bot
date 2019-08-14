@@ -24,7 +24,7 @@ exports.handleMsg = (message) => {
     let { system, author, channel, content } = message
 
     if (system) return;
-    // if (author.bot) return;
+    if (author.bot) return;
     if (channel.type === "dm") return;
 
     let args = content.trim().split(/\s+/);
