@@ -147,7 +147,7 @@ async function rep(message, args) {
                 let midnightUTC = new Date(createdTimestamp);
                 midnightUTC.setUTCDate(midnightUTC.getUTCDate() + 1);
                 midnightUTC.setUTCHours(0,0,0,0);
-                let timeFromNow = functions.getTimeFrom(createdTimestamp, midnightUTC.getTime());
+                let timeFromNow = functions.getDelta(midnightUTC.getTime() - createdTimestamp, 'hours');
                 let fromNowText = ''
                 if (timeFromNow.hours) fromNowText += `${timeFromNow.hours}h `;
                 if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
@@ -248,7 +248,7 @@ async function repStatus(message) {
     let midnightUTC = new Date(createdTimestamp);
     midnightUTC.setUTCDate(midnightUTC.getUTCDate() + 1);
     midnightUTC.setUTCHours(0,0,0,0);
-    let timeFromNow = functions.getTimeFrom(createdTimestamp, midnightUTC.getTime());
+    let timeFromNow = functions.getDelta(midnightUTC.getTime() - createdTimestamp, 'hours');
     let fromNowText = '';
     if (timeFromNow.hours) fromNowText += `${timeFromNow.hours}h `;
     if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
@@ -338,7 +338,7 @@ async function streaks(message) {
         if (!user) user = await Client.fetchUser(userID);
         let name = user ? user.username.replace(/([\`\*\~\_])/g, "\\$&") : userID;
 
-        let time = functions.getTimeFrom(createdTimestamp, Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) + 36*60*60*1000);
+        let time = functions.getDelta((Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) + 36*60*60*1000) - createdTimestamp, 'hours');
         let timeText = ''
         if (time.hours) timeText += `${time.hours}h `;
         if (time.minutes) timeText += `${time.minutes}m `;

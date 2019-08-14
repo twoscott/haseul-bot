@@ -97,24 +97,31 @@ exports.getTimeAgo = (time, limit) => {
     
 }
 
-exports.getTimeFrom = (startTime, endTime) => {
+exports.getDelta = (ms, type) => {
+    
+    let delta = Math.ceil(ms / 1000);
+    let days = 0, hours = 0, minutes = 0, seconds = 0;
 
-    startTimeSec = startTime / 1000;
-    endTimeSec = endTime / 1000;
-    let timeDiffSecs = Math.ceil(endTimeSec - startTimeSec);
-    let hours, minutes, seconds;
-
-    if (timeDiffSecs > 0) { // more than 0 seconds
-        seconds = Math.floor(timeDiffSecs % 60);
+    if (['days'].includes(type) || !type) {
+        days = Math.floor(delta / 86400);
+        delta -= days * 86400;
     }
-    if (timeDiffSecs > 60) { // more than a minute
-        minutes = Math.floor(timeDiffSecs % 3600 / 60);
-    }
-    if (timeDiffSecs > 60*60) { // more than an hour
-        hours   = Math.floor(timeDiffSecs / 3600);
+    
+    if (['days', 'hours'].includes(type) || !type) {
+        hours = Math.floor(delta / 3600) % 24;
+        delta -= hours * 3600;
     }
 
-    return { ms: endTime - startTime, hours: hours, minutes: minutes, seconds: seconds };
+    if (['days', 'hours', 'minutes'].includes(type) || !type) {
+        minutes = Math.floor(delta / 60) % 60;
+        delta -= minutes * 60;
+    }
+
+    if (['days', 'hours', 'minutes', 'seconds'].includes(type) || !type) {
+        seconds = delta % 60;
+    }
+    
+    return { days, hours, minutes, seconds, ms };
 
 }
 
