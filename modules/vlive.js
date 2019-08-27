@@ -75,7 +75,7 @@ exports.msg = async function(message, args) {
                 case "notif":
                 case "notifs":
                 case "notification":
-                    perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+                    perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS"];
                     if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
                     if (!perms.some(p => message.member.hasPermission(p))) break;
                     switch (args[2]) {
@@ -128,6 +128,11 @@ exports.msg = async function(message, args) {
                         message.channel.stopTyping();
                     })
                     break;
+                
+                case "help":
+                default:
+                    message.channel.send("Help with VLIVE can be found here: https://haseulbot.xyz/#vlive");
+                    break;
 
             }
             break;
@@ -162,7 +167,7 @@ async function vlive_notif_add(message, args) {
 
     let { guild } = message;
 
-    let formatMatch = args.join(' ').trim().match(/^(?:https?\:\/\/channels\.vlive\.tv\/)?(.+?)(?:\/home\/?)?\s+<?#?(\d{8,})>?\s*(.+)?/i);
+    let formatMatch = args.join(' ').trim().match(/^(?:https?\:\/\/channels\.vlive\.tv\/)?(.+?)(?:\/home\/?)?\s+<?#?(\d{8,})>?\s*((<@&)?(.*?)(>))?/i);
     if (!formatMatch) {
         return "⚠ Incorrect formatting.\nUsage: `.vlive notif add {vlive channel name} {discord channel} [mention role name](optional)`.";
     }
@@ -181,9 +186,16 @@ async function vlive_notif_add(message, args) {
 
     let role;
     if (mentionRole) {
-        role = guild.roles.find(role => role.name == mentionRole);
-        if (!role) {
-            return `⚠ The role \`${mentionRole}\` does not exist in this server.`;
+        if (formatMatch[4] && formatMatch[6]) {
+            role = guild.roles.get(formatMatch[5])
+            if (!role) {
+                return `⚠ A role with the ID \`${formatMatch[5]}\` does not exist in this server.`;
+            }
+        } else {
+            role = guild.roles.find(role => role.name == formatMatch[5]);
+            if (!role) {
+                return `⚠ The role \`${formatMatch[5]}\` does not exist in this server.`;
+            }
         }
     }
 

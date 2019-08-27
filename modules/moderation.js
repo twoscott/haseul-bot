@@ -26,13 +26,14 @@ exports.msg = async function(message, args) {
 
     // Handle commands
 
-    let perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
-    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-    if (!perms.some(p => message.member.hasPermission(p))) return;
+    let perms; 
 
     switch (args[0]) {
 
         case ".say":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_MESSAGES"];
+            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!perms.some(p => message.member.hasPermission(p))) break;
             message.channel.startTyping();
             say(message, args).then(response => {
                 message.channel.send(response);
@@ -44,6 +45,9 @@ exports.msg = async function(message, args) {
             break;
         
         case ".edit":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_MESSAGES"];
+            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!perms.some(p => message.member.hasPermission(p))) break;
             message.channel.startTyping();
             edit(message, args).then(response => {
                 message.channel.send(response);
@@ -55,6 +59,9 @@ exports.msg = async function(message, args) {
             break;
 
         case ".get":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_MESSAGES"];
+            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!perms.some(p => message.member.hasPermission(p))) break;
             message.channel.startTyping();
             get(message, args.slice(1)).then(response => {
                 message.channel.send(response);
@@ -67,6 +74,9 @@ exports.msg = async function(message, args) {
 
 
         case ".poll":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS"];
+            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!perms.some(p => message.member.hasPermission(p))) break;
             switch (args[1]) {
 
                 case "channel":
@@ -102,13 +112,13 @@ exports.msg = async function(message, args) {
                 case "toggle":
                     message.channel.startTyping();
                     togglePoll(message).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
                         message.channel.stopTyping();
                     })
-                    
+                    break;                  
                     
             }
             break;
@@ -148,7 +158,7 @@ async function say(message, args) {
     }
 
     channel.startTyping();
-    let contentStart = message.content.match(new RegExp(args.slice(0,2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let contentStart = message.content.match(new RegExp(args.slice(0,2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     let content = message.content.slice(contentStart).trim();
 
     await channel.send(content, {files: files});
@@ -159,23 +169,25 @@ async function say(message, args) {
 
 async function edit(message, args) {
 
+    let { guild } = message;
+
     if (args.length < 2) {
-        return "⚠ No channel provided to edit a message from.\nUsage: `.edit {channel id} {message id} <new message content>`";
+        return "⚠ No channel provided to edit a message from.";
     }
 
     let channel_id = args[1].match(/<?#?!?(\d+)>?/);        
     if (!channel_id) {
-        return "⚠ No channel provided to edit a message from.\nUsage: `.edit {channel id} {message id} <new message content>`";
+        return "⚠ No channel provided to edit a message from.";
     }
     channel_id = channel_id[1];
     
-    let channel = Client.channels.get(channel_id);
+    let channel = guild.channels.get(channel_id);
     if (!channel) {
-        return "⚠ Invalid channel provided.";
+        return "⚠ Invalid channel provided or channel is not in this server.";
     }
 
     if (args.length < 3) {
-        return "⚠ No message ID provided to edit.\nUsage: `.edit {channel id} {message id} <new message content>`";
+        return "⚠ No message ID provided to edit.";
     }
 
     let message_id = args[2].match(/^\d+$/);
@@ -196,7 +208,7 @@ async function edit(message, args) {
         return "⚠ No content provided to edit the message with.\nUsage: `.edit {channel id} {message id} <new message content>`";
     }
 
-    let contentStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let contentStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     let content = message.content.slice(contentStart).trim();
 
     await msg.edit(content);
@@ -205,6 +217,8 @@ async function edit(message, args) {
 }
 
 async function get(message, args) {
+
+    let { guild } = message;
 
     if (args.length < 1) {
         return "⚠ Please provide a message ID to be fetched.";
@@ -216,9 +230,9 @@ async function get(message, args) {
     }
     channel_id = channel_id[1];
     
-    let channel = Client.channels.get(channel_id);
+    let channel = guild.channels.get(channel_id);
     if (!channel) {
-        return "⚠ Invalid channel provided.";
+        return "⚠ Invalid channel provided or channel is not in this server.";
     }
 
     let message_id = args[1].match(/^\d+$/);
@@ -229,7 +243,7 @@ async function get(message, args) {
     let msg = await channel.fetchMessage(message_id);
     if (!msg) return "⚠ Invalid message provided.";
     if (msg.content.length < 1) return "⚠ Message has no content.";
-    message.channel.send(`${msg.content.includes('```') ? `\` \`\`\`‌‌\` -> \`'''\`\n`:``}\`\`\`${msg.content.replace(/```/g, "'''")}\`\`\``);
+    message.channel.send(`${msg.content.includes('```') ? `\` \`\`\`‌‌\` -> \`'''\`\n`:``}\`\`\`${msg.content.replace(/```/g, "'''").slice(0,2048)}\`\`\``);
 
 }
 

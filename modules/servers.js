@@ -32,7 +32,7 @@ exports.msg = async function(message, args) {
 async function guildinfo(message, target) {
 
     let guild;
-    if (!target) {
+    if (!target || message.author.id != '125414437229297664') {
         guild = message.guild;
     } else {
         let match = target.match(/^\d+$/);

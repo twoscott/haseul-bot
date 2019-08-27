@@ -19,8 +19,7 @@ exports.msg = async function(message, args) {
         case ".binfo":
         case ".clientinfo":
             message.channel.startTyping();
-            botinfo(message).then(response => {
-                if (response) message.channel.send(response);
+            botinfo(message).then(() => {
                 message.channel.stopTyping();
             }).catch(error => {
                 console.error(error);
@@ -34,8 +33,7 @@ exports.msg = async function(message, args) {
                 break;
             }
             message.channel.startTyping();
-            serverlist(message).then(response => {
-                if (response) message.channel.send(response);
+            serverlist(message).then(() => {
                 message.channel.stopTyping();
             }).catch(error => {
                 console.error(error);
@@ -71,11 +69,11 @@ async function botinfo(message) {
     if (uptime.seconds) uptimeString += `${uptime.seconds}s `;
 
     let status = {
-        "0" : "<:online_cb:533459049765928970>Ready",
-        "1"   : "<:idle_cb:533459049702752266>Connecting",
-        "2"   : "<:idle_cb:533459049702752266>Reconnecting",
-        "3"   : "<:idle_cb:533459049702752266>Idle",
-        "4"   : "<:idle_cb:533459049702752266>Nearly",
+        "0": "<:online_cb:533459049765928970>Ready",
+        "1": "<:idle_cb:533459049702752266>Connecting",
+        "2": "<:idle_cb:533459049702752266>Reconnecting",
+        "3": "<:idle_cb:533459049702752266>Idle",
+        "4": "<:idle_cb:533459049702752266>Nearly",
         "5": "<:offline_cb:533459049648226317>Offline"
     }
 
@@ -95,7 +93,7 @@ async function botinfo(message) {
             { name: 'Cached Users', value: Client.users.size, inline: true },
             { name: 'Memory', value: memory + 'MB', inline: true },
             { name: 'Threads', value: threads, inline: true },
-            { name: 'Links', value: 'Website - Discord - Patreon (soon)' }
+            { name: 'Links', value: '[Website](https://haseulbot.xyz/) - [Discord](https://discord.gg/w4q5qux) - [Patreon](https://www.patreon.com/haseulbot)' }
         ],
         footer: { text: 'Type .help for help' }
     }

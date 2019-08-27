@@ -5,6 +5,8 @@ const axios = require("axios")
 
 const config = require("../config.json");
 const helpmodules = require("../resources/JSON/help.json");
+const langs = require("../resources/JSON/languages.json");
+
 const functions = require("../functions/functions.js")
 
 const units = {
@@ -65,7 +67,16 @@ exports.msg = async function(message, args) {
         case ".git":
             message.channel.send("https://github.com/haseul/haseul-bot");
             break;
+
+        case ".donate":
+        case ".patreon":
+            message.channel.send("https://www.patreon.com/haseulbot");
+            break;
         
+        case ".discord":
+            message.channel.send("https://discord.gg/w4q5qux");
+            break;
+
         case ".translate":
         case ".trans":
         case ".tr":
@@ -154,13 +165,15 @@ async function convert(args) {
 async function translate(args) {
 
     if (args.length < 1) {
-        return "⚠ Please provide a language and text to translate to.";
+        return "Help with translation can be found here: https://haseulbot.xyz/#misc";
     }
-    let response = await axios.get(`https://api.cognitive.microsofttranslator.com/languages?api-version=3.0`);
-    let langs = response.data.translation;
-    
+
     let lang_options = args[0]
     let text = args.slice(1).join(" ");
+
+    if (lang_options.toLowerCase() == "languages") {
+        return "Language codes can be found here: https://haseulbot.xyz/languages/"
+    }
 
     let source_lang;
     let target_lang;
@@ -276,124 +289,11 @@ async function translate(args) {
 
 // }
 
-async function help(message, args) {
+async function help(args) {
 
-    if (args.length < 1) {
-
-        let moduleString = Object.keys(helpmodules).sort((a,b) => a.localeCompare(b)).map(name => name[0].toUpperCase() + name.slice(1).toLowerCase()).join('\n');
-
-        let descriptions = [];
-        while (moduleString.length > 2048 || moduleString.split('\n').length > 25) {
-            let currString = moduleString.slice(0, 2048);
-
-            let lastIndex = 0;
-            for (let i = 0; i < 25; i++) {
-                let index = currString.indexOf('\n', lastIndex) + 1;
-                if (index) lastIndex = index; else break;
-            }
-            currString   = currString.slice(0, lastIndex);
-            moduleString = moduleString.slice(lastIndex);
-
-            descriptions.push(currString);
-        } 
-        descriptions.push(moduleString);
-
-        let pages = descriptions.map((desc, i) => {
-            return {
-                content: "To get help, type `.help <module name>`. Here you will see the module's commands and how to use them.",
-                options: {embed: {
-                    author: {
-                        name: 'Modules', icon_url: 'https://i.imgur.com/p9n0Y0C.png'
-                    },
-                    description: desc,
-                    color: 0xfe4971,
-                    footer: {
-                        text: `Page ${i+1} of ${descriptions.length}`
-                    }
-                }}
-            }
-        })
-    
-        functions.pages(message, pages);
-        return
-    }
-
-    let module_name;
     switch (args[0]) {
-        case "lastfm":
-        case "fm":
-        case "lf":
-            module_name = "lastfm";
-            break;
-        
-        case "youtube":
-        case "yt":
-            module_name = "youtube";
-            break;
-        
-        case "utility":
-        case "ut":
-            module_name = "utility";
-            break;
-        
-        case "notifications":
-        case "notification":
-        case "notif":
-        case "noti":
-            module_name = "notification";
-            break;
-        
-        case "commands":
-        case "command":
-        case "cmds":
-        case "cmd":
-            module_name = "commands";
-            break;
-        
-        case "emojis":
-        case "emoji":
-            module_name = "emoji";
-            break;
-        
         default:
-            return "⚠ Invalid module name provided.";
+            return "Commands can be found here: https://haseulbot.xyz/";
     }
-
-    let module_obj = helpmodules[module_name];
-    
-    let commands = module_obj.commands;
-    let fieldPages = [];
-    let fieldPage = [];
-    let field_count = 0;
-    for (i=0; i < commands.length; i++) {
-        if (field_count > 4) {
-            fieldPages.push(fieldPage);
-            fieldPage = [commands[i]];
-            field_count = 1;
-        } else {
-            fieldPage.push(commands[i]);
-            field_count += 1;
-        }
-    }
-    fieldPages.push(fieldPage);
-
-    let pages = fieldPages.map((page, i) => {
-        return {
-            content: undefined,
-            options: {embed: {
-                author: {
-                    name: module_obj.name, icon_url: module_obj.image
-                },
-                description: module_obj.description,
-                fields: page,
-                color: +module_obj.colour,
-                footer: {
-                    text: `Page ${i+1} of ${fieldPages.length}`
-                }
-            }}
-        }
-    });
-
-    functions.pages(message, pages);
 
 }

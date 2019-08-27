@@ -27,6 +27,7 @@ exports.msg = async function(message, args) {
                         message.channel.stopTyping();
                     })
                     break;
+                
                 case undefined:
                     message.channel.startTyping();
                     repStatus(message).then(response => {
@@ -37,6 +38,7 @@ exports.msg = async function(message, args) {
                         message.channel.stopTyping();
                     })
                     break;
+                
                 default:
                     message.channel.startTyping();
                     rep(message, args.slice(1)).then(response => {

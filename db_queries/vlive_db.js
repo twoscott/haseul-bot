@@ -20,7 +20,7 @@ db.run(`CREATE TABLE IF NOT EXISTS vliveChannels (
     channelCode TEXT NOT NULL,
     channelName TEXT NOT NULL,
     mentionRoleID TEXT,
-    VPICK INT NOT NULL DEFAULT 0,
+    VPICK INT NOT NULL DEFAULT 1,
     UNIQUE(discordChanID, ChannelSeq)
 )`);
 

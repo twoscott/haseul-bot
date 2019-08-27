@@ -167,10 +167,10 @@ exports.msg = async function(message, args) {
             })
             break;
 
-        case ".join":
         case ".joins":
         case ".joinlogs":
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+        case ".memberlogs":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS"];
             if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
             if (!perms.some(p => message.member.hasPermission(p))) break;
             switch (args[1]) {
@@ -203,11 +203,15 @@ exports.msg = async function(message, args) {
                     })
                     break;
 
+                default:
+                    message.channel.send("Help with logs can be found here: https://haseulbot.xyz/#member-logs");
+                    break;
+
             }
             break;
 
-        case ".welcome":
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+        case ".greeter":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS"];
             if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
             if (!perms.some(p => message.member.hasPermission(p))) break;
             switch (args[1]) {
@@ -279,7 +283,7 @@ async function userinfo(message, args) {
     } else {
         let match = target.match(/^<?@?!?(\d{8,})>?$/);
         if (!match) {
-            let textStart = message.content.match(new RegExp(args.slice(0, 1).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+            let textStart = message.content.match(new RegExp(args.slice(0, 1).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
             target = message.content.slice(textStart).trim();
             guild = await guild.fetchMembers();
 
@@ -343,7 +347,7 @@ async function member_embed(author, member) {
         let modRoles = [];
         let roles = [];
         let perms = [
-            "ADMINISTRATOR", "MANAGE_GUILD", "VIEW_AUDIT_LOG", 
+            "ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS", "VIEW_AUDIT_LOG", 
             "KICK_MEMBERS", "BAN_MEMBERS"
         ];
         for (let role of allRoles) {
@@ -414,7 +418,7 @@ async function user_dp(message, args) {
     } else {
         let match = target.match(/^<?@?!?(\d{8,})>?$/);
         if (!match) {
-            let textStart = message.content.match(new RegExp(args.slice(0, 1).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+            let textStart = message.content.match(new RegExp(args.slice(0, 1).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
             target = message.content.slice(textStart).trim();
             guild = await guild.fetchMembers();
 
@@ -528,7 +532,7 @@ async function setWelcomeMsg(message, args) {
     if (args.length < 4) {
         return "⚠ Please provide a message.";
     }
-    let msgStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let msgStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     let msg = message.content.slice(msgStart).trim();   
     await serverSettings.set(message.guild.id, "welcomeMsg", msg)
     return "Welcome message set.";

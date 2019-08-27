@@ -28,7 +28,7 @@ async function scrapeArtistImage(artist) {
         response = await axios.get(`https://www.last.fm/music/${encodeURIComponent(artist)}/+images`);
     } catch (e) {
         let { message } = e.response.data;
-        return `⚠ ${message}.`;
+        return `⚠ ${message || "Unknown Error Occurred."}`;
     }
     
     let doc = new JSDOM(response.data).window.document;
@@ -209,7 +209,11 @@ exports.msg = async function(message, args) {
                         console.error(error);
                         message.channel.stopTyping();
                     })
-                    break; 
+                    break;
+
+                case "help":
+                    message.channel.send("Help with Last.fm can be found here: https://haseulbot.xyz/#last.fm");
+                    break;
 
                 default:
                     message.channel.startTyping();
@@ -282,8 +286,9 @@ async function set_lf_user(message, username) {
     } catch (e) {
         let { message, error } = e.response.data;
         if (error != 6) console.error(new Error(message));
-        return `⚠ ${message}.`;
+        return `⚠ ${message || "Unknown Error Occurred."}`;
     }
+    console.log(response.data);
     
     await database.set_lf_user(message.author.id, username);
     return `Last.fm username set to ${username}.`;
@@ -327,7 +332,7 @@ async function lf_recents(message, args, limit) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=${limit}`);
     } catch (e) {
         let { message } = e.response.data;
-        return `⚠ ${message}.`;
+        return `⚠ ${message || "Unknown Error Occurred."}`;
     }
 
     let tracks = response.data.recenttracks.track
@@ -534,7 +539,7 @@ async function lf_top_media(message, args, type) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${limit}`);
     } catch (e) {
         let { message } = e.response.data;
-        return `⚠ ${message}.`;
+        return `⚠ ${message || "Unknown Error Occurred."}`;
     }
 
     let lf_user = response.data[`top${type}s`]["@attr"].user;
@@ -612,7 +617,7 @@ async function lf_profile(message, username) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
     } catch (e) {
         let { message } = e.response.data;
-        return `⚠ ${message}.`;
+        return `⚠ ${message || "Unknown Error Occurred."}`;
     }
 
     let user = response.data.user;
@@ -662,7 +667,7 @@ async function lf_avatar(message, username) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
     } catch (e) {
         let { message } = e.response.data;
-        return `⚠ ${message}.`;
+        return `⚠ ${message || "Unknown Error Occurred."}`;
     }
 
     let { name, image } = response.data.user;
@@ -699,7 +704,7 @@ async function lf_youtube(message, username) {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=1`);
     } catch (e) {
         let { message } = e.response.data;
-        return `⚠ ${message}.`;
+        return `⚠ ${message || "Unknown Error Occurred."}`;
     }
 
     let track = response.data.recenttracks.track[0];
@@ -754,7 +759,7 @@ async function lf_chart(message, args, type = "album") {
             response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type.toLowerCase()}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${dimension ** 2}`);
         } catch (e) {
             let { message } = e.response.data;
-            return `⚠ ${message}.`;
+            return `⚠ ${message || "Unknown Error Occurred."}`;
         }
         collection = response.data[`top${type}s`][type];
 
@@ -767,7 +772,7 @@ async function lf_chart(message, args, type = "album") {
                 response = await axios.get(`https://www.last.fm/user/${username}/library/artists?date_preset=${date_preset}&page=${i+1}`);
             } catch (e) {
                 let { message } = e.response.data;
-                return `⚠ ${message}.`;
+                return `⚠ ${message || "Unknown Error Occurred."}`;
             }
 
             let doc = new JSDOM(response.data).window.document;

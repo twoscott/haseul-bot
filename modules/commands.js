@@ -60,6 +60,17 @@ exports.msg = async function(message, args) {
                         })
                         break;
 
+                case "rename":
+                    message.channel.startTyping();
+                    renameCommand(message, args).then(response => {
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
+                    }).catch(error => {
+                        console.error(error);
+                        message.channel.stopTyping();
+                    })
+                    break;
+
                 case "edit":
                         message.channel.startTyping();
                         editCommand(message, args).then(response => {
@@ -103,8 +114,14 @@ exports.msg = async function(message, args) {
                         message.channel.stopTyping();
                     })
                     break;
+                
+                case "help":
+                default:
+                    message.channel.send("Help with custom commands can be found here: https://haseulbot.xyz/#custom-commands");
+                    break;
 
             }
+            break;
 
     }
     
@@ -134,7 +151,7 @@ async function addCommand(message, args) {
         return "⚠ This is a reserved command name, please use another name.";
     }
 
-    let textStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let textStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     let text = message.content.slice(textStart).trim();
 
     let fileUrl = files[0] ? files[0].url : '';
@@ -153,6 +170,37 @@ async function delCommand(message, commandName) {
 
     let removed = await database.remove_command(message.guild.id, commandName);
     return removed ? `Command \`.${commandName}\` was removed.` : `⚠ No command with the name \`${commandName}\` was found.`;
+
+}
+
+async function renameCommand(message, args) {
+
+    if (args.length < 3) {
+        return "⚠ Please provide a command name and a new name for the command.";
+    }
+
+    if (args.length < 4) {
+        return "⚠ Please provide a new name for the command.";
+    }
+
+    let commandName = args[2].toLowerCase();
+    let newName = args[3].toLowerCase();
+    
+    if (!/^[a-z0-9]+$/.test(newName)) {
+        return `⚠ \`${newName}\` contains invalid characters \`${newName.replace(/([a-z0-9]+)/g, '')}\`, please use characters A-Z and 0-9.`;
+    }
+
+    if (reservedCommands.list.includes(newName)) {
+        return `⚠ \`.${newName}\` is a reserved command name, please use another name.`;
+    }
+
+    let command = await database.get_command(message.guild.id, commandName);
+    if (!command) {
+        return `⚠ \`.${commandName}\` does not exist.`;
+    }
+    
+    let renamed = await database.rename_command(message.guild.id, commandName, newName);
+    return renamed ? `\`.${commandName}\` was renamed to \`.${newName}\`.` : `⚠ \`.${newName}\` already exists.`;
 
 }
 
@@ -176,7 +224,7 @@ async function editCommand(message, args) {
         return "⚠ This is a reserved command name, please use another name.";
     }
 
-    let textStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let textStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     let text = message.content.slice(textStart).trim();
 
     let fileUrl = files[0] ? files[0].url : '';

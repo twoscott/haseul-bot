@@ -46,7 +46,7 @@ exports.msg = async function(message, args) {
     switch (args[0]) {
 
         case ".autorole":
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES"];
             if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
             if (!perms.some(p => message.member.hasPermission(p))) break;
             switch (args[1]) {
@@ -73,6 +73,10 @@ exports.msg = async function(message, args) {
                     })
                     break;
 
+                default:
+                    message.channel.send("Help with roles can be found here: https://haseulbot.xyz/#roles");
+                    break;
+
             }
             break;
 
@@ -91,7 +95,7 @@ exports.msg = async function(message, args) {
                     break;
 
             }
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES"];
             if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
             if (!perms.some(p => message.member.hasPermission(p))) break;
             switch (args[1]) {
@@ -121,7 +125,6 @@ exports.msg = async function(message, args) {
 
                 case "remove":
                 case "delete":
-                case "del":
                     message.channel.startTyping();
                     remove_role(message, args).then(response => {
                             if (response) message.channel.send(response);
@@ -192,6 +195,11 @@ exports.msg = async function(message, args) {
 
                     }
                     break;
+                
+                case "help":
+                default:
+                    message.channel.send("Help with roles can be found here: https://haseulbot.xyz/#roles");
+                    break;
 
             }
             break;
@@ -199,7 +207,7 @@ exports.msg = async function(message, args) {
         // Available roles
 
         case ".avarole":
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES"];
             if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
             if (!perms.some(p => message.member.hasPermission(p))) break;
             message.channel.startTyping();
@@ -408,7 +416,7 @@ async function add_role(message, args) {
         return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
 
-    let textStart = message.content.match(new RegExp(args.slice(0, 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let textStart = message.content.match(new RegExp(args.slice(0, 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     let roles_text = message.content.slice(textStart).trim();
     let pairs = roles_text.split(",");
     let errors = [];
@@ -457,7 +465,7 @@ async function remove_role(message, args) {
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
         return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
-    let textStart = message.content.match(new RegExp(args.slice(0, 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let textStart = message.content.match(new RegExp(args.slice(0, 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     let roles_text = message.content.slice(textStart).trim();
     let role_commands = roles_text.split(",");
 
@@ -496,7 +504,7 @@ async function toggle_available_role(message, args) {
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
         return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
     }
-    let textStart = message.content.match(new RegExp(args.slice(0, 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let textStart = message.content.match(new RegExp(args.slice(0, 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     let roles_text = message.content.slice(textStart).trim();
     let role_names = roles_text.split(",");
 
@@ -620,7 +628,7 @@ async function set_roles_msg(message, args) {
     if (args.length < 4) {
         return "⚠ Please provide a message.";
     }
-    let msgStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let msgStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     let msg = message.content.slice(msgStart).trim();
     await database.set_roles_msg(message.guild.id, msg);
     return "Roles message set.";
@@ -633,7 +641,7 @@ async function setAutorole(message, args) {
         return "⚠ Please provide a role name.";
     }
 
-    let roleStart = message.content.match(new RegExp(args.slice(0, 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let roleStart = message.content.match(new RegExp(args.slice(0, 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     let roleName = message.content.slice(roleStart).trim();
     let role = message.guild.roles.find(role => role.name == roleName);
     if (!role) {
@@ -724,7 +732,7 @@ async function roleslist(message) {
         return '⚠ This server has no roles to list!';
     }
 
-    let roleString = guildRoles.map(role => `${role} - ${role.members.size} member${role.members.size != 1 ? 's':''}`).join('\n');
+    let roleString = guildRoles.map(role => `${role} - ${role.members.size} member${role.members.size != 1 ? 's':''} \`${role.hexColor.toUpperCase()}\``).join('\n');
 
     let descriptions = [];
     while (roleString.length > 1024 || roleString.split('\n').length > 30) {

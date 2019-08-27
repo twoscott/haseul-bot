@@ -40,6 +40,24 @@ exports.remove_command = (guild_id, command_name) => {
     })
 }
 
+// Rename command
+
+exports.rename_command = (guild_id, command_name, new_name) => {
+    return new Promise((resolve, reject) => {
+        db.get("SELECT commandName FROM commands WHERE commandName = ? AND guildID = ?", [new_name, guild_id], (err, row) => {
+            if (err) return reject(err);
+            if (row) {
+                return resolve(false);
+            } else {
+                db.run("UPDATE commands SET commandName = ? WHERE commandName = ? AND guildID = ?", [new_name, command_name, guild_id], err => {
+                    if (err) return reject(err);
+                    return resolve(true);
+                })
+            }
+        })
+    })
+}
+
 // Edit command
 
 exports.edit_command = (guild_id, command_name, text) => {

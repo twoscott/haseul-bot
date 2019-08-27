@@ -7,6 +7,20 @@ const HashSet = require("hashset");
 
 const database = require("../db_queries/notifications_db.js");
 
+const notif_nums = {
+    'i': '1!',
+    'l': '1|',
+    'z': '2',
+    'e': '3',
+    'a': '4@',
+    's': '5$',
+    'b': '68',
+    't': '7',
+    'q': '9',
+    'g': '9',
+    'o': '0'
+}
+
 // Functions
 
 async function notify(message) {
@@ -44,8 +58,43 @@ async function notify(message) {
         let dnd = await database.get_dnd(notif.userID);
         if (dnd) continue;
 
-        let regxp = new RegExp(notif.keyexp, 'i');
-        let match = content.match(regxp);
+        let ignored_server = ignored_servers.find(x => x.userID == notif.userID && x.guildID == guild.id);
+        if (ignored_server) continue;
+        let ignored_channel = ignored_channels.find(x => x.userID == notif.userID && x.channelID == channel.id);
+        if (ignored_channel) continue;
+
+        let regexp;
+        switch (notif.type) {
+            case "NORMAL":
+                let plural = ['s','x','ch','sh'].includes(notif.keyexp[notif.keyexp.length-1]) ? 'es':'s';
+                regexp = new RegExp(`(^|\\W)${notif.keyexp}(?:[\`']s|${plural})?($|\\W)`, 'i');
+                break;
+            case "STRICT":
+                regexp = new RegExp(`(^|\\s)${notif.keyexp}($|\\s)`);
+                break;
+            case "LENIENT":
+                regexp = new RegExp(notif.keyexp, 'i');;
+                break;
+            case "ANARCHY":
+                regexp = notif.keyexp;
+                let anarch_regex = "";
+                for (i=0; i<regexp.length; i++) {
+                    let char = regexp[i];
+                    if (char == '\\') {
+                        let nextchar = regexp[++i];
+                        anarch_regex += i < regexp.length - 1 ? `${char+nextchar}+\\W*` : `${char+nextchar}+`;
+                    } else {
+                        let num = notif_nums[char];
+                        let insert = num != null ? `[${char+num}]` : char;
+                        anarch_regex += i < regexp.length - 1 ? `${insert}+\\W*` : `${insert}+`;
+                    }
+                }
+                regexp = new RegExp(anarch_regex, 'i');
+                break;
+        }
+
+        // let regxp = new RegExp(notif.keyexp, 'i');
+        let match = content.match(regexp);
         if (!match) continue;
 
         let notif_set = matches.get(notif.userID);
@@ -58,11 +107,6 @@ async function notify(message) {
     }
 
     for (let userID of matches.keys()) {
-
-        let ignored_server = ignored_servers.find(x => x.userID == userID && x.guildID == guild.id);
-        if (ignored_server) continue;
-        let ignored_channel = ignored_channels.find(x => x.userID == userID && x.channelID == channel.id);
-        if (ignored_channel) continue;
 
         let member;
         try {
@@ -78,7 +122,7 @@ async function notify(message) {
         let set = matches.get(userID);
         let keywords = set.toArray().sort().join('`, `');
         let alert = `💬 **${author.username}** mentioned \`${keywords}\` in ${channel}`;
-        member.send(alert, {embed});
+        member.send(alert, {embed}).catch(console.error);
         
     }
 
@@ -132,6 +176,17 @@ exports.msg = async function(message, args) {
                         case "purge":
                             message.channel.startTyping();
                             clear_notifications(message, true).then(response => {
+                                if (response) message.channel.send(response);
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+
+                        case "list":
+                            message.channel.startTyping();
+                            list_notifications(message, true).then(response => {
                                 if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -222,9 +277,9 @@ exports.msg = async function(message, args) {
                             })
                             break;
 
-                        default:
+                        case "channel":
                             message.channel.startTyping();
-                            ignore_channel(message, args.slice(2)).then(response => {
+                            ignore_channel(message, args.slice(3)).then(response => {
                                 if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
@@ -234,7 +289,12 @@ exports.msg = async function(message, args) {
                             break;
 
                     }
-                    
+                    break;
+                
+                case "help":
+                default:
+                    message.channel.send("Help with notifications can be found here: https://haseulbot.xyz/#notifications");
+                    break;                    
 
 
             }
@@ -255,39 +315,18 @@ async function add_notification(message, args, global) {
     let type;
     let typeArg = global ? args[3] : args[2];
     let keyword;
-    let keyphrase;
-    if (["STRICT", "NORMAL", "LENIENT"].includes(typeArg.toUpperCase()) && args.length > (global ? 4 : 3)) {
+    if (["STRICT", "NORMAL", "LENIENT", "ANARCHY"].includes(typeArg.toUpperCase()) && args.length > (global ? 4 : 3)) {
         type = typeArg.toUpperCase();
-        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 4 : 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 4 : 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
         keyword = message.content.slice(keyStart).trim().toLowerCase();
     } else {
         type = "NORMAL";
-        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
         keyword = message.content.slice(keyStart).trim().toLowerCase();
     }
     
-    keyphrase = keyword.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&");
-
-    let keyrgx;
-    if (type == "STRICT")  {
-        keyrgx = `(^|\\W)${keyphrase}[\`']?s?($|\\W)`;
-    }
-    if (type == "NORMAL")  {
-        keyrgx = `${keyphrase}`;
-    }
-    if (type == "LENIENT") {
-        keyrgx = '';
-        for (i=0; i<keyphrase.length; i++) {
-            let char = keyphrase[i];
-            if (char == '\\' && keyphrase[i+1] != '\\') {
-                let nextchar = keyphrase[++i];
-                keyrgx += (i) < keyphrase.length - 1 ? `${char+nextchar}+\\W*` : `${char+nextchar}+`;
-            } else {
-                keyrgx += i < keyphrase.length - 1 ? `${char}+\\W*` : `${char}+`;
-            }
-        }
-        keyrgx += `[\`']?s?`;
-    }
+    // [\^$.|?*+(){}
+    let keyrgx = keyword.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&");
 
     let { guild, author } = message;
     let addedNotif = global ? await database.add_global_notif(author.id, keyword, keyrgx, type)
@@ -296,8 +335,8 @@ async function add_notification(message, args, global) {
         return "⚠ Notification with this key word already added.";
     }
 
-    author.send(`You will now be notified when \`${keyword}\` is mentioned ${global ? `globally` : `in \`${guild.name}\``}.`);
-    return `Notification added with search mode: \`${type}\`.`; 
+    author.send(`You will now be notified when \`${keyword}\` is mentioned ${global ? `globally` : `in \`${guild.name}\``} with \`${type}\` search mode.`);
+    return `Notification added.`; 
     
 }
 
@@ -307,7 +346,7 @@ async function remove_notification(message, args, global) {
         return "⚠ Please specify a key word or phrase to remove."
     }
 
-    let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\<\>\^\$\?\!\:\*\=\+\-])/g, "\\$&")).join('\\s+')))[0].length;
+    let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
     keyphrase = message.content.slice(keyStart).trim().toLowerCase();
 
     message.delete(500);
@@ -328,7 +367,12 @@ async function remove_notification(message, args, global) {
 async function clear_notifications(message, global) {
 
     let { author, guild } = message;
-    let cleared = global  ? database.clear_global_notifs(author.id) : database.clear_local_notifs(guild.id, author.id);
+    let cleared;
+    if (global) {
+        cleared = await database.clear_global_notifs(author.id);
+    } else {
+        cleared = await database.clear_local_notifs(guild.id, author.id);
+    }
     if (!cleared) {
         return global ? `⚠ No notifications to clear.` : `⚠ No notifications in \`${guild.name}\` to clear.`;
     } else {
@@ -337,27 +381,23 @@ async function clear_notifications(message, global) {
 
 }
 
-async function list_notifications(message) {
+async function list_notifications(message, global) {
 
-    let { author } = message;
-    let globals = await database.get_global_notifs();
-    let locals  = await database.get_local_notifs();
-    let notifs  = globals.concat(locals).filter(n => n.userID == author.id);
-
-    if (notifs.length < 1) {
-        return "⚠ You don't have any notifications!";
+    let { author, guild } = message;
+    let notifs;
+    if (global) {
+        notifs = await database.get_global_notifs()
+        notifs = notifs.filter(n => n.userID == author.id);
+    } else {
+        notifs = await database.get_local_notifs(guild.id)
+        notifs = notifs.filter(n => n.userID == author.id);
     }
 
-    let notifString = ['**Notifications List**\n__Scope - Type - Keyword__'].concat(notifs.map(notif => {
-        let scope;
-        if (notif.guildID) {
-            let guild = Client.guilds.get(notif.guildID);
-            scope = guild ? guild.name : notif.guildID;
-        } else {
-            scope = 'Global';
-        }
-        return `\`${scope}\` - \`${notif.type}\` - ${notif.keyword.toLowerCase()}`;
-    })).join('\n');
+    if (notifs.length < 1) {
+        return `⚠ You don't have any notifications${!global ? ` in ${message.guild.name}` : ``}!`;
+    }
+
+    let notifString = [`**${global ? 'Global' : message.guild.name} Notifications List**\n__Type - Keyword__`].concat(notifs.map(notif => `\`${notif.type}\` - ${notif.keyword.toLowerCase()}`)).join('\n');
 
     let pages = [];
     while (notifString.length > 2048) {
