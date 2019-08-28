@@ -6,6 +6,7 @@ const emojis = require("../modules/emojis.js");
 const lastfm = require("../modules/lastfm.js");
 const levels = require("../modules/levels.js");
 const media = require("../modules/media.js");
+const misc = require("../modules/misc.js");
 const moderation = require("../modules/moderation.js");
 const notifications = require("../modules/notifications.js");
 const profiles = require("../modules/profiles.js");
@@ -36,6 +37,7 @@ exports.handleMsg = (message) => {
     levels.msg(message, args);
     moderation.msg(message, args);
     media.msg(message, args);
+    misc.msg(message, args);
     notifications.msg(message, args);
     profiles.msg(message, args);
     reps.msg(message, args);

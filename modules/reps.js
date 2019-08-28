@@ -4,6 +4,7 @@ const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 
 const functions = require("../functions/functions.js");
+const colours = require("../functions/colours.js");
 
 const database = require("../db_queries/reps_db.js");
 const levelsdb = require("../db_queries/levels_db.js");
@@ -213,7 +214,7 @@ async function rep(message, args) {
     let d = newStreak > 1 ? 's':'';
     let embed = new Discord.RichEmbed()
         .setAuthor(`Report`, recipient.user.displayAvatarURL)
-        .setColor(functions.randomHexColor())
+        .setColor(parseInt(colours.randomHexColour(true), 16))
         .addField(`Rep`, `${recipientProfile.rep} (+1)`, true)
         .addField(`Exp`, `${recipientXp.xp.toLocaleString()} (+${addXp})`, true);
     if (newStreak) embed.addField(`Streak`, `${newStreak} day${d} :fire:`, false);

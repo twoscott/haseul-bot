@@ -55,6 +55,7 @@ async function botinfo(message) {
     } catch(e) {
         console.error(Error(e));
         message.channel.send("⚠ Error occurred.");
+        return;
     }
     let statArray = stat.toString().split(/(?<!\(\w+)\s(?!\w+\))/i);
     let memory = Math.round((parseInt(statArray[23]) * 4096)/10000)/100;

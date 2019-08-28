@@ -286,9 +286,8 @@ async function set_lf_user(message, username) {
     } catch (e) {
         let { message, error } = e.response.data;
         if (error != 6) console.error(new Error(message));
-        return `⚠ ${message || "Unknown Error Occurred."}`;
+        return `⚠ ${message || "Invalid Last.fm username."}`;
     }
-    console.log(response.data);
     
     await database.set_lf_user(message.author.id, username);
     return `Last.fm username set to ${username}.`;

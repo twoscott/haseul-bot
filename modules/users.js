@@ -1,9 +1,11 @@
 // Require modules
 
+const Client = require("../haseul.js").Client;
 const Discord = require("discord.js");
+
 const axios = require("axios");
 
-const Client = require("../haseul.js").Client;
+const colours = require("../functions/colours.js");
 const functions = require("../functions/functions.js");
 const serverSettings = require("./server_settings.js");
 const Image = require("../functions/images.js");
@@ -37,7 +39,7 @@ async function getMemberNo(member) {
 
 exports.join = async function(member) {
 
-    let colour = functions.randomHexColor();
+    let colour = parseInt(colours.randomHexColour(true), 16);
     welcome(member, colour);
     log(member, colour, logJoin);
 
@@ -47,7 +49,7 @@ exports.join = async function(member) {
 
 exports.leave = async function(member) {
 
-    let colour = functions.randomHexColor();
+    let colour = parseInt(colours.randomHexColour(true), 16);
     log(member, colour, logLeave);
 
 }

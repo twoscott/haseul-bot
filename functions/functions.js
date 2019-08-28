@@ -11,21 +11,6 @@ exports.capitalise = (text) => {
     return text[0].toUpperCase() + text.slice(1).toLowerCase();
 }
 
-exports.randomHexColor = () => {
-    
-    let rgb = [];
-    let full = Math.floor(Math.random() * 3);
-    rgb[full] = 'ff';
-
-    for (let i = 0; i < 3; i++) {
-        if (i == full) continue;
-        rgb[i] = Math.floor(Math.random() * 256).toString(16);
-    }
-
-    return parseInt(rgb.join(''), 16);
-
-}
-
 exports.searchMembers = async (guild, query) => {
     
     query = query.toLowerCase();

@@ -324,19 +324,22 @@ async function add_notification(message, args, global) {
         let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
         keyword = message.content.slice(keyStart).trim().toLowerCase();
     }
-    
-    // [\^$.|?*+(){}
+
+    if (keyword.length > 128) {
+        return "⚠ Keywords must not exceed 128 character in length.";
+    }
+
     let keyrgx = keyword.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&");
 
     let { guild, author } = message;
     let addedNotif = global ? await database.add_global_notif(author.id, keyword, keyrgx, type)
                             : await database.add_local_notif(guild.id, author.id, keyword, keyrgx, type);
     if (!addedNotif) {
-        return "⚠ Notification with this key word already added.";
+        return "⚠ Notification with this keyword already added.";
     }
 
     author.send(`You will now be notified when \`${keyword}\` is mentioned ${global ? `globally` : `in \`${guild.name}\``} with \`${type}\` search mode.`);
-    return `Notification added.`; 
+    return `Notification added.`;
     
 }
 
