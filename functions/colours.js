@@ -20,7 +20,7 @@ exports.randomHexColour = (maxBright) => {
 }
 
 exports.rgbToHex = (c) => {
-    let hex = parseInt(c).toString(16);
+    let hex = c.toString(16);
     return hex.length === 1 ? '0'+hex : hex;
 }
 

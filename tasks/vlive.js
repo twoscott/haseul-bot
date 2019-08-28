@@ -1,7 +1,6 @@
 // Require modules
 
 const Client = require("../haseul.js").Client;
-const botchannel = Client.channels.get('417893349039669260');
 
 const axios = require("axios");
 
@@ -12,13 +11,9 @@ const clientdb = require("../db_queries/client_db.js");
 
 const vlive = axios.create({
     baseURL: 'http://api.vfan.vlive.tv/vproxy/channelplus/',
-    timeout: 10000
+    timeout: 5000
 })
 const app_id = '8c6cc7b45d2568fb668be6e05b6e5a3b';
-
-// Variables
-
-let lastVliveCheck;
 
 // Task loop
 
@@ -35,10 +30,6 @@ async function vliveLoop() {
     let startTime = Date.now();
 
     console.log("Started checking Vlives at " + new Date(startTime).toUTCString());
-    // if (!lastVliveCheck) {
-    //     let clientData = await clientdb.get_client_data();
-    //     lastVliveCheck = clientData ? clientData.lastVliveCheck : 0;
-    // }
 
     let channelNotifs = await database.get_all_vlive_channels();
     let channelSeqs = new Set(channelNotifs.map(x => x.channelSeq));
@@ -46,12 +37,10 @@ async function vliveLoop() {
     for (let channelSeq of channelSeqs.values()) {
         
         let response;
-        for (let i=0; !response && i<10; i++) {
-            try {
-                response = await vlive.get('getChannelVideoList', { params: { app_id, channelSeq, maxNumOfRows: 10, pageNo: 1 } });
-            } catch(e) {
-                console.error(channelSeq + ' ' + Error(e));
-            }
+        try {
+            response = await vlive.get('getChannelVideoList', { params: { app_id, channelSeq, maxNumOfRows: 10, pageNo: 1 } });
+        } catch(e) {
+            console.error(channelSeq + ' ' + Error(e));
         }
         if (!response) {
             console.error("couldn't fetch videos for " + channelSeq);
@@ -60,9 +49,9 @@ async function vliveLoop() {
 
         let channelData = response.data["result"];
         for (let i=0; !channelData && i<10; i++) { //
+            let botchannel = Client.channels.get('417893349039669260');
             console.error(channelSeq + ' has no channel data, attempt: ' + i+1); //             JS is drunk
-            console.error(response.data); //
-            botchannel.send(channelSeq + ' has no channel data, attempt: ' + i+1 + '\n' + response.data.toString().slice(0,1900)); //
+            botchannel.send(channelSeq + ' has no channel data, attempt: ' + i+1 + '\n' + response.data.toString().slice(0,1900)).catch(console.error); //
             channelData = response.data["result"]; //
         } //
         if (!channelData) {
@@ -139,8 +128,6 @@ async function vliveLoop() {
 
     }
 
-    // lastVliveCheck = startTime;
-    // await clientdb.set_last_vlive_check(lastVliveCheck);
     console.log("Finished checking vlives, took " + (Date.now() - startTime) / 1000 + "s");
     setTimeout(vliveLoop, Math.max(30000 - (Date.now() - startTime), 0)); // ensure runs every 30 secs unless processing time > 30 secs
 

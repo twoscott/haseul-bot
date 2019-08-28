@@ -130,6 +130,8 @@ exports.msg = async function(message, args) {
 
 async function say(message, args) {
 
+    let { guild } = message;
+
     if (args.length < 2) {
         return "⚠ No channel provided to send a message to.\nUsage: `.say {channel} {message}`";
     }
@@ -140,9 +142,9 @@ async function say(message, args) {
     }
     channel_id = channel_id[1];
 
-    let channel = Client.channels.get(channel_id);
+    let channel = guild.channels.get(channel_id);
     if (!channel) {
-        return "⚠ Invalid channel provided.";
+        return "⚠ Invalid channel provided or channel is not in this server.";
     }
     
     let attachments = message.attachments.array();

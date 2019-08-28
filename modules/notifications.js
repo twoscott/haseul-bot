@@ -73,7 +73,7 @@ async function notify(message) {
                 regexp = new RegExp(`(^|\\s)${notif.keyexp}($|\\s)`);
                 break;
             case "LENIENT":
-                regexp = new RegExp(notif.keyexp, 'i');;
+                regexp = new RegExp(notif.keyexp, 'i');
                 break;
             case "ANARCHY":
                 regexp = notif.keyexp;
