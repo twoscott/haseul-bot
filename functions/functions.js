@@ -93,16 +93,25 @@ exports.getDelta = (ms, type) => {
     }
     
     if (['days', 'hours'].includes(type) || !type) {
-        hours = Math.floor(delta / 3600) % 24;
+        hours = Math.floor(delta / 3600);
+        if (['days'].includes(type)) {
+            hours = hours % 24;
+        }
         delta -= hours * 3600;
     }
 
     if (['days', 'hours', 'minutes'].includes(type) || !type) {
-        minutes = Math.floor(delta / 60) % 60;
+        minutes = Math.floor(delta / 60);
+        if (['days', 'hours'].includes(type)) {
+            minutes = minutes % 60;
+        }
         delta -= minutes * 60;
     }
 
     if (['days', 'hours', 'minutes', 'seconds'].includes(type) || !type) {
+        if (['days', 'hours', 'minutes'].includes(type)) {
+            seconds = seconds % 60;
+        }
         seconds = delta % 60;
     }
     
