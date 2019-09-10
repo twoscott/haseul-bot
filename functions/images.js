@@ -1,5 +1,8 @@
 //Require modules
 
+const fs = require("fs");
+const html = require("../functions/html.js");
+
 //Classes
 
 class Image {
@@ -61,4 +64,77 @@ class Image {
 
 }
 
-module.exports = Image;
+// Functions
+
+async function createMediaCollage(media, width, height, col1w) {
+
+    if (media.length < 2) {
+        return media[0];
+    }
+
+    if (media.length > 4) {
+        media = media.slice(0, 4);
+    }
+
+    if (media.length == 4) {
+        let temp = media[1];
+        media[1] = media[2];
+        media[2] = temp;
+    }
+
+    let col1 = media.slice(0, Math.floor(media.length/2));
+    let col2 = media.slice(Math.floor(media.length/2), 4);
+
+    let htmlString = "";
+    htmlString += '<div class="media-container">\n';
+
+    if (col1) {
+        if (col1.length == 1) {
+            if (col2.length > 1) {
+                htmlString += `<div class="media-column c1 media-image" style="background-image:url(${col1[0]}); height:${height}px; width:${(col1w || width/2)-2}px;"></div>\n`;
+            } else {
+                htmlString += `<div class="media-column c1 media-image" style="background-image:url(${col1[0]}); height:${height}px; width:${width/2-2}px;"></div>\n`;
+            }
+        }
+        if (col1.length == 2) {
+            htmlString += `<div class="media-column c1">\n`
+            for (let i=0; i<2; i++) {
+                htmlString += `<div class="media-image i${i+1}" style="background-image:url(${col1[i]}); height:${height/2-2}px; width:${width/2-2}px;"></div>\n`
+            }
+            htmlString += `</div>\n`
+        }
+    }
+
+    if (col2) {
+        if (col2.length == 1) {
+            htmlString += `<div class="media-column c2 media-image" style="background-image:url(${col2[0]}); height:${height}px; width:${width/2-2}px;"></div>\n`;
+        }
+        if (col2.length == 2) {
+            htmlString += `<div class="media-column c2">\n`
+            for (let i=0; i<2; i++) {
+                htmlString += `<div class="media-image i${i+1}" style="background-image:url(${col2[i]}); height:${height/2-2}px; width:${(col1w && col1.length==1 ? width-col1w : width/2)-2}px;"></div>\n`
+            }
+            htmlString += `</div>\n`
+        }
+    }
+
+    htmlString+= '</div>\n'
+
+    let css = fs.readFileSync("./resources/css/twittermedia.css", {encoding: 'utf8'});
+    htmlString = [
+        `<html>\n`,
+        `<style>\n`,
+        `${css}\n`,
+        `</style>\n\n`,
+        `<body>\n`,
+        `${htmlString}\n`,
+        `</body>\n\n`,
+        `</html>\n`
+    ].join(``);
+
+    let image = await html.toImage(htmlString, width, height, 'png');
+    return image;
+
+}
+
+module.exports = { Image, createMediaCollage };

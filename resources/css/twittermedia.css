@@ -1,0 +1,38 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+.media-container {
+    display: flex;
+    flex-direction: row;
+}
+
+.media-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.media-image {
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    overflow: hidden;
+}
+
+.c1 {
+    margin-right: 2px;
+}
+
+.c2 {
+    margin-left: 2px;
+}
+
+.i1 {
+    margin-bottom: 2px;
+}
+
+.i2 {
+    margin-top: 2px;
+}
