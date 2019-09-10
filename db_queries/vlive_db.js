@@ -64,7 +64,7 @@ exports.add_vlive_channel = (guild_id, channel_id, vlive_chanseq, vlive_chancode
         db.get("SELECT * FROM vliveChannels WHERE channelSeq = ? AND discordChanID = ?", [vlive_chanseq, channel_id], (err, row) => {
             if (err) return reject(err);
             if (!row) {
-                db.run("INSERT INTO vliveChannels VALUES (?,?,?,?,?,?,0)", [guild_id, channel_id, vlive_chanseq, vlive_chancode, vlive_channame, mention_role], err => {
+                db.run("INSERT INTO vliveChannels VALUES (?,?,?,?,?,?,1)", [guild_id, channel_id, vlive_chanseq, vlive_chancode, vlive_channame, mention_role], err => {
                     if (err) return reject(err);
                     return resolve(true);
                 })

@@ -43,10 +43,10 @@ async function get_channel(query) {
         let response;
         try {
             console.log("fetching channels from API...");
-            response = await vlive.get('getSearchChannelList', { params: { app_id } });
+            response = await vlive.get('getSearchChannelList', { params: {app_id} });
         } catch(e) {
             console.error(Error(e));
-            return "⚠ Unknown error occurred.";
+            return null;
         }
 
         channelList = response.data.result.items;
@@ -83,7 +83,6 @@ exports.msg = async function(message, args) {
                         case "add":
                             message.channel.startTyping();
                             vlive_notif_add(message, args.slice(3)).then(response => {
-                                if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
                                 console.error(error);
@@ -95,7 +94,6 @@ exports.msg = async function(message, args) {
                         case "delete":
                             message.channel.startTyping();
                             vlive_notif_del(message, args.slice(3)).then(response => {
-                                if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
                                 console.error(error);
@@ -106,7 +104,6 @@ exports.msg = async function(message, args) {
                         case "list":
                             message.channel.startTyping();
                             vlive_notif_list(message).then(response => {
-                                if (response) message.channel.send(response);
                                 message.channel.stopTyping();
                             }).catch(error => {
                                 console.error(error);
@@ -114,6 +111,26 @@ exports.msg = async function(message, args) {
                             })
                             break;
 
+                    }
+                    break;
+
+                case "toggle":
+                    switch (args[2]) {
+    
+                        case "vpick":
+                            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
+                            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+                            if (!perms.some(p => message.member.hasPermission(p))) break;
+                            message.channel.startTyping();
+                            vpick_toggle(message, args.slice(3)).then(response => {
+                                message.channel.stopTyping();
+                            }).catch(error => {
+                                console.error(error);
+                                message.channel.stopTyping();
+                            })
+                            break;
+    
+    
                     }
                     break;
 
@@ -136,27 +153,6 @@ exports.msg = async function(message, args) {
 
             }
             break;
-
-            case ".vpick":
-                switch (args[1]) {
-
-                    case "toggle":
-                        perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
-                        if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                        if (!perms.some(p => message.member.hasPermission(p))) break;
-                        message.channel.startTyping();
-                        vpick_toggle(message, args.slice(2)).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                        }).catch(error => {
-                            console.error(error);
-                            message.channel.stopTyping();
-                        })
-                        break;
-
-
-                }
-                break;
         
     }
 
@@ -167,9 +163,10 @@ async function vlive_notif_add(message, args) {
 
     let { guild } = message;
 
-    let formatMatch = args.join(' ').trim().match(/^(?:https?\:\/\/channels\.vlive\.tv\/)?(.+?)(?:\/home\/?)?\s+<?#?(\d{8,})>?\s*((<@&)?(.*?)(>))?/i);
+    let formatMatch = args.join(' ').trim().match(/^(?:https?\:\/\/channels\.vlive\.tv\/)?(.+?)(?:\/home\/?)?\s+<?#?(\d{8,})>?\s*((<@&)?(.*?)(>)?)?$/i);
     if (!formatMatch) {
-        return "⚠ Incorrect formatting.\nUsage: `.vlive notif add {vlive channel name} {discord channel} [mention role name](optional)`.";
+        message.channel.send("⚠ Incorrect formatting. For help with VLIVE, see: https://haseulbot.xyz/#vlive");
+        return;
     }
 
     let vliveQuery = formatMatch[1];
@@ -178,10 +175,29 @@ async function vlive_notif_add(message, args) {
 
     let channel = guild.channels.get(discordChannel);
     if (!channel) {
-        return "⚠ The Discord channel provided does not exist in this server.";
+        message.channel.send("⚠ The Discord channel provided does not exist in this server.");
+        return;
     }
     if (channel.type != "text") {
-        return "⚠ Please provide a text channel to send notifications to.";
+        message.channel.send("⚠ Please provide a text channel to send notifications to.");
+        return;
+    }
+
+    let member;
+    try {
+        member = await guild.fetchMember(Client.user.id);
+    } catch (e) {
+        member = null;
+    }
+    if (!member) {
+        message.channel.send("⚠ Error occurred.");
+        return;
+    }
+    
+    let botCanRead = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
+    if (!botCanRead) {
+        message.channel.send("⚠ I cannot see this channel!");
+        return;
     }
 
     let role;
@@ -189,12 +205,14 @@ async function vlive_notif_add(message, args) {
         if (formatMatch[4] && formatMatch[6]) {
             role = guild.roles.get(formatMatch[5])
             if (!role) {
-                return `⚠ A role with the ID \`${formatMatch[5]}\` does not exist in this server.`;
+                message.channel.send(`⚠ A role with the ID \`${formatMatch[5]}\` does not exist in this server.`);
+                return;
             }
         } else {
             role = guild.roles.find(role => role.name == formatMatch[5]);
             if (!role) {
-                return `⚠ The role \`${formatMatch[5]}\` does not exist in this server.`;
+                message.channel.send(`⚠ The role \`${formatMatch[5]}\` does not exist in this server.`);
+                return;
             }
         }
     }
@@ -202,31 +220,36 @@ async function vlive_notif_add(message, args) {
     let query = vliveQuery.toLowerCase();
     let chanResult = await get_channel(query);    
     if (!chanResult) {
-        return `⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`;
+        message.channel.send(`⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`);
+        return;
     }
     if (!chanResult) {
-        return `⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`;
+        message.channel.send(`⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`);
+        return;
     }
 
     let { channelName, channelCode } = chanResult;
     try {
-        response = await vlive.get('decodeChannelCode', { params: { app_id, channelCode } });
+        response = await vlive.get('decodeChannelCode', { params: {app_id, channelCode} });
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Error occurred.";
+        message.channel.send("⚠ Error occurred.");
+        return;
     }
     let { channelSeq } = response.data.result;
 
     try {
-        response = await vlive.get('getChannelVideoList', { params: { app_id, channelSeq, maxNumOfRows: 10, pageNo: 1 } });
+        response = await vlive.get('getChannelVideoList', { params: {app_id, channelSeq, maxNumOfRows: 10, pageNo: 1} });
     } catch(e) {
         console.error(channelSeq + ' ' + Error(e));
-        return "⚠ Error occurred.";
+        message.channel.send("⚠ Error occurred.");
+        return;
     }
 
     let channelData = response.data["result"];
     if (!channelData) {
-        return "⚠ Error occurred.";
+        message.channel.send("⚠ Error occurred.");
+        return;
     }
 
     let { videoList } = channelData;
@@ -245,11 +268,12 @@ async function vlive_notif_add(message, args) {
         added = await database.add_vlive_channel(guild.id, channel.id, channelSeq, channelCode, channelName, role ? role.id : null);
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Error occurred.";
+        message.channel.send("⚠ Error occurred.");
+        return;
     }
     
-    return added ? `${role ? `\`${role.name}\``:'You'} will now be notified when \`${channelName}\` posts a new VLIVE in ${channel}.` :
-                   `⚠ ${channel} is already set up to be notified when \`${channelName}\` posts a new VLIVE.`;
+    message.channel.send(added ? `${role ? `\`${role.name}\``:'You'} will now be notified when \`${channelName}\` posts a new VLIVE in ${channel}.` :
+                   `⚠ ${channel} is already set up to be notified when \`${channelName}\` posts a new VLIVE.`);
 
 }
 
@@ -260,7 +284,8 @@ async function vlive_notif_del(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https?\:\/\/channels\.vlive\.tv\/)?(.+?)(?:\/home\/?)?\s+<?#?(\d{14,})>?/i);
     if (!formatMatch) {
-        return "⚠ Incorrect formatting.\nUsage: `.vlive notif remove {vlive channel name} {discord channel}`.";
+        message.channel.send("⚠ Incorrect formatting. For help with VLIVE, see: https://haseulbot.xyz/#vlive");
+        return;
     }
 
     let vliveQuery = formatMatch[1];
@@ -268,21 +293,24 @@ async function vlive_notif_del(message, args) {
 
     let channel = guild.channels.get(discordChannel);
     if (!channel) {
-        return "⚠ The Discord channel provided does not exist in this server.";
+        message.channel.send("⚠ The Discord channel provided does not exist in this server.");
+        return;
     }
 
     let query = vliveQuery.toLowerCase();
     let chanResult = await get_channel(query);    
     if (!chanResult) {
-        return `⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`;
+        message.channel.send(`⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`);
+        return;
     }
 
     let { channelName, channelCode } = chanResult;
     try {
-        response = await vlive.get('decodeChannelCode', { params: { app_id, channelCode } });
+        response = await vlive.get('decodeChannelCode', { params: {app_id, channelCode} });
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Unknown error occurred."
+        message.channel.send("⚠ Unknown error occurred.");
+        return;
     }
     let { channelSeq } = response.data.result;
 
@@ -291,11 +319,12 @@ async function vlive_notif_del(message, args) {
         deleted = await database.del_vlive_channel(guild.id, channel.id, channelSeq);
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Unknown error occurred.";
+        message.channel.send("⚠ Unknown error occurred.");
+        return;
     }
     
-    return deleted ? `You will no longer be notified when \`${channelName}\` posts a new VLIVE in <#${discordChannel}>.` :
-                     `⚠ VLIVE notifications for \`${channelName}\` are not set up in <#${discordChannel}> on this server.`;
+    message.channel.send(deleted ? `You will no longer be notified when \`${channelName}\` posts a new VLIVE in ${channel}.` :
+                     `⚠ VLIVE notifications for \`${channelName}\` are not set up in ${channel} on this server.`);
 
 }
 
@@ -306,7 +335,8 @@ async function vlive_notif_list(message) {
 
     let notifs = await database.get_guild_vlive_channels(guild.id);
     if (notifs.length < 1) {
-        return "⚠ There are no VLIVE notifications added to this server.";
+        message.channel.send("⚠ There are no VLIVE notifications added to this server.");
+        return;
     }
     notifString = notifs.sort((a,b) => a.channelName.localeCompare(b.channelName)).map(x => `<#${x.discordChanID}> - [${x.channelName.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://channels.vlive.tv/${x.channelCode.replace(/\)/g, "\\)")}/)${x.VPICK ? `/VPICK`:``}${x.mentionRoleID ? ` <@&${x.mentionRoleID}>`:``}`).join('\n');
 
@@ -353,7 +383,8 @@ async function vpick_toggle(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https?\:\/\/channels\.vlive\.tv\/)?(.+?)(?:\/home\/?)?\s+<?#?(\d{14,})>?/i);
     if (!formatMatch) {
-        return "⚠ Incorrect formatting.\nUsage: `.vpick toggle {vlive channel name} {discord channel}`.";
+        message.channel.send("⚠ Incorrect formatting. For help with VLIVE, see: https://haseulbot.xyz/#vlive");
+        return;
     }
 
     let vliveQuery = formatMatch[1];
@@ -361,21 +392,24 @@ async function vpick_toggle(message, args) {
 
     let channel = guild.channels.get(discordChannel);
     if (!channel) {
-        return "⚠ The Discord channel provided does not exist in this server.";
+        message.channel.send("⚠ The Discord channel provided does not exist in this server.");
+        return;
     }
 
     let query = vliveQuery.toLowerCase();
     let chanResult = await get_channel(query);    
     if (!chanResult) {
-        return `⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`;
+        message.channel.send(`⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`);
+        return;
     }
 
     let { channelName, channelCode } = chanResult;
     try {
-        response = await vlive.get('decodeChannelCode', { params: { app_id, channelCode } });
+        response = await vlive.get('decodeChannelCode', { params: {app_id, channelCode} });
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Unknown error occurred."
+        message.channel.send("⚠ Unknown error occurred.");
+        return;
     }
     let { channelSeq } = response.data.result;
 
@@ -384,15 +418,17 @@ async function vpick_toggle(message, args) {
         toggle = await database.toggle_vpick(guild.id, channel.id, channelSeq);
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Unknown error occurred.";
+        message.channel.send("⚠ Unknown error occurred.");
+        return;
     }
 
     if (toggle === null) {
-        return `⚠ VLIVE notifications for \`${channelName}\` are not set up in <#${discordChannel}> on this server.`
+        message.channel.send(`⚠ VLIVE notifications for \`${channelName}\` are not set up in <#${discordChannel}> on this server.`);
+        return;
     }
     
-    return toggle ? `You will now be notified for VPICK uploads from \`${channelName}\` in <#${discordChannel}>.` :
-                    `You will no longer be notified for VPICK uploads from \`${channelName}\` in <#${discordChannel}>.`;
+    message.channel.send(toggle ? `You will now be notified for VPICK uploads from \`${channelName}\` in ${channel}.` :
+                    `You will no longer be notified for VPICK uploads from \`${channelName}\` in ${channel}.`);
 
 }
 
@@ -401,7 +437,8 @@ async function vlive_channel_info(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https?\:\/\/channels\.vlive\.tv\/)?(.+)(?:\/home\/?)?/i);
     if (!formatMatch) {
-        return "⚠ Incorrect formatting.\nUsage: `.vpick toggle {vlive channel name} {discord channel}`.";
+        message.channel.send("⚠ Incorrect formatting. For help with VLIVE, see: https://haseulbot.xyz/#vlive");
+        return;
     }
 
     let vliveQuery = formatMatch[1];
@@ -409,24 +446,27 @@ async function vlive_channel_info(message, args) {
     
     let chanResult = await get_channel(query);    
     if (!chanResult) {
-        return `⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`;
+        message.channel.send(`⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`);
+        return;
     }
     let { channelName, channelCode } = chanResult;
 
     let response;
     try {
-        response = await vlive.get('decodeChannelCode', { params: { app_id, channelCode } });
+        response = await vlive.get('decodeChannelCode', { params: {app_id, channelCode} });
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Unknown error occurred."
+        message.channel.send("⚠ Unknown error occurred.");
+        return;
     }
     let { channelSeq } = response.data.result;
 
     try {
-        response = await vlive.get('getChannelVideoList', { params: { app_id, channelSeq, maxNumOfRows: 0, pageNo: 0 } });
+        response = await vlive.get('getChannelVideoList', { params: {app_id, channelSeq, maxNumOfRows: 0, pageNo: 0} });
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Unknown error occurred.";
+        message.channel.send("⚠ Unknown error occurred.");
+        return;
     }
     let channelData = response.data.result;
     let { channelInfo } = channelData;

@@ -318,11 +318,11 @@ async function add_notification(message, args, global) {
     if (["STRICT", "NORMAL", "LENIENT", "ANARCHY"].includes(typeArg.toUpperCase()) && args.length > (global ? 4 : 3)) {
         type = typeArg.toUpperCase();
         let keyStart = message.content.match(new RegExp(args.slice(0, global ? 4 : 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-        keyword = message.content.slice(keyStart).trim().toLowerCase();
+        keyword = message.content.slice(keyStart).trim()
     } else {
         type = "NORMAL";
         let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-        keyword = message.content.slice(keyStart).trim().toLowerCase();
+        keyword = message.content.slice(keyStart).trim()
     }
 
     if (keyword.length > 128) {
@@ -330,6 +330,7 @@ async function add_notification(message, args, global) {
     }
 
     let keyrgx = keyword.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&");
+    keyword = keyword.toLowerCase();
 
     let { guild, author } = message;
     let addedNotif = global ? await database.add_global_notif(author.id, keyword, keyrgx, type)

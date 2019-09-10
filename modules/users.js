@@ -8,7 +8,7 @@ const axios = require("axios");
 const colours = require("../functions/colours.js");
 const functions = require("../functions/functions.js");
 const serverSettings = require("./server_settings.js");
-const Image = require("../functions/images.js");
+const { Image } = require("../functions/images.js");
 
 // Functions
 

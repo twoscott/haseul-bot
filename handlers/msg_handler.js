@@ -3,6 +3,7 @@
 const client = require("../modules/client.js");
 const commands = require("../modules/commands.js");
 const emojis = require("../modules/emojis.js");
+const instagram = require("../modules/instagram.js");
 const lastfm = require("../modules/lastfm.js");
 const levels = require("../modules/levels.js");
 const media = require("../modules/media.js");
@@ -13,6 +14,7 @@ const profiles = require("../modules/profiles.js");
 const reps = require("../modules/reps.js");
 const roles = require("../modules/roles.js");
 const servers = require("../modules/servers.js");
+const twitter = require("../modules/twitter.js");
 const users = require("../modules/users.js");
 const utility = require("../modules/utility.js");
 const vlive = require("../modules/vlive.js");
@@ -33,6 +35,7 @@ exports.handleMsg = (message) => {
     client.msg(message, args);
     commands.msg(message, args);
     emojis.msg(message, args);
+    instagram.msg(message, args);
     lastfm.msg(message, args);
     levels.msg(message, args);
     moderation.msg(message, args);
@@ -43,6 +46,7 @@ exports.handleMsg = (message) => {
     reps.msg(message, args);
     roles.msg(message, args);
     servers.msg(message, args);
+    twitter.msg(message, args);
     users.msg(message, args);
     utility.msg(message, args);
     vlive.msg(message, args);

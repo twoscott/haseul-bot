@@ -13,7 +13,7 @@ const media = require("./media.js");
 
 const database = require("../db_queries/lastfm_db.js");
 
-const Image = require("../functions/images.js");
+const { Image } = require("../functions/images.js");
 
 // Init
 
@@ -800,7 +800,7 @@ async function lf_chart(message, args, type = "album") {
     let screen_width = (collection.length < dimension ? collection.length : dimension) * 300;
     let screen_height = (Math.ceil(collection.length / dimension)) * 300;
 
-    let css = fs.readFileSync("./resources/fmchart.css", {encoding: 'utf8'});
+    let css = fs.readFileSync("./resources/css/fmchart.css", {encoding: 'utf8'});
     let htmlString = "";
 
     htmlString += `<div class="grid">\n    `;

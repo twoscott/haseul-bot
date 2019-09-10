@@ -78,9 +78,10 @@ async function listEmojis(message) {
         return "⚠ There are no emojis added to this server.";    
     }
 
+    emojis = emojis.filter(x => x['_roles'].length < 1);
     let staticEmojis = emojis.filter(x => !x.animated).sort((a,b) => a.name.localeCompare(b.name));
     let animatedEmojis = emojis.filter(x => x.animated).sort((a,b) => a.name.localeCompare(b.name));
-    let emojiString = staticEmojis.concat(animatedEmojis).map(x => `:${x.name}:` + (x.animated ? ` (animated)` : ``)).join('\n');
+    let emojiString = staticEmojis.concat(animatedEmojis).map(x => `<${x.animated ? 'a':''}:${x.name}:${x.id}> \`:${x.name}:\`` + (x.animated ? ` (animated)` : ``)).join('\n');
 
     let descriptions = [];
     while (emojiString.length > 2048 || emojiString.split('\n').length > 25) {
@@ -135,7 +136,7 @@ async function searchEmojis(message, query) {
         let diff = query.length / b.name.length - query.length / a.name.length;
         if (diff == 0) return a.name.indexOf(query.toLowerCase()) - b.name.indexOf(query.toLowerCase());
         else return diff;
-    }).map(x => `:${x.name}:` + (x.animated ? ` (animated)` : ``)).join('\n');
+    }).map(x => `<${x.animated ? 'a':''}:${x.name}:${x.id}> \`:${x.name}:\`` + (x.animated ? ` (animated)` : ``)).join('\n');
 
     let descriptions = [];
     while (emojiString.length > 2048 || emojiString.split('\n').length > 25) {
@@ -198,7 +199,9 @@ async function emoji_function(message, args) {
     let emojiID = emojiMatch[3];
 
     let imageUrl = `https://cdn.discordapp.com/emojis/${emojiID}.${animated ? 'gif':'png'}`;
-    let response = await axios.get(imageUrl);
+    let b = Date.now()
+    let response = await axios.head(imageUrl);
+    console.log('took ' + (Date.now() - b) + 'ms');
     let imageType = response.headers['content-type'].split('/')[1];
     let imageSize = Math.max(Math.round(response.headers['content-length']/10)/100, 1/100);
 

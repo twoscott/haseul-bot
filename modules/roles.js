@@ -54,8 +54,8 @@ exports.msg = async function(message, args) {
                 case "set":
                     message.channel.startTyping();
                     setAutorole(message, args).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
+                        if (response) message.channel.send(response);
+                        message.channel.stopTyping();
                     }).catch(error => {
                         console.error(error);
                         message.channel.stopTyping();

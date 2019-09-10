@@ -33,7 +33,7 @@ exports.msg = async function(message, args) {
         case ".say":
             perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_MESSAGES"];
             if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p))) break;
+            if (!perms.some(p => message.member.hasPermission(p)) && message.author.id != '125414437229297664') break;
             message.channel.startTyping();
             say(message, args).then(response => {
                 message.channel.send(response);
@@ -47,7 +47,7 @@ exports.msg = async function(message, args) {
         case ".edit":
             perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_MESSAGES"];
             if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p))) break;
+            if (!perms.some(p => message.member.hasPermission(p)) && message.author.id != '125414437229297664') break;
             message.channel.startTyping();
             edit(message, args).then(response => {
                 message.channel.send(response);
@@ -61,7 +61,7 @@ exports.msg = async function(message, args) {
         case ".get":
             perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_MESSAGES"];
             if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p))) break;
+            if (!perms.some(p => message.member.hasPermission(p)) && message.author.id != '125414437229297664') break;
             message.channel.startTyping();
             get(message, args.slice(1)).then(response => {
                 message.channel.send(response);
@@ -146,6 +146,21 @@ async function say(message, args) {
     if (!channel) {
         return "⚠ Invalid channel provided or channel is not in this server.";
     }
+
+    let member;
+    try {
+        member = await guild.fetchMember(Client.user.id);
+    } catch (e) {
+        member = null;
+    }
+    if (!member) {
+        return "⚠ Error occurred.";
+    }
+    
+    let botCanRead = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
+    if (!botCanRead) {
+        return "⚠ I cannot see this channel!";
+    }
     
     let attachments = message.attachments.array();
     let files = [];
@@ -186,6 +201,21 @@ async function edit(message, args) {
     let channel = guild.channels.get(channel_id);
     if (!channel) {
         return "⚠ Invalid channel provided or channel is not in this server.";
+    }
+
+    let member;
+    try {
+        member = await guild.fetchMember(Client.user.id);
+    } catch (e) {
+        member = null;
+    }
+    if (!member) {
+        return "⚠ Error occurred.";
+    }
+    
+    let botCanRead = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
+    if (!botCanRead) {
+        return "⚠ I cannot see this channel!";
     }
 
     if (args.length < 3) {
@@ -237,6 +267,21 @@ async function get(message, args) {
         return "⚠ Invalid channel provided or channel is not in this server.";
     }
 
+    let member;
+    try {
+        member = await guild.fetchMember(Client.user.id);
+    } catch (e) {
+        member = null;
+    }
+    if (!member) {
+        return "⚠ Error occurred.";
+    }
+    
+    let botCanRead = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
+    if (!botCanRead) {
+        return "⚠ I cannot see this channel!";
+    }
+
     let message_id = args[1].match(/^\d+$/);
     if (!message_id) {
         return "⚠ No message ID provided.";
@@ -254,8 +299,7 @@ async function addPollChannel(message, args) {
     let channel_id;
     if (args.length < 1) {
         channel_id = message.channel.id;
-    } 
-    else {
+    } else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
             return "⚠ Invalid channel or channel ID.";

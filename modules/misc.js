@@ -67,6 +67,13 @@ async function colour(message, args) {
         message.channel.send("⚠ Please provide a valid colour hexcode or RGB values.");
         return;
     }
+
+    for (let component of rgb) {
+        if (component < 0 || component > 255) {
+            message.channel.send("⚠ Please provide a valid colour hexcode or RGB values.");
+            return;
+        }
+    }
     
     let hsv = colours.rgbToHsv(rgb);
 
@@ -76,11 +83,11 @@ async function colour(message, args) {
     let embed = {
         title: `Colour \`#${hex.toLowerCase()}\``,
         color: hexValue,
-        image: { url: `attachment://${hex.replace('#','')}.jpg`},
+        image: { url: `attachment://${hex}.jpg`},
         footer: { text: `RGB: ${rgb.join(', ')} | HSV: ${hsv[0]}, ${hsv[1]}%, ${hsv[2]}%` }
     }
 
-    message.channel.send({embed, files: [{ attachment: image, name: `${hex.replace('#','')}.jpg` }]});
+    message.channel.send({embed, files: [{ attachment: image, name: `${hex}.jpg` }]});
 
 }
 

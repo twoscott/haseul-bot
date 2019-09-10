@@ -1,5 +1,6 @@
 // Require modules
 
+const Client = require("../haseul.js").Client;
 const config = require("../config.json");
 
 const axios = require("axios");
@@ -72,17 +73,6 @@ exports.msg = async function(message, args) {
                     }
                     break;
 
-                case "channelinfo":
-                case "channel":
-                    message.channel.startTyping();
-                    vlive_channel_info(message, args.slice(2)).then(() => {
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
                 case "toggle":
                     switch (args[2]) {
     
@@ -148,7 +138,8 @@ async function twitter_notif_add(message, args) {
         member = null;
     }
     if (!member) {
-        return "⚠ Error occurred.";
+         message.channel.send("⚠ Error occurred.");
+         return;
     }
     
     let botCanRead = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
@@ -277,7 +268,8 @@ async function twitter_notif_del(message, args) {
         deleted = await database.del_twitter_channel(channel.id, id_str);
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Error occurred.";
+        message.channel.send("⚠ Error occurred.");
+        return;
     }
     
     message.channel.send(deleted ? `You will no longer be notified when \`@${screen_name}\` posts a new tweet in ${channel}.` :
@@ -292,7 +284,8 @@ async function twitter_notif_list(message) {
 
     let notifs = await database.get_guild_twitter_channels(guild.id)
     if (notifs.length < 1) {
-        return "⚠ There are no Twitter notifications added to this server.";
+        message.channel.send("⚠ There are no Twitter notifications added to this server.");
+        return;
     }
     notifString = notifs.sort((a,b) => a.screenName.localeCompare(b.screenName)).map(x => `<#${x.channelID}> - [@${x.screenName}](https://twitter.com/${x.screenName}/)${x.retweets ? ` + <:retweet:618184292820058122>`:``}${x.mentionRoleID ? ` <@&${x.mentionRoleID}>`:``}`).join('\n');
 
@@ -377,14 +370,16 @@ async function retweet_toggle(message, args) {
         toggle = await database.toggle_retweets(channel.id, id_str)
     } catch(e) {
         console.error(Error(e));
-        return "⚠ Unknown error occurred.";
+        message.channel.send("⚠ Unknown error occurred.");
+        return;
     }
 
     if (toggle === null) {
-        return `⚠ Twitter notifications for \`@${screen_name}\` are not set up in ${channel} on this server.`
+        message.channel.send(`⚠ Twitter notifications for \`@${screen_name}\` are not set up in ${channel} on this server.`);
+        return;
     }
     
-    return toggle ? `You will now be notified for retweets from \`@${screen_name}\` in ${channel}.` :
-                    `You will no longer be notified for retweets from \`@${screen_name}\` in ${channel}.`;
+    message.channel.send(toggle ? `You will now be notified for retweets from \`@${screen_name}\` in ${channel}.` :
+                                  `You will no longer be notified for retweets from \`@${screen_name}\` in ${channel}.`);
 
 }
