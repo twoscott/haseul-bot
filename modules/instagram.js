@@ -166,6 +166,7 @@ async function insta_notif_add(message, args) {
     try {
         response = await instagram.get(`/${instaUser}/`, { params: {'__a': 1} })
     } catch(e) {
+        console.log(e.response.status);
         switch (e.response.status) {
             case 404:
             case 403:
@@ -183,6 +184,13 @@ async function insta_notif_add(message, args) {
 
     let { user } = response.data.graphql;
     let { username, id } = user;
+
+    let instaNotifs = await database.get_guild_insta_channels(guild.id)
+    let instaIDs = new Set(instaNotifs.map(x => x.instaID));
+    if (instaIDs.size >= 5) {
+        message.channel.send("⚠ No more than 5 Instagram accounts may be set up for notifications on a server.");
+        return;
+    }
 
     // store current posts
     try {

@@ -121,10 +121,10 @@ async function instaLoop() {
                         }
                         
                         if (caption) {
-                            let captionHyperlinked = caption.replace(/@([^ \n!-/:-@[-^`\{-~]+)?/gi, `[#$1](https://www.instagram.com/$1/ "View @$1 on Instagram")`)
-                                                            .replace(/#([^ \n!-/:-@[-^`\{-~]+)?/gi, `[#$1](https://www.instagram.com/explore/tags/$1/ "Explore #$1 on Instagram")`).replace(/(\n\.)+/, '\n');
+                            let captionHyperlinked = caption.replace(/@([^ \n!-/:-@[-^`\{-~]+)/gi, `[@$1](https://www.instagram.com/$1/ "View @$1 on Instagram")`)
+                                                            .replace(/#([^ \n!-/:-@[-^`\{-~]+)/gi, `[#$1](https://www.instagram.com/explore/tags/$1/ "Explore #$1 on Instagram")`).replace(/(\n\.)+/, '\n');
                             caption = captionHyperlinked.length <= 2048 ? captionHyperlinked : caption;
-                            embed.description = caption.replace(/(?<!\(https?:\/\/.+\s"View\s#[^ \n!-/:-@[-^`\{-~]+)([`\*~_])(?!\son\sInstagram")/g, "\\$&").replace(/#([^ \n!-/:-@[-^`\{-~]+)?/gi, `[#$1](https://www.instagram.com/explore/tags/$1/ "View #$1 on Instagram")`).replace(/(\n\.)+/, '\n');
+                            embed.description = caption.replace(/(?<!\(https?:\/\/.+\s"View\s#[^ \n!-/:-@[-^`\{-~]+)([`\*~_])(?!\son\sInstagram")/g, "\\$&");
                         }
                         if (user) embed.author.icon_url = user.profile_pic;
                         if (type == "GraphSidecar") {
