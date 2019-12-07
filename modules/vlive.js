@@ -254,15 +254,15 @@ async function vlive_notif_add(message, args) {
     }
 
     let { videoList } = channelData;
-    // let now = Date.now();
-    // for (let video of videoList) {
-    //     let { videoSeq, onAirStartAt } = video; 
+    let now = Date.now();
+    for (let video of videoList) {
+        let { videoSeq, onAirStartAt } = video; 
 
-    //     let releaseTimestamp = new Date(onAirStartAt + " UTC+9:00").getTime();
-    //     if (releaseTimestamp > (now - 1000*60)) continue; // don't add videos in last minute; prevent conflicts with task
+        let releaseTimestamp = new Date(onAirStartAt + " UTC+9:00").getTime();
+        if (releaseTimestamp > (now - 1000*60)) continue; // don't add videos in last minute; prevent conflicts with task
 
-    //     await database.add_video(videoSeq, channelSeq);
-    // }
+        await database.add_video(videoSeq, channelSeq);
+    }
 
     let added;
     try {

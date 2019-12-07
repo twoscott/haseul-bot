@@ -201,13 +201,13 @@ async function twitter_notif_add(message, args) {
     }
     let recentTweets = response.data;
 
-    // let now = Date.now();
-    // for (let tweet of recentTweets) {
-    //     let createdAt = new Date(tweet.created_at).getTime();
-    //     if (createdAt > (now - 1000*60)) continue; // don't add tweets in last minute; prevent conflicts with task
+    let now = Date.now();
+    for (let tweet of recentTweets) {
+        let createdAt = new Date(tweet.created_at).getTime();
+        if (createdAt > (now - 1000*60)) continue; // don't add tweets in last minute; prevent conflicts with task
 
-    //     await database.add_tweet(id_str, tweet.id_str);
-    // }
+        await database.add_tweet(id_str, tweet.id_str);
+    }
 
     let added;
     try {

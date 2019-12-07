@@ -64,53 +64,54 @@ async function twitterLoop() {
             for (let tweet of newTweets) {
 
                 let { retweeted_status, id_str, user } = tweet;
-                if (retweeted_status) tweet = retweeted_status;
-                let text = tweet.full_text || tweet.text;
+                
+                // if (retweeted_status) tweet = retweeted_status;
+                // let text = tweet.full_text || tweet.text;
 
-                if (text) {
-                    text = text
-                    .replace(/&apos;/g, "'")
-                    .replace(/&quot;/g, '"')
-                    .replace(/&gt;/g, '>')
-                    .replace(/&lt;/g, '<')
-                    .replace(/&amp;/g, '&')
-                    .replace(/([`\*~_<>])/g, "\\$&");
-                }
+                // if (text) {
+                //     text = text
+                //     .replace(/&apos;/g, "'")
+                //     .replace(/&quot;/g, '"')
+                //     .replace(/&gt;/g, '>')
+                //     .replace(/&lt;/g, '<')
+                //     .replace(/&amp;/g, '&')
+                //     .replace(/([`\*~_<>])/g, "\\$&");
+                // }
 
-                let options;
-                let embed = {
-                    author: {
-                        name: `${tweet.user.name} (@${tweet.user.screen_name})`,
-                        icon_url: tweet.user.profile_image_url_https,
-                        url: `https://twitter.com/${tweet.user.screen_name}/`
-                    },
-                    url: `https://twitter.com/${user.screen_name}/status/${id_str}/`,
-                    description: text,
-                    footer: { icon_url: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png', text: 'Twitter' },
-                }
+                // let options;
+                // let embed = {
+                //     author: {
+                //         name: `${tweet.user.name} (@${tweet.user.screen_name})`,
+                //         icon_url: tweet.user.profile_image_url_https,
+                //         url: `https://twitter.com/${tweet.user.screen_name}/`
+                //     },
+                //     url: `https://twitter.com/${user.screen_name}/status/${id_str}/`,
+                //     description: text,
+                //     footer: { icon_url: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png', text: 'Twitter' },
+                // }
 
-                if (tweet.extended_entities) {
-                    let { media } = tweet.extended_entities;
-                    if (media.length == 1) {
-                        switch (media[0].type) {
-                            case "video":
-                            case "animated_gif":
-                                break;
-                            case "photo":
-                                embed.description = text.split(RegExp('https://t.co/[a-zA-Z0-9]+$'), 1)[0];
-                                embed.image = { url: media[0].media_url_https }
-                                options = { embed };
-                                break;
-                        }
-                    } else {
-                        let collage = await images.createMediaCollage(media.map(m => m.media_url_https), 800, 600);
-                        let files = [{attachment: collage, name: `${tweet.id_str}-media-collage.png`}];
-                        embed.image = { url: 'attachment://' + files[0].name};
-                        options = { embed, files };
-                    }
-                } else {
-                    options = { embed };
-                }
+                // if (tweet.extended_entities) {
+                //     let { media } = tweet.extended_entities;
+                //     if (media.length == 1) {
+                //         switch (media[0].type) {
+                //             case "video":
+                //             case "animated_gif":
+                //                 break;
+                //             case "photo":
+                //                 embed.description = text.split(RegExp('https://t.co/[a-zA-Z0-9]+$'), 1)[0];
+                //                 embed.image = { url: media[0].media_url_https }
+                //                 options = { embed };
+                //                 break;
+                //         }
+                //     } else {
+                //         let collage = await images.createMediaCollage(media.map(m => m.media_url_https), 800, 600);
+                //         let files = [{attachment: collage, name: `${tweet.id_str}-media-collage.png`}];
+                //         embed.image = { url: 'attachment://' + files[0].name};
+                //         options = { embed, files };
+                //     }
+                // } else {
+                //     options = { embed };
+                // }
 
                 await database.add_tweet(twitterID, id_str);
 
@@ -134,7 +135,7 @@ async function twitterLoop() {
 
                     let message = `https://twitter.com/${user.screen_name}/status/${id_str}/${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
 
-                    channel.send(message, options).catch(console.error);
+                    channel.send(message/*, options*/).catch(console.error);
                 }
 
             }
