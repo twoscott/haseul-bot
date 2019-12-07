@@ -10,6 +10,7 @@ const media = require("../modules/media.js");
 const misc = require("../modules/misc.js");
 const moderation = require("../modules/moderation.js");
 const notifications = require("../modules/notifications.js");
+const patreon = require("../modules/patreon.js");
 const profiles = require("../modules/profiles.js");
 const reps = require("../modules/reps.js");
 const roles = require("../modules/roles.js");
@@ -42,6 +43,7 @@ exports.handleMsg = (message) => {
     media.msg(message, args);
     misc.msg(message, args);
     notifications.msg(message, args);
+    patreon.msg(message, args);
     profiles.msg(message, args);
     reps.msg(message, args);
     roles.msg(message, args);

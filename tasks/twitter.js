@@ -67,8 +67,6 @@ async function twitterLoop() {
                 if (retweeted_status) tweet = retweeted_status;
                 let text = tweet.full_text || tweet.text;
 
-                await database.add_tweet(twitterID, id_str);
-
                 if (text) {
                     text = text
                     .replace(/&apos;/g, "'")
@@ -79,6 +77,43 @@ async function twitterLoop() {
                     .replace(/([`\*~_<>])/g, "\\$&");
                 }
 
+                let options;
+                let embed = {
+                    author: {
+                        name: `${tweet.user.name} (@${tweet.user.screen_name})`,
+                        icon_url: tweet.user.profile_image_url_https,
+                        url: `https://twitter.com/${tweet.user.screen_name}/`
+                    },
+                    url: `https://twitter.com/${user.screen_name}/status/${id_str}/`,
+                    description: text,
+                    footer: { icon_url: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png', text: 'Twitter' },
+                }
+
+                if (tweet.extended_entities) {
+                    let { media } = tweet.extended_entities;
+                    if (media.length == 1) {
+                        switch (media[0].type) {
+                            case "video":
+                            case "animated_gif":
+                                break;
+                            case "photo":
+                                embed.description = text.split(RegExp('https://t.co/[a-zA-Z0-9]+$'), 1)[0];
+                                embed.image = { url: media[0].media_url_https }
+                                options = { embed };
+                                break;
+                        }
+                    } else {
+                        let collage = await images.createMediaCollage(media.map(m => m.media_url_https), 800, 600);
+                        let files = [{attachment: collage, name: `${tweet.id_str}-media-collage.png`}];
+                        embed.image = { url: 'attachment://' + files[0].name};
+                        options = { embed, files };
+                    }
+                } else {
+                    options = { embed };
+                }
+
+                await database.add_tweet(twitterID, id_str);
+
                 for (let data of targetData) {
                     let { guildID, channelID, mentionRoleID, retweets } = data;
 
@@ -88,51 +123,16 @@ async function twitterLoop() {
 
                     let guild = Client.guilds.get(guildID);
                     if (!guild) {
-                        console.error(Error("Guild couldn't be retrieved to send VLIVE notif to."));
+                        console.error(Error("Guild couldn't be retrieved to send Twitter notif to."));
                         continue;
                     }
                     let channel = Client.channels.get(channelID) || guild.channels.get(channelID);
                     if (!channel) {
-                        console.error(Error("Channel couldn't be retrieved to send VLIVE notif to."));
+                        console.error(Error("Channel couldn't be retrieved to send Twitter notif to."));
                         continue;
                     }
 
                     let message = `https://twitter.com/${user.screen_name}/status/${id_str}/${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
-                    
-                    let options;
-                    let embed = {
-                        author: {
-                            name: `${tweet.user.name} (@${tweet.user.screen_name})`,
-                            icon_url: tweet.user.profile_image_url_https,
-                            url: `https://twitter.com/${tweet.user.screen_name}/`
-                        },
-                        url: `https://twitter.com/${user.screen_name}/status/${id_str}/`,
-                        description: text,
-                        footer: { icon_url: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png', text: 'Twitter' },
-                    }
-
-                    if (tweet.extended_entities) {
-                        let { media } = tweet.extended_entities;
-                        if (media.length == 1) {
-                            switch (media[0].type) {
-                                case "video":
-                                case "animated_gif":
-                                    break;
-                                case "photo":
-                                    embed.description = text.split(RegExp('https://t.co/[a-zA-Z0-9]+$'), 1)[0];
-                                    embed.image = { url: media[0].media_url_https }
-                                    options = { embed };
-                                    break;
-                            }
-                        } else {
-                            let collage = await images.createMediaCollage(media.map(m => m.media_url_https), 800, 600);
-                            let files = [{attachment: collage, name: `${tweet.id_str}-media-collage.png`}];
-                            embed.image = { url: 'attachment://' + files[0].name};
-                            options = { embed, files };
-                        }
-                    } else {
-                        options = { embed };
-                    }
 
                     channel.send(message, options).catch(console.error);
                 }

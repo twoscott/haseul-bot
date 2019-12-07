@@ -25,8 +25,9 @@ db.run(`CREATE TABLE IF NOT EXISTS vliveChannels (
 )`);
 
 db.run(`CREATE TABLE IF NOT EXISTS vliveVideos (
-    videoSeq INT NOT NULL PRIMARY KEY,
-    channelSeq INT NOT NULL
+    videoSeq INT NOT NULL,
+    channelSeq INT NOT NULL,
+    UNIQUE(videoSeq, ChannelSeq)
 )`);
 
 // Channel archive

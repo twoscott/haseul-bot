@@ -11,13 +11,13 @@ const database = require("../db_queries/instagram_db.js");
 
 const instagram = axios.create({
     baseURL: 'https://www.instagram.com',
-    timeout: 10000,
+    timeout: 5000,
     headers: { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0' }
 })
 
 const graphql = axios.create({
     baseURL: 'https://www.instagram.com/graphql',
-    timeout: 10000,
+    timeout: 5000,
 })
 
 exports.instagram = instagram;
@@ -57,7 +57,7 @@ exports.login = async function() {
         console.error(e);
         return null;
     }
-    let csrf_token = response.headers['set-cookie'][0].split('csrftoken=')[1].split(';')[0];
+    let csrf_token = response.headers['set-cookie'][1].split('csrftoken=')[1].split(';')[0];
     let cookie = response.headers['set-cookie'][0];
     let { instagram_username, instagram_password } = config;
 

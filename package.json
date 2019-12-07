@@ -8,6 +8,7 @@
     "discord.js": "^11.5.1",
     "hashset": "^0.0.6",
     "jsdom": "^15.1.1",
+    "patreon": "^0.4.1",
     "sqlite3": "^4.0.9"
   },
   "devDependencies": {},

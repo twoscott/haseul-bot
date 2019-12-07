@@ -80,6 +80,20 @@ async function vliveLoop() {
 
                 let videoLive = videoType == 'LIVE';
 
+                let embed = {
+                    author: {
+                        name: `${representChannelName} - ${videoLive ? 'Now Live!' : 'New Upload'}`, 
+                        icon_url: channelProfileImage, 
+                        url: `https://channels.vlive.tv/${channelCode}/home` 
+                    },
+                    title: (videoLive ? '**[LIVE]** ' : '**[VOD]** ') + title,
+                    url: `https://www.vlive.tv/video/${videoSeq}/`,
+                    image: { url: thumbnail + '?type=f886_499' },
+                    footer: { text: 'VLIVE', icon_url: 'https://i.imgur.com/gHo7BTO.png' },
+                    timestamp: releaseTimestamp,
+                    color: channelColour
+                }
+
                 for (let data of targetData) {
                     let { guildID, discordChanID, mentionRoleID, VPICK } = data;
 
@@ -99,25 +113,11 @@ async function vliveLoop() {
                     }
 
                     let message = `https://www.vlive.tv/video/${videoSeq}/${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
-                    let embed = {
-                        author: { 
-                            name: `${representChannelName} - ${videoLive ? 'Now Live!' : 'New Upload'}`, 
-                            icon_url: 'https://i.imgur.com/gHo7BTO.png', 
-                            url: `https://channels.vlive.tv/${channelCode}/home` 
-                        },
-                        title: (videoLive ? '**[LIVE]** ' : '**[VOD]** ') + title,
-                        url: `https://www.vlive.tv/video/${videoSeq}/`,
-                        thumbnail: { url: channelProfileImage },
-                        image: { url: thumbnail + '?type=f886_499' },
-                        footer: { text: videoLive ? 'Aired' : 'Uploaded', icon_url: videoLive ? 'https://i.imgur.com/h25t2pG.png':'' },
-                        timestamp: releaseTimestamp,
-                        color: channelColour
-                    }
 
                     discordChannel.send(message, {embed}).catch(error => {
                         console.error(Error(error));
                     });
-                }            
+                }   
 
             }
 

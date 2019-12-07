@@ -26,27 +26,41 @@ exports.searchMembers = async (guild, query) => {
     if (memberResults.length < 1) {
         memberResults = members.filter(m => m.user.username.toLowerCase().includes(query));
     }
+    if (memberResults.length > 1) {
+        memberResults = memberResults.sort((a,b) => {
+            return a.user.username.localeCompare(b.user.username);
+        }).sort((a,b)=> {
+            let diff = a.user.username.length - b.user.username.length;
+            if (diff == 0) return a.user.username.indexOf(query.toLowerCase()) - b.user.username.indexOf(query.toLowerCase());
+            else return diff;
+        }).filter(m => m.user.username.length <= memberResults[0].user.username.length);
+    }
+
+
     if (memberResults.length < 1) {
         memberResults = members.filter(m => m.nickname ? m.nickname.toLowerCase() == query : false);
     }
     if (memberResults.length < 1) {
         memberResults = members.filter(m => m.nickname ? m.nickname.toLowerCase().includes(query) : false);
     }
+    if (memberResults.length > 1) {
+        memberResults = memberResults.sort((a,b) => {
+            return a.nickname.localeCompare(b.nickname);
+        }).sort((a,b)=> {
+            let diff = a.nickname.length - b.nickname.length;
+            if (diff == 0) return a.nickname.indexOf(query.toLowerCase()) - b.nickname.indexOf(query.toLowerCase());
+            else return diff;
+        }).filter(m => m.nickname.length <= memberResults[0].nickname.length);
+    }
 
     if (memberResults.length > 1) {
         let ranks = await levelsdb.get_all_guild_xp(guild.id);
         memberResults = memberResults.sort((a,b) => {
-            return a.user.username.localeCompare(b.user.username);
-        }).sort((a,b)=> {
-            let diff = query.length / b.length - query.length / a.length;
-            if (diff == 0) return a.indexOf(query.toLowerCase()) - b.indexOf(query.toLowerCase());
-            else return diff;
-        }).sort((a,b) => {
             let aMem = ranks.find(x => x.userID == a.id);
             let bMem = ranks.find(x => x.userID == b.id);
             aXp = aMem ? aMem.xp : 0; bXp = bMem ? bMem.xp : 0;
             return bXp - aXp;
-        });
+        })
     }
 
     [ member ] = memberResults;

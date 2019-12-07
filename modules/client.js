@@ -3,7 +3,6 @@
 const fs = require('fs');
 const process = require('process');
 
-const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 
 const functions = require("../functions/functions.js");

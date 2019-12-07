@@ -1,7 +1,5 @@
 // Require modules
 
-const Client = require("../haseul.js").Client;
-
 const sql = require("sqlite3").verbose();
 const db = new sql.Database('./haseul_data/client.db');
 

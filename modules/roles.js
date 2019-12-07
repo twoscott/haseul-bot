@@ -100,6 +100,9 @@ exports.msg = async function(message, args) {
             if (!perms.some(p => message.member.hasPermission(p))) break;
             switch (args[1]) {
 
+                case "list":
+                    break;
+
                 case "toggle":
                     message.channel.startTyping();
                     toggleRoles(message).then(response => {

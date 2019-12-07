@@ -38,14 +38,14 @@ async function instaLoop() {
     let accounts = new Map();
     let channelNotifs = await database.get_all_insta_channels();
     let instaIDs = new Set(channelNotifs.map(x => x.instaID));
-    let promises = [];
 
     await (async () => {
         for (let instaID of instaIDs.values()) {
 
+            let promises = [];
             let targetData = channelNotifs.filter(data => data.instaID == instaID);   
             
-            promises.push((async function processPosts() {
+            promises.push((async function processPosts(instaID, targetData) {
 
                 let response;
                 try {
@@ -87,7 +87,7 @@ async function instaLoop() {
                             console.error(e);
                         }
                     }
-        
+
                     await database.add_post(instaID, id);
         
                     for (let data of targetData) {
@@ -103,13 +103,13 @@ async function instaLoop() {
                             console.error(Error("Channel couldn't be retrieved to send VLIVE notif to."));
                             continue;
                         }
-        
+
                         let message = `https://www.instagram.com/p/${shortcode}/${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
-        
+                        
                         let options;
                         let embed = {
                             author: {
-                                name: user ? `${user.full_name} (@${user.username})` : owner.username,
+                                name: user ? `${user.full_name} (@${owner.username})` : owner.username,
                                 url: `https://www.instagram.com/${owner.username}/`
                             },
                             title: `New ${type == "GraphImage" ? "Photo" : type == "GraphVideo" ? "Video" : "Post"}`,
@@ -188,15 +188,15 @@ async function instaLoop() {
                             embed.fields.push({ name: 'Video Link', value: `[\`>\`:film_frames:\`<\`](${post.video_url} "Click to Watch Video")` });
                             options = { embed };
                         }
-                        
+
                         channel.send(message, options).catch(console.error);
-                    }            
+                    }
         
                 }
 
-            })());
+            })(instaID, targetData));
             
-            promises.push((async function processStories() {
+            promises.push((async function processStories(instaID, targetData) {
 
                 let LOGGED_IN = false;
                 for (let i = 0; i < 3 && !LOGGED_IN; i++) {
@@ -278,12 +278,12 @@ async function instaLoop() {
 
                         let guild = Client.guilds.get(guildID);
                         if (!guild) {
-                            console.error(Error("Guild couldn't be retrieved to send VLIVE notif to."));
+                            console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
                             continue;
                         }
                         let channel = Client.channels.get(channelID) || guild.channels.get(channelID);
                         if (!channel) {
-                            console.error(Error("Channel couldn't be retrieved to send VLIVE notif to."));
+                            console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
                             continue;
                         }
 
@@ -303,7 +303,7 @@ async function instaLoop() {
                             timestamp
                         }
                         if (user) embed.author.icon_url = user.profile_pic;
-
+    
                         if (type == "GraphStoryVideo") {
                             let { video_resources } = story;
                             embed.description = `[\\▶ Video Link](${video_resources[video_resources.length - 1].src } "Click to Watch Video")`
@@ -314,10 +314,10 @@ async function instaLoop() {
                     
                 }
 
-            })())
+            })(instaID, targetData));
 
-        }
-        await Promise.all(promises);
+            await Promise.all(promises);
+        }   
     })().catch(console.error);
     
 

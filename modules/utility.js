@@ -67,11 +67,6 @@ exports.msg = async function(message, args) {
         case ".git":
             message.channel.send("https://github.com/haseul/haseul-bot");
             break;
-
-        case ".donate":
-        case ".patreon":
-            message.channel.send("https://www.patreon.com/haseulbot");
-            break;
         
         case ".discord":
             message.channel.send("https://discord.gg/w4q5qux");

@@ -107,6 +107,7 @@ exports.msg = async function(message, args) {
 async function insta_notif_add(message, args) {
 
     let { guild } = message;
+    guild = await guild.fetchMembers();
 
     let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/www\.instagram\.com\/)?(.+?)(?:\/)?\s+<?#?(\d{8,})>?\s*((<@&)?(.+?)(>)?)?$/i);
     if (!formatMatch) {
@@ -162,6 +163,24 @@ async function insta_notif_add(message, args) {
         }
     }
 
+    let instaNotifs = await database.get_guild_insta_channels(guild.id)
+    let instaIDs = new Set(instaNotifs.map(x => x.instaID));
+    if (guild.id != '276766140938584085') {
+        if (guild.members.size < 100) {
+            message.channel.send("⚠ Due to Instagram's limitations, you must have more than 100 members in the server to use Instagram notifications!");
+            return;
+        } else if (guild.members.size < 500 && instaIDs.size >= 1) {
+            message.channel.send("⚠ Due to Instagram's limitations, you must have more than 500 members in the server to have 2 Instagram notifications on the server!");
+            return;
+        } else if (guild.members.size < 1000 && instaIDs.size >= 2) {
+            message.channel.send("⚠ Due to Instagram's limitations, you must have more than 1000 members in the server to have 3 Instagram notifications on the server!");
+            return;
+        } else if (instaIDs.size >= 3) {
+            message.channel.send("⚠ No more than 3 Instagram accounts may be set up for notifications on a server.");
+            return;
+        }
+    }
+
     let response;
     try {
         response = await instagram.get(`/${instaUser}/`, { params: {'__a': 1} })
@@ -184,13 +203,6 @@ async function insta_notif_add(message, args) {
 
     let { user } = response.data.graphql;
     let { username, id } = user;
-
-    let instaNotifs = await database.get_guild_insta_channels(guild.id)
-    let instaIDs = new Set(instaNotifs.map(x => x.instaID));
-    if (instaIDs.size >= 5) {
-        message.channel.send("⚠ No more than 5 Instagram accounts may be set up for notifications on a server.");
-        return;
-    }
 
     // store current posts
     try {

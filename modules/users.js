@@ -448,7 +448,13 @@ async function user_dp(message, args) {
         }
     }
 
-    let res = await axios.get(user.displayAvatarURL.split('?')[0] + '?size=2048', {responseType: 'arraybuffer'});
+    let res;
+    try {
+        res = await axios.get(user.displayAvatarURL.split('?')[0] + '?size=2048', {responseType: 'arraybuffer'});
+    } catch (e) {
+        return "Error fetching avatar: " + user.displayAvatarURL;
+    }
+
     let img_size = Math.max(Math.round(res.headers['content-length']/10000)/100, 1/100);
     let img_type = res.headers['content-type'].split('/')[1];
     let timestamp = new Date(res.headers['last-modified']);
@@ -459,7 +465,8 @@ async function user_dp(message, args) {
     let p = username.toLowerCase().endsWith('s') ? "'" : "'s";
 
     let embed = {
-        author: { name: `${username+p} Avatar`, url: user.displayAvatarURL.split('?')[0] + '?size=2048' },
+        title: `${username+p} Avatar`,
+        // author: { name: , url: user.displayAvatarURL.split('?')[0] + '?size=2048' },
         color: member ? member.displayColor || 0xffffff : 0xffffff
     }
 
