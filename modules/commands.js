@@ -8,9 +8,8 @@ const database = require("../db_queries/commands_db.js");
 
 // Functions
 
-async function cmdCheck(message, commandName) {
+async function cmdCheck(message, commandName, cmdsOn) {
 
-    let cmdsOn = await serverSettings.get(message.guild.id, "commandsOn");
     if (!cmdsOn) return;
     let cmd = await database.get_command(message.guild.id, commandName);
     if (!cmd) return;
@@ -21,13 +20,17 @@ async function cmdCheck(message, commandName) {
 
 exports.msg = async function(message, args) {
 
+    let cmdsOn = await serverSettings.get(message.guild.id, "commandsOn");
+
     // Check if custom command
 
     if (args[0].startsWith('.')) {
-        cmdCheck(message, args[0].replace(/^\./, ''));
+        cmdCheck(message, args[0].replace(/^\./, ''), cmdsOn);
     }
 
     // Handle commands
+
+    let perms;
 
     switch (args[0]) {
 
@@ -38,6 +41,7 @@ exports.msg = async function(message, args) {
             switch(args[1]) {
 
                 case "add":
+                    if (cmdsOn) {
                         message.channel.startTyping();
                         addCommand(message, args).then(response => {
                             if (response) message.channel.send(response);
@@ -46,10 +50,12 @@ exports.msg = async function(message, args) {
                             console.error(error);
                             message.channel.stopTyping();
                         })
-                        break;
+                    }
+                    break;
 
                 case "remove":
                 case "delete":
+                    if (cmdsOn) {
                         message.channel.startTyping();
                         delCommand(message, args[2]).then(response => {
                             if (response) message.channel.send(response);
@@ -58,20 +64,24 @@ exports.msg = async function(message, args) {
                             console.error(error);
                             message.channel.stopTyping();
                         })
-                        break;
+                    }
+                    break;
 
                 case "rename":
-                    message.channel.startTyping();
-                    renameCommand(message, args).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    if (cmdsOn) {
+                        message.channel.startTyping();
+                        renameCommand(message, args).then(response => {
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
+                    }
                     break;
 
                 case "edit":
+                    if (cmdsOn) {
                         message.channel.startTyping();
                         editCommand(message, args).then(response => {
                             if (response) message.channel.send(response);
@@ -79,32 +89,40 @@ exports.msg = async function(message, args) {
                         }).catch(error => {
                             console.error(error);
                             message.channel.stopTyping();
-                        })
-                        break;
+                        })   
+                    }
+                    break;
 
                 case "list":
-                    message.channel.startTyping();
-                    listCommands(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    if (cmdsOn) {
+                        message.channel.startTyping();
+                        listCommands(message).then(response => {
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
+                    }
                     break;  
 
                 case "search":
-                    message.channel.startTyping();
-                    searchCommands(message, args[2]).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    if (cmdsOn) {
+                        message.channel.startTyping();
+                        searchCommands(message, args[2]).then(response => {
+                            if (response) message.channel.send(response);
+                            message.channel.stopTyping();
+                        }).catch(error => {
+                            console.error(error);
+                            message.channel.stopTyping();
+                        })
+                    }
                     break;
                     
                 case "toggle":
+                    perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS", "VIEW_AUDIT_LOG"];
+                    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+                    if (!perms.some(p => message.member.hasPermission(p))) break;
                     message.channel.startTyping();
                     toggleCommands(message).then(response => {
                             if (response) message.channel.send(response);
@@ -117,7 +135,7 @@ exports.msg = async function(message, args) {
                 
                 case "help":
                 default:
-                    message.channel.send("Help with custom commands can be found here: https://haseulbot.xyz/#custom-commands");
+                    if (cmdsOn) message.channel.send("Help with custom commands can be found here: https://haseulbot.xyz/#custom-commands");
                     break;
 
             }
