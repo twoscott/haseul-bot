@@ -1,33 +1,24 @@
-//Require modules
-
 const Discord = require("discord.js");
 const config = require("./config.json");
-// const config = require("./config_test.json");
-const Client = new Discord.Client({disableEveryone: true})
-exports.Client = Client;
-
-//Fetch handlers
+const Client = new Discord.Client({disableEveryone: true});
+module.exports = { Client };
 
 const messages = require("./handlers/msg_handler.js");
 const border = require("./handlers/border_handler.js");
-const checklist = require("./handlers/task_handler.js");
+const checklist = require("./handlers/ready_handler.js");
+
+let initialised = false;
 
 // -- Events --
 
-//Debugging
+// Debugging
 
 Client.on("disconnect", closeEvent => {
-    console.log(`Fatal error occured... Reason: ${closeEvent.reason}`);
+    console.error(`Fatal error occured... Reason: ${closeEvent.reason}`);
 })
 
 Client.on("reconnecting", () => {
     console.log("Reconnecting...");
-})
-
-//
-
-Client.on("debug", debug => {
-    console.log(debug);
 })
 
 Client.on("error", error => {
@@ -35,17 +26,21 @@ Client.on("error", error => {
 })
 
 Client.on("warn", warning => {
-    console.log(warning);
+    console.error(warning);
 })
 
-//Discord
+// Discord
 
 Client.on("ready", () => {
     console.log("Ready!");
-    let botchannel = Client.channels.get('417893349039669260');
-    botchannel.send("Ready!");
 
-    checklist.handleTasks();
+    let botChannel = Client.channels.get(config.bot_channel);    
+    botChannel.send("Ready!");
+
+    if (!initialised) {
+        checklist.handleTasks();
+        initialised = true;
+    }
 })
 
 Client.on("message", message => {
