@@ -1,4 +1,6 @@
-// Require modules
+///////////////////////////////////////
+///// ! NEEDS COMPLETE OVERHAUL ! /////
+///////////////////////////////////////
 
 const sql = require("sqlite3").verbose();
 const db = new sql.Database('./haseul_data/roles.db');

@@ -1,100 +1,74 @@
-// Require modules
+const sqlite = require("sqlite");
+const SQL = require("sql-template-strings");
+const dbopen = sqlite.open('./haseul_data/commands.db');
 
-const sql = require("sqlite3").verbose();
-const db = new sql.Database('./haseul_data/commands.db');
+dbopen.then(async db => {
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS commands(
+            guildID TEXT NOT NULL,
+            command TEXT NOT NULL,
+            text TEXT NOT NULL,
+            UNIQUE(guildID, command)
+        )
+    `);
+})
 
-// Init
+// dbopen.then(async db => {
+//     await db.run(SQL`
+//     CREATE TABLE IF NOT EXISTS commandsNew (
+//         guildID TEXT NOT NULL,
+//         command TEXT NOT NULL,
+//         text TEXT NOT NULL,
+//         UNIQUE(guildID, command)
+//     )
+//     `);
+//     let rows = await db.all(SQL`SELECT * FROM commands`);
+//     for (let row of rows) {
+//         await db.run(SQL`INSERT INTO commandsNew VALUES (${row.guildID}, ${row.commandName}, ${row.text})`);
+//     }
+//     await db.run(SQL`DROP TABLE commands`);
+//     await db.run(SQL`ALTER TABLE commandsNew RENAME TO commands`);
+//     console.log("Finished altering commands.db");
+// })
 
-db.run("CREATE TABLE IF NOT EXISTS commands (guildID TEXT NOT NULL, commandName TEXT NOT NULL, text TEXT)");
+exports.addCommand = async function(guildID, command, text) {
+    const db = await dbopen;
 
-// Add command
-
-exports.add_command = (guild_id, command_name, text) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT commandName FROM commands WHERE commandName = ? AND guildID = ?", [command_name, guild_id], (err, row) => {
-            if (err) return reject(err);
-            if (row) {
-                return resolve(false);
-            } else {
-                db.run("INSERT INTO commands VALUES (?,?,?)", [guild_id, command_name, text], err => {
-                    if (err) return reject(err);
-                    return resolve(true);
-                })
-            }
-        })
-    })
+    let statement = await db.run(SQL`INSERT OR IGNORE INTO commands VALUES (${guildID}, ${command}, ${text})`);
+    return statement.changes;
 }
 
-// Remove command
-
-exports.remove_command = (guild_id, command_name) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT commandName FROM commands WHERE commandName = ? AND guildID = ?", [command_name, guild_id], (err, row) => {
-            if (err) return reject(err);
-            if (!row) return resolve(false);
-            db.run("DELETE FROM commands WHERE commandName = ? AND guildID = ?", [command_name, guild_id], err => {
-                if (err) return reject(err);
-                return resolve(true);
-            })
-        })
-    })
+exports.removeCommand = async function(guildID, command) {
+    const db = await dbopen;
+    
+    let statement = await db.run(SQL`DELETE FROM commands WHERE command = ${command} AND guildID = ${guildID}`);
+    return statement.changes;
 }
 
-// Rename command
+exports.renameCommand = async function(guildID, command, newCommand) {
+    const db = await dbopen;
 
-exports.rename_command = (guild_id, command_name, new_name) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT commandName FROM commands WHERE commandName = ? AND guildID = ?", [new_name, guild_id], (err, row) => {
-            if (err) return reject(err);
-            if (row) {
-                return resolve(false);
-            } else {
-                db.run("UPDATE commands SET commandName = ? WHERE commandName = ? AND guildID = ?", [new_name, command_name, guild_id], err => {
-                    if (err) return reject(err);
-                    return resolve(true);
-                })
-            }
-        })
-    })
+    let statement = await db.run(SQL`UPDATE OR IGNORE commands SET command = ${newCommand} WHERE command = ${command} AND guildID = ${guildID}`);
+    return statement.changes;
 }
 
-// Edit command
+exports.editCommand = async function(guildID, command, text) {
+    const db = await dbopen;
 
-exports.edit_command = (guild_id, command_name, text) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT commandName FROM commands WHERE commandName = ? AND guildID = ?", [command_name, guild_id], (err, row) => {
-            if (err) return reject(err);
-            if (!row) {
-                return resolve(false);
-            } else {
-                db.run("UPDATE commands SET text = ? WHERE commandName = ? AND guildID = ?", [text, command_name, guild_id], err => {
-                    if (err) return reject(err);
-                    return resolve(true);
-                })
-            }
-        })
-    })
+    let statement = await db.run(SQL`UPDATE OR IGNORE commands SET text = ${text} WHERE command = ${command} AND guildID = ${guildID}`);
+    return statement.changes;
 }
 
-// Get command
-
-exports.get_command = (guild_id, command_name) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT text FROM commands WHERE commandName = ? AND guildID = ?", [command_name, guild_id], (err, row) => {
-            if (err) return reject(err);
-            return resolve(row ? row.text : null);
-        })
-    })
+exports.getCommand = async function(guildID, command) {
+    const db = await dbopen;
+    
+    let row = await db.get(SQL`SELECT text FROM commands WHERE command = ${command} AND guildID = ${guildID}`);
+    return row ? row.text : null;
 }
 
-// Get commands for guild
-
-exports.get_commands = (guild_id) => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT commandName FROM commands WHERE guildID = ?", [guild_id], (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows ? rows.map(x => x.commandName) : null);
-        })
-    })
+exports.getCommands = async function(guildID) {
+    const db = await dbopen;
+    
+    let rows = await db.all(SQL`SELECT * FROM commands WHERE guildID = ${guildID}`);
+    return rows;
 }
-

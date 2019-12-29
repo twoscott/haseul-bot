@@ -1,157 +1,134 @@
-// Require modules
+const sqlite = require("sqlite");
+const SQL = require("sql-template-strings");
+const dbopen = sqlite.open('./haseul_data/vlive.db');
 
-const sql = require("sqlite3").verbose();
-const db = new sql.Database('./haseul_data/vlive.db');
+dbopen.then(db => {
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS channelArchive(
+            channelCode TEXT NOT NULL PRIMARY KEY,
+            channelName TEXT NOT NULL,
+            channelPlusType TEXT
+        )
+    `)
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS vliveChannels(
+            guildID TEXT NOT NULL,
+            discordChanID TEXT NOT NULL,
+            channelSeq INT NOT NULL,
+            channelCode TEXT NOT NULL,
+            channelName TEXT NOT NULL,
+            mentionRoleID TEXT,
+            VPICK INT NOT NULL DEFAULT 1,
+            UNIQUE(discordChanID, ChannelSeq)
+        )
+    `);
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS vliveVideos(
+            videoSeq INT NOT NULL,
+            channelSeq INT NOT NULL,
+            UNIQUE(videoSeq, ChannelSeq)
+        )
+    `);
+})
 
-// Init
+exports.updateArchiveChannel = async function(channelCode, channelName, channelPlusType) {
+    const db = await dbopen;
 
-db.configure("busyTimeout", 10000);
-
-db.run(`CREATE TABLE IF NOT EXISTS channelArchive (
-    channelCode TEXT NOT NULL PRIMARY KEY,
-    channelName TEXT NOT NULL,
-    channelPlusType TEXT
-)`)
-
-db.run(`CREATE TABLE IF NOT EXISTS vliveChannels (
-    guildID TEXT NOT NULL,
-    discordChanID TEXT NOT NULL,
-    channelSeq INT NOT NULL,
-    channelCode TEXT NOT NULL,
-    channelName TEXT NOT NULL,
-    mentionRoleID TEXT,
-    VPICK INT NOT NULL DEFAULT 1,
-    UNIQUE(discordChanID, ChannelSeq)
-)`);
-
-db.run(`CREATE TABLE IF NOT EXISTS vliveVideos (
-    videoSeq INT NOT NULL,
-    channelSeq INT NOT NULL,
-    UNIQUE(videoSeq, ChannelSeq)
-)`);
-
-// Channel archive
-
-exports.add_update_archive_channel = (channel_code, channel_name, channel_plus_type) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT FROM channelArchive WHERE channelCode = ?", [channel_code], (err, row) => {
-            if (!row) {
-                db.run("INSERT OR IGNORE INTO channelArchive VALUES (?, ?, ?)", [channel_code, channel_name, channel_plus_type], err => {
-                    if (err) return reject(err);
-                    return resolve();
-                })
-            } else {
-                db.run("UPDATE channelArchive SET channelName = ?, channelPlusType = ?", [channel_name, channel_plus_type], err => {
-                    if (err) return reject(err);
-                })
-            }
-        })
-    })
+    let statement = await db.run(SQL`
+        INSERT INTO channelArchive
+        VALUES (${channelCode}, ${channelName}, ${channelPlusType})
+        ON CONFLICT (channelCode) DO
+        UPDATE SET channelName = ${channelName}, channelPlusType = ${channelPlusType}
+    `);
+    return statement.changes;
 }
 
-exports.get_channel_archive = () => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM channelArchive", (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows);
-        })
-    })
+exports.getChannelArchive = async function () {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM channelArchive`);
+    return rows;
 }
 
-// Vlive channels
+exports.addVliveChannel = async function(guildID, discordChanID, channelSeq, channelCode, channelName, mentionRoleID) {
+    const db = await dbopen;
 
-exports.add_vlive_channel = (guild_id, channel_id, vlive_chanseq, vlive_chancode, vlive_channame, mention_role) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM vliveChannels WHERE channelSeq = ? AND discordChanID = ?", [vlive_chanseq, channel_id], (err, row) => {
-            if (err) return reject(err);
-            if (!row) {
-                db.run("INSERT INTO vliveChannels VALUES (?,?,?,?,?,?,1)", [guild_id, channel_id, vlive_chanseq, vlive_chancode, vlive_channame, mention_role], err => {
-                    if (err) return reject(err);
-                    return resolve(true);
-                })
-            } else {
-                return resolve(false);
-            }
-        })
-    })
+    let statement = await db.run(SQL`
+        INSERT OR IGNORE 
+        INTO vliveChannels (guildID, discordChanID, channelSeq, channelCode, channelName, mentionRoleID)
+        VALUES (${guildID}, ${discordChanID}, ${channelSeq}, ${channelCode}, ${channelName}, ${mentionRoleID})
+    `);
+    return statement.changes;
 }
 
-exports.del_vlive_channel = (guild_id, channel_id, channel_seq) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM vliveChannels WHERE channelSeq = ? AND discordChanID = ? AND guildID = ?", [channel_seq, channel_id, guild_id], (err, row) => {
-            if (err) return reject(err);
-            if (row) {
-                db.run("DELETE FROM vliveChannels WHERE channelSeq = ? AND discordChanID = ? AND guildID = ?", [channel_seq, channel_id, guild_id], err => {
-                    if (err) return reject(err);
-                    return resolve(true);
-                })
-            } else {
-                return resolve(false);
-            }
-        })
-    })
+exports.removeVliveChannel = async function(discordChanID, channelSeq) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`
+        DELETE FROM vliveChannels
+        WHERE discordChanID = ${discordChanID} AND channelSeq = ${channelSeq}
+    `);
+    return statement.changes;
 }
 
-exports.get_guild_vlive_channels = (guild_id) => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM vliveChannels WHERE guildID = ?", [guild_id], (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows);
-        })
-    })
+exports.getVliveChannel = async function(discordChanID, channelSeq) {
+    const db = await dbopen;
+
+    let row = await db.get(SQL`
+        SELECT * FROM vliveChannels 
+        WHERE discordChanID = ${discordChanID} AND channelSeq = ${channelSeq}
+    `);
+    return row;
 }
 
-exports.get_all_vlive_channels = () => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM vliveChannels", (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows);
-        })
-    })
+exports.getGuildVliveChannels = async function(guildID) {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM vliveChannels WHERE guildID = ${guildID}`);
+    return rows;
 }
 
-exports.toggle_vpick = (guild_id, channel_id, channel_seq) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM vliveChannels WHERE channelSeq = ? AND discordChanID = ? AND guildID = ?", [channel_seq, channel_id, guild_id], (err, row) => {
-            if (err) return reject(err);
-            if (!row) {
-                return resolve(null);
-            } else {
-                let tog = row.VPICK ^ 1;
-                db.run("UPDATE vliveChannels SET VPICK = ? WHERE channelSeq = ? AND discordChanID = ? AND guildID = ?", [tog, channel_seq, channel_id, guild_id], err => {
-                    if (err) return reject(err);
-                    return resolve(tog);
-                })
-            }
-        })
-    })
+exports.getAllVliveChannels = async function() {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM vliveChannels`);
+    return rows;
 }
 
-// Vlive videos
+exports.toggleVpick = async function(discordChanID, channelSeq) {
+    const db = await dbopen;
 
-exports.add_video = (video_seq, channel_seq) => {
-    return new Promise((resolve, reject) => {
-        db.run("INSERT OR IGNORE INTO vliveVideos VALUES (? ,?)", [video_seq, channel_seq], err => {
-            if (err) return reject(err);
-            return resolve();
-        })
-    })
+    let statement = await db.run(SQL`
+        UPDATE OR IGNORE vliveChannels 
+        SET VPICK = ~VPICK & 1 
+        WHERE discordChanID = ${discordChanID} AND channelSeq = ${channelSeq}
+    `);
+
+    let toggle = 0;
+    if (statement.changes) {
+        let row = await db.get(SQL`SELECT VPICK FROM vliveChannels WHERE discordChanID = ${discordChanID} AND channelSeq = ${channelSeq}`);
+        toggle = row ? row.VPICK : 0;
+    }
+    return toggle;
 }
 
-exports.get_channel_vlive_videos = (channel_seq) => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM vliveVideos WHERE channelSeq = ?", channel_seq, (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows);
-        })
-    })
+exports.addVideo = async function(videoSeq, channelSeq) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`INSERT OR IGNORE INTO vliveVideos VALUES (${videoSeq}, ${channelSeq})`);
+    return statement.changes;
 }
 
-exports.get_all_vlive_videos = () => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM vliveVideos", (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows);
-        })
-    })
+exports.getChannelVliveVideos = async function(channelSeq) {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM vliveVideos WHERE channelSeq = ${channelSeq}`);
+    return rows;
+}
+
+exports.getAllVliveVideos = async function() {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM vliveVideos`);
+    return rows;
 }

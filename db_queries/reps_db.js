@@ -1,173 +1,198 @@
-// Require modules
+const sqlite = require("sqlite");
+const SQL = require("sql-template-strings");
+const dbopen = sqlite.open('./haseul_data/reps.db');
 
-const sql = require("sqlite3").verbose();
-const db = new sql.Database('./haseul_data/reps.db');
-
-// Init
-
-db.configure("busyTimeout", 10000);
-
-db.run(`CREATE TABLE IF NOT EXISTS repProfiles (
-    userID TEXT NOT NULL PRIMARY KEY,
-    rep INT NOT NULL DEFAULT 0,
-    repsRemaining INT NOT NULL DEFAULT 3,
-    lastRepTimestamp INT
-)`)
-
-db.run(`CREATE TABLE IF NOT EXISTS repStreaks (
-    user1 TEXT NOT NULL,
-    user2 TEXT NOT NULL,
-    firstRep INT NOT NULL,
-    user1LastRep INT,
-    user2LastRep INT,
-    streak INT NOT NULL DEFAULT 0
-)`);
-
-// Functions
-
-// Rep
-
-exports.init_rep_profile = (user_id) => {
-    return new Promise((resolve, reject) => {
-        db.run("INSERT OR IGNORE INTO repProfiles (userID) VALUES (?)", [user_id], err => {
-            if (err) return reject(err);
-            return resolve();
-        })
-    })
+function streakHash(IDarray) {
+    IDarray = IDarray.sort();
+    let longID = IDarray.join(';');
+    let base64ID = Buffer.from(longID).toString('base64');
+    return base64ID;
 }
 
-exports.get_rep_profile = (user_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM repProfiles WHERE userID = ?", [user_id], (err, row) => {
-            if (err) return reject(err);
-            return resolve(row);
-        })
-    })
+// function streakDecode(base64ID) {
+//     let longID = Buffer.from(base64ID, 'base64').toString();
+//     let IDarray = longID.split(';');
+//     return IDarray;
+// }
+
+dbopen.then(db => {
+    db.configure("busyTimeout", 10000);
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS repProfiles(
+            userID TEXT NOT NULL PRIMARY KEY,
+            rep INT NOT NULL DEFAULT 0,
+            repsRemaining INT NOT NULL DEFAULT 3,
+            lastRepTimestamp INT
+        )
+    `);
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS repStreaks(
+            userHash TEXT NOT NULL PRIMARY KEY,
+            user1 TEXT NOT NULL,
+            user2 TEXT NOT NULL,
+            firstRep INT NOT NULL,
+            user1LastRep INT,
+            user2LastRep INT
+        )
+    `);
+})
+
+// dbopen.then(async db => {
+//     await db.run(`
+//         CREATE TABLE IF NOT EXISTS repStreaksNew(
+//             userHash TEXT NOT NULL PRIMARY KEY,
+//             user1 TEXT NOT NULL,
+//             user2 TEXT NOT NULL,
+//             firstRep INT NOT NULL,
+//             user1LastRep INT,
+//             user2LastRep INT
+//         )
+//     `);//////////////////////////////////////////////////////////////// 
+//     let rows = await db.all(SQL`SELECT * FROM repStreaks`);
+//     for (let row of rows) {
+//         let userHash = streakHash([row.user1, row.user2]);
+//         await db.run(SQL`INSERT OR IGNORE INTO repStreaksNew VALUES (${userHash}, ${row.user1}, ${row.user2}, ${row.firstRep}, ${row.user1LastRep}, ${row.user2LastRep})`);
+//     }
+//     await db.run(SQL`DROP TABLE repStreaks`);
+//     await db.run(SQL`ALTER TABLE repStreaksNew RENAME TO repStreaks`);
+//     console.log("Finished altering reps.db");
+// })
+
+exports.setUserReps = async function(userID, repsRemaining) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`
+        INSERT INTO repProfiles (userID, repsRemaining) VALUES (${userID}, ${repsRemaining})
+        ON CONFLICT (userID) DO
+        UPDATE SET repsRemaining = ${repsRemaining}
+    `);
+    return statement.changes;
 }
 
-exports.set_user_reps = (user_id, reps_remaining) => {
-    return new Promise((resolve, reject) => {
-        db.run("UPDATE repProfiles SET repsRemaining = ? WHERE userID = ?", [reps_remaining, user_id], err => {
-            if (err) return reject(err);
-            return resolve();
-        })
-    })
+exports.repUser = async function(senderID, recipientID, timestamp) {
+    const db = await dbopen;
+
+    let stmt1 = await db.run(SQL`
+        INSERT INTO repProfiles (userID, repsRemaining, lastRepTimestamp)
+        VALUES (${senderID}, 2, ${timestamp})
+        ON CONFLICT (userID) DO
+        UPDATE SET repsRemaining = repsRemaining - 1, lastRepTimestamp = ${timestamp}
+    `);
+    let stmt2 = await db.run(SQL`
+        INSERT INTO repProfiles (userID, rep)
+        VALUES (${recipientID}, 1)
+        ON CONFLICT (userID) DO
+        UPDATE SET rep = rep + 1
+    `);
+    return stmt1.changes + stmt2.changes;
 }
 
-exports.rep_user = (timestamp, sender_id, recipient_id) => {
-    return new Promise((resolve, reject) => {
-        db.run("UPDATE repProfiles SET repsRemaining = repsRemaining - 1, lastRepTimestamp = ? WHERE userID = ?", [timestamp, sender_id], err => {
-            if (err) return reject(err);
-            db.run("UPDATE repProfiles SET rep = rep + 1 WHERE userID = ?", [recipient_id], err => {
-                if (err) return reject(err);
-                return resolve(true);
-            })
-        })
-    })
+exports.getRepProfile = async function(userID) {
+    const db = await dbopen;
+
+    let row = await db.get(SQL`SELECT * FROM repProfiles WHERE userID = ${userID}`);
+    return row;
 }
 
-exports.get_reps = () => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM repProfiles", (err, rows) => {
-            if (err) return reject (err);
-            return resolve(rows);
-        })
-    })
+exports.getReps = async function() {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM repProfiles`);
+    return rows;
 }
 
-exports.update_streak = (timestamp, sender_id, recipient_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM repStreaks WHERE user1 IN (?,?) AND user2 IN (?,?)", [sender_id, recipient_id, sender_id, recipient_id], (err, streak) => {
-            if (err) return reject(err);
-            if (!streak) {
-                db.run("INSERT INTO repStreaks VALUES (?,?,?,?,?,?)", [sender_id, recipient_id, timestamp, timestamp, null, 0], err => {
-                    if (err) return reject(err);
-                    return resolve(0);
-                })
+
+exports.updateStreak = async function(senderID, recipientID, timestamp) {
+    const db = await dbopen;
+    let userHash = streakHash([senderID, recipientID]);
+    let currentStreak = 0;
+
+    let statement = await db.run(SQL`
+        INSERT OR IGNORE INTO repStreaks 
+        VALUES (${userHash}, ${senderID}, ${recipientID}, ${timestamp}, ${timestamp}, NULL)
+    `);
+
+    if (!statement.changes) {
+        let streak = await db.get(SQL`SELECT * FROM repStreaks WHERE userHash = ${userHash}`);
+
+        if (streak) {
+            let { userHash, firstRep, user1LastRep, user2LastRep } = streak;
+            let sendingUser = Object.keys(streak).find(key => streak[key] == senderID);
+            let receivingUser = Object.keys(streak).find(key => streak[key] == recipientID);
+            let trailingTimestamp = Math.min(user1LastRep || firstRep, user2LastRep || firstRep);
+            let leadingTimestamp  = Math.max(user1LastRep || firstRep, user2LastRep || firstRep);
+
+            if (timestamp - leadingTimestamp > 129600000) { /* 36 hours */
+                await db.run(`
+                    UPDATE repStreaks 
+                    SET firstRep = ?, ${sendingUser}LastRep = ?, ${receivingUser}LastRep = NULL 
+                    WHERE userHash = ?`, [timestamp, timestamp, userHash]
+                );
+            } else if (timestamp - trailingTimestamp > 129600000) { /* 36 hours */
+                let leadingUser = user1LastRep > user2LastRep ? "user1" : "user2";
+                let receivingTimestamp = receivingUser == leadingUser ? streak[`${leadingUser}LastRep`] : null
+                
+                await db.run(`
+                    UPDATE repStreaks 
+                    SET firstRep = ${leadingUser}LastRep, ${sendingUser}LastRep = ?, ${receivingUser}LastRep = ? 
+                    WHERE userHash = ?`, [timestamp, receivingTimestamp, userHash]
+                );
             } else {
-                let sendingUser = Object.keys(streak).find(key => streak[key] == sender_id);
-                let receivingUser = Object.keys(streak).find(key => streak[key] == recipient_id);
-                if (timestamp - Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) > 36*60*60*1000/*36 Hours*/) {
-                    if (timestamp - Math.max(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) > 36*60*60*1000/*36 Hours*/) {
-                        db.run(`UPDATE repStreaks SET firstRep = ?, ${sendingUser}LastRep = ?, ${receivingUser}LastRep = NULL, streak = 0 WHERE user1 = ? AND user2 = ?`, [timestamp, timestamp, streak.user1, streak.user2], err => {
-                            if (err) return reject(err);
-                            return resolve(0);
-                        })
-                    } else {
-                        let leadingUser = streak.user1LastRep > streak.user2LastRep ? "user1" : "user2";
-                        db.run(`UPDATE repStreaks SET firstRep = ${leadingUser}LastRep, ${sendingUser}LastRep = ?, ${receivingUser}LastRep = ?, streak = 0 WHERE user1 = ? AND user2 = ?`, [timestamp, (receivingUser == leadingUser ? streak[`${leadingUser}LastRep`] : null), streak.user1, streak.user2], err => {
-                            if (err) return reject(err);
-                            return resolve(0);
-                        })
-                    }
-                } else {
-                    let currentStreakDays = Math.floor((timestamp - streak.firstRep)/(24*60*60*1000/*24 Hours*/));
-                    db.run(`UPDATE repStreaks SET ${sendingUser}LastRep = ?, streak = ? WHERE user1 = ? AND user2 = ?`, [timestamp, currentStreakDays, streak.user1, streak.user2], err => {
-                        if (err) return reject(err);
-                        return resolve(currentStreakDays);
-                    })
-                }
+                await db.run(`
+                    UPDATE repStreaks 
+                    SET ${sendingUser}LastRep = ?
+                    WHERE userHash = ?`, [timestamp, userHash]
+                );
+                currentStreak = Math.floor((timestamp - streak.firstRep) / 86400000 /* 24 Hours */)
             }
-        })
-    })
+        }
+
+    }
+
+    return currentStreak;
 }
 
-exports.update_streaks = (timestamp) => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM repStreaks", async (err, streaks) => {
-            if (err) return reject(err);
-            for (let streak of streaks) {
-                await new Promise((resolve, reject) => {
-                    if (timestamp - Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) > 36*60*60*1000/*36 Hours*/) {
-                        if (timestamp - Math.max(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) > 36*60*60*1000/*36 Hours*/) {
-                            db.run(`DELETE FROM repStreaks WHERE user1 = ? AND user2 = ?`, [streak.user1, streak.user2], err => {
-                                if (err) return reject(err);
-                                return resolve();
-                            })
-                        } else {
-                            let [ leadingUser, fallingUser ] = streak.user1LastRep > streak.user2LastRep ? [ "user1", "user2" ] : [ "user2", "user1" ];
-                            db.run(`UPDATE repStreaks SET firstRep = ${leadingUser}LastRep, ${fallingUser}LastRep = NULL, streak = 0 WHERE user1 = ? AND user2 = ?`, [streak.user1, streak.user2], err => {
-                                if (err) return reject(err);
-                                return resolve();
-                            })
-                        }
-                    } else {
-                        let currentStreakDays = Math.floor((timestamp - streak.firstRep)/(24*60*60*1000/*24 Hours*/));
-                        db.run(`UPDATE repStreaks SET streak = ? WHERE user1 = ? AND user2 = ?`, [currentStreakDays, streak.user1, streak.user2], err => {
-                            if (err) return reject(err);
-                            return resolve();
-                        })
-                    }
-                })
-            }
-            return resolve();
-        })
-    })
+exports.updateStreaks = async function(timestamp) {
+    const db = await dbopen;
+
+    let streaks = await db.all(SQL`SELECT * FROM repStreaks`);
+    for (let streak of streaks) {
+        let { userHash, firstRep, user1LastRep, user2LastRep } = streak;
+        let trailingTimestamp = Math.min(user1LastRep || firstRep, user2LastRep || firstRep);
+        let leadingTimestamp  = Math.max(user1LastRep || firstRep, user2LastRep || firstRep);
+
+        if (timestamp - leadingTimestamp > 129600000) { /* 36 hours */
+            let statement = await db.run(SQL`DELETE FROM repStreaks WHERE userHash = ${userHash}`);
+        } else if (timestamp - trailingTimestamp > 129600000) { /* 36 hours */
+            let [ leadingUser, fallingUser ] = user1LastRep > user2LastRep ? [ "user1", "user2" ] : [ "user2", "user1" ];
+            
+            let statement = await db.run(`
+                UPDATE repStreaks 
+                SET firstRep = ${leadingUser}LastRep, ${fallingUser}LastRep = NULL 
+                WHERE userHash = ?`, [userHash]
+            );
+        }
+    }
 }
 
-exports.get_streak = (sender_id, recipient_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM repStreaks WHERE user1 IN (?,?) AND user2 IN (?,?)", [sender_id, recipient_id, sender_id, recipient_id], (err, streak) => {
-            if (err) return reject(err);
-            return resolve(streak);
-        })
-    })
+exports.getStreak = async function(senderID, recipientID) {
+    const db = await dbopen;
+    let userHash = streakHash([senderID, recipientID]);
+
+    let row = await db.get(SQL`SELECT * FROM repStreaks WHERE userHash = ${userHash}`);
+    return row;
 }
 
-exports.get_user_streaks = (user_id) => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM repStreaks WHERE ? IN (user1, user2)", [user_id], (err, streaks) => {
-            if (err) return reject(err);
-            return resolve(streaks);
-        })
-    })
+exports.getUserStreaks = async function(userID) {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM repStreaks WHERE ${userID} IN (user1, user2)`);
+    return rows;
 }
 
-exports.get_all_streaks = () => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM repStreaks", (err, streaks) => {
-            if (err) return reject(err);
-            return resolve(streaks);
-        })
-    })
+exports.getAllStreaks = async function() {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM repStreaks`);
+    return rows;
 }

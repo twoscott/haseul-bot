@@ -1,121 +1,106 @@
-// Require modules
+const sqlite = require("sqlite");
+const SQL = require("sql-template-strings");
+const dbopen = sqlite.open('./haseul_data/twitter.db');
 
-const sql = require("sqlite3").verbose();
-const db = new sql.Database('./haseul_data/twitter.db');
+dbopen.then(db => {
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS twitterChannels(
+            guildID TEXT NOT NULL,
+            channelID TEXT NOT NULL,
+            twitterID TEXT NOT NULL,
+            screenName TEXT NOT NUll,
+            mentionRoleID TEXT,
+            retweets DEFAULT 1,
+            UNIQUE(channelID, twitterID)
+        )
+    `);
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS tweets(
+            twitterID TEXT NOT NULL,
+            tweetID TEXT NOT NULL PRIMARY KEY
+        )
+    `);
+})
 
-// Init
+exports.addTwitterChannel = async function(guildID, channelID, twitterID, screenName, mentionRole) {
+    const db = await dbopen;
 
-db.configure("busyTimeout", 10000);
-
-db.run(`CREATE TABLE IF NOT EXISTS twitterChannels (
-    guildID TEXT NOT NULL,
-    channelID TEXT NOT NULL,
-    twitterID TEXT NOT NULL,
-    screenName TEXT NOT NUll,
-    mentionRoleID TEXT,
-    retweets DEFAULT 1,
-    UNIQUE(channelID, twitterID)
-)`);
-
-db.run(`CREATE TABLE IF NOT EXISTS tweets (
-    twitterID TEXT NOT NULL,
-    tweetID TEXT NOT NULL PRIMARY KEY
-)`);
-
-// twitter channels
-
-exports.add_twitter_channel = (guild_id, channel_id, twitter_id, screen_name, mention_role) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM twitterChannels WHERE twitterID = ? AND channelID = ?", [twitter_id, channel_id], (err, row) => {
-            if (err) return reject(err);
-            if (!row) {
-                db.run("INSERT INTO twitterChannels VALUES (?,?,?,?,?,1)", [guild_id, channel_id, twitter_id, screen_name, mention_role], err => {
-                    if (err) return reject(err);
-                    return resolve(true);
-                })
-            } else {
-                return resolve(false);
-            }
-        })
-    })
+    let statement = await db.run(SQL`
+        INSERT OR IGNORE 
+        INTO twitterChannels (guildID, channelID, twitterID, screenName, mentionRoleID) 
+        VALUES (${guildID}, ${channelID}, ${twitterID}, ${screenName}, ${mentionRole})
+    `);
+    return statement.changes;
 }
 
-exports.del_twitter_channel = (channel_id, twitter_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM twitterChannels WHERE twitterID = ? AND channelID = ?", [twitter_id, channel_id], (err, row) => {
-            if (err) return reject(err);
-            if (row) {
-                db.run("DELETE FROM twitterChannels WHERE twitterID = ? AND channelID = ?", [twitter_id, channel_id], err => {
-                    if (err) return reject(err);
-                    return resolve(true);
-                })
-            } else {
-                return resolve(false);
-            }
-        })
-    })
+exports.removeTwitterChannel = async function(channelID, twitterID) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`
+        DELETE FROM twitterChannels 
+        WHERE channelID = ${channelID} AND twitterID = ${twitterID}
+    `);
+    return statement.changes;
 }
 
-exports.get_guild_twitter_channels = (guild_id) => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM twitterChannels WHERE guildID = ?", [guild_id], (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows);
-        })
-    })
+exports.getTwitterChannel = async function(channelID, twitterID) {
+    const db = await dbopen;
+
+    let row = await db.get(SQL`
+        SELECT * FROM twitterChannels
+        WHERE channelID = ${channelID} AND twitterID = ${twitterID}
+    `);
+    return row;
 }
 
-exports.get_all_twitter_channels = () => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM twitterChannels", (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows);
-        })
-    })
+exports.getGuildTwitterChannels = async function(guildID) {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM twitterChannels WHERE guildID = ${guildID}`);
+    return rows;
 }
 
-exports.toggle_retweets = (channel_id, twitter_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM twitterChannels WHERE twitterID = ? AND channelID = ?", [twitter_id, channel_id], (err, row) => {
-            if (err) return reject(err);
-            if (!row) {
-                return resolve(null);
-            } else {
-                let tog = row.retweets ^ 1;
-                db.run("UPDATE twitterChannels SET retweets = ? WHERE twitterID = ? AND channelID = ?", [tog, twitter_id, channel_id], err => {
-                    if (err) return reject(err);
-                    return resolve(tog);
-                })
-            }
-        })
-    })
+exports.getAllTwitterChannels = async function() {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM twitterChannels`);
+    return rows;
 }
 
-// tweets
+exports.toggleRetweets = async function(channelID, twitterID) {
+    const db = await dbopen;
 
-exports.add_tweet = (twitter_id, tweet_id) => {
-    return new Promise((resolve, reject) => {
-        db.run("INSERT OR IGNORE INTO tweets VALUES (? ,?)", [twitter_id, tweet_id], err => {
-            if (err) return reject(err);
-            return resolve();
-        })
-    })
+    let statement = await db.run(SQL`
+        UPDATE OR IGNORE twitterChannels 
+        SET retweets = ~retweets & 1 
+        WHERE channelID = ${channelID} AND twitterID = ${twitterID}
+    `);
+
+    let toggle = 0;
+    if (statement.changes) {
+        let row = await db.get(SQL`SELECT retweets FROM twitterChannels WHERE channelID = ${channelID} AND twitterID = ${twitterID}`);
+        toggle = row ? row.retweets : 0;
+    }
+    return toggle;
 }
 
-exports.get_account_tweets = (twitter_id) => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM tweets WHERE twitterID = ?", twitter_id, (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows);
-        })
-    })
+exports.addTweet = async function(twitterID, tweetID) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`INSERT OR IGNORE INTO tweets VALUES (${twitterID}, ${tweetID})`);
+    return statement.changes;
 }
 
-exports.get_all_tweets = () => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM tweets", (err, rows) => {
-            if (err) return reject(err);
-            return resolve(rows);
-        })
-    })
+exports.getAccountTweets = async function(twitterID) {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM tweets WHERE twitterID = ${twitterID}`);
+    return rows;
+}
+
+exports.getAllTweets = async function() {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM tweets`);
+    return rows;
 }

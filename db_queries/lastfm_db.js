@@ -1,55 +1,53 @@
-// Require modules
+const sqlite = require("sqlite");
+const SQL = require("sql-template-strings");
+const dbopen = sqlite.open('./haseul_data/lastfm.db');
 
-const sql = require("sqlite3").verbose();
-const db = new sql.Database('./haseul_data/lastfm.db');
+dbopen.then(db => {
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS lfUsers(
+            userID TEXT NOT NULL PRIMARY KEY,
+            lfUser TEXT NOT NULL
+        )
+    `);
+})
 
-// Init
+// dbopen.then(async db => {
+//     await db.run(SQL`
+//         CREATE TABLE IF NOT EXISTS lfUsers (
+//             userID TEXT NOT NULL PRIMARY KEY,
+//             lfUser TEXT NOT NULL
+//         )
+//     `);
+//     let rows = await db.all(SQL`SELECT * FROM lastfm`);
+//     for (let row of rows) {
+//         await db.run(SQL`INSERT OR IGNORE INTO lfUsers VALUES (${row.userID}, ${row.lfUser})`);
+//     }
+//     await db.run(SQL`DROP TABLE lastfm`);
+//     console.log("Finished altering lastfm.db");
+// })
 
-db.run("CREATE TABLE IF NOT EXISTS lastfm (userID TEXT NOT NULL, lfUser TEXT NOT NULL)");
- 
-// Set username
+exports.setLfUser = async function(userID, lfUser) {
+    const db = await dbopen;
 
-exports.set_lf_user = (user_id, lastfm_user) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT lfUser FROM lastfm WHERE userID = ?", [user_id], (err, row) => {
-            if (err) return reject(err);
-            if (row) {
-                db.run("UPDATE lastfm SET lfUser = ? WHERE userID = ?", [lastfm_user, user_id], err => {
-                    if (err) return reject(err);
-                    return resolve();
-                })
-            } else {
-                db.run("INSERT INTO lastfm VALUES (?, ?)", [user_id, lastfm_user], err => {
-                    if (err) return reject(err);
-                    return resolve();
-                })
-            }
-        })
-    })
+    let statement = await db.run(SQL`
+        INSERT INTO lfUsers VALUES (${userID}, ${lfUser})
+        ON CONFLICT (userID) DO 
+        UPDATE SET lfUser = ${lfUser}
+    `);
+    return statement.changes;
 }
 
-// Remove username
+exports.removeLfUser = async function(userID) {
+    const db = await dbopen;
 
-exports.remove_lf_user = (user_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT lfUser FROM lastfm WHERE userID = ?", [user_id], (err, row) => {
-            if (err) return reject(err);
-            if (!row) return resolve(false);
-            db.run("DELETE FROM lastfm WHERE userID = ?", [user_id], err => {
-                if (err) return reject(err);
-                return resolve(true);
-            })
-        })
-    })
+    let statement = await db.run(SQL`DELETE FROM lfUsers WHERE userID = ${userID}`);
+    return statement.changes;
 }
 
-// Get username
 
-exports.get_lf_user = (user_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT lfUser FROM lastfm WHERE userID = ?", [user_id], (err, row) => {
-            if (err) return reject(err);
-            return resolve(row ? row.lfUser : undefined);
-        })
-    })
+exports.getLfUser = async function(userID) {
+    const db = await dbopen;
+
+    let row = await db.get(SQL`SELECT lfUser FROM lfUsers WHERE userID = ${userID}`);
+    return row ? row.lfUser : null;
 }

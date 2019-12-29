@@ -1,242 +1,228 @@
-// Require modules
+const sqlite = require("sqlite");
+const SQL = require("sql-template-strings");
+const dbopen = sqlite.open('./haseul_data/notifications.db');
 
-const sql = require("sqlite3").verbose();
-const db = new sql.Database('./haseul_data/notifications.db');
+dbopen.then(db => {
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS globalNotifs(
+            userID TEXT NOT NULL, 
+            keyword TEXT NOT NULL,
+            keyexp TEXT NOT NULL, 
+            type TEXT DEFAULT "NORMAL",
+            UNIQUE(userID, keyword)
+        )
+    `);
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS localNotifs(
+            guildID TEXT NOT NULL, 
+            userID TEXT NOT NULL, 
+            keyword TEXT NOT NULL,
+            keyexp TEXT NOT NULL, 
+            type TEXT DEFAULT "NORMAL",
+            UNIQUE(guildID, userID, keyword)
+        )
+    `);
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS channelBlacklist(
+            userID TEXT NOT NULL,
+            channelID TEXT NOT NULL,
+            UNIQUE(userID, channelID)
+        )
+    `);
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS serverBlacklist(
+            userID TEXT NOT NULL,
+            guildID TEXT NOT NULL,
+            UNIQUE(userID, guildID)
+        )
+    `);
+    db.run(SQL`
+        CREATE TABLE IF NOT EXISTS DnD(
+            userID TEXT NOT NULL PRIMARY KEY
+        )
+    `);
+})
 
-// Init
+// dbopen.then(async db => {
+//     await db.run(
+//         `CREATE TABLE IF NOT EXISTS globalNotifsNew(
+//         userID TEXT NOT NULL, 
+//         keyword TEXT NOT NULL,
+//         keyexp TEXT NOT NULL, 
+//         type TEXT DEFAULT "NORMAL",
+//         UNIQUE(userID, keyword)
+//     )`);
+//     await db.run(`CREATE TABLE IF NOT EXISTS localNotifsNew(
+//         guildID TEXT NOT NULL, 
+//         userID TEXT NOT NULL, 
+//         keyword TEXT NOT NULL,
+//         keyexp TEXT NOT NULL, 
+//         type TEXT DEFAULT "NORMAL",
+//         UNIQUE(guildID, userID, keyword)
+//     )`);
+//     await db.run(`
+//         CREATE TABLE IF NOT EXISTS DnDNew(
+//             userID TEXT NOT NULL PRIMARY KEY
+//         )
+//     `)
+//     let rows = await db.all(SQL`SELECT * FROM globalNotifs`);
+//     for (let row of rows) {
+//         await db.run(SQL`INSERT OR IGNORE INTO globalNotifsNew VALUES (${row.userID}, ${row.keyword}, ${row.keyexp}, ${row.type})`);
+//     }
+//     rows = await db.all(SQL`SELECT * FROM localNotifs`);
+//     for (let row of rows) {
+//         await db.run(SQL`INSERT OR IGNORE INTO localNotifsNew VALUES (${row.guildID}, ${row.userID}, ${row.keyword}, ${row.keyexp}, ${row.type})`);
+//     }
+//     rows = await db.all(SQL`SELECT * FROM DnD`);
+//     for (let row of rows) {
+//         if (row.dnd) {
+//             await db.run(SQL`INSERT OR IGNORE INTO DnDNew VALUES (${row.userID})`);
+//         }
+//     }
+//     await db.run(SQL`DROP TABLE globalNotifs`);
+//     await db.run(SQL`ALTER TABLE globalNotifsNew RENAME TO globalNotifs`);
 
-db.run(
-    `CREATE TABLE IF NOT EXISTS globalNotifs (
-    userID TEXT NOT NULL, 
-    keyword TEXT NOT NULL,
-    keyexp TEXT NOT NULL, 
-    type TEXT DEFAULT "NORMAL"
-)`);
-db.run(`CREATE TABLE IF NOT EXISTS localNotifs  (
-    guildID TEXT NOT NULL, 
-    userID TEXT NOT NULL, 
-    keyword TEXT NOT NULL,
-    keyexp TEXT NOT NULL, 
-    type TEXT DEFAULT "NORMAL"
-)`);
-db.run(`CREATE TABLE IF NOT EXISTS channelBlacklist (
-    userID TEXT NOT NULL,
-    channelID TEXT NOT NULL,
-    UNIQUE(userID, channelID)
-)`);
-db.run(`CREATE TABLE IF NOT EXISTS serverBlacklist (
-    userID TEXT NOT NULL,
-    guildID TEXT NOT NULL,
-    UNIQUE(userID, guildID)
-)`);
-db.run(`CREATE TABLE IF NOT EXISTS DnD (
-    userID TEXT NOT NULL,
-    dnd INT NOT NULL DEFAULT 0
-)`)
+//     await db.run(SQL`DROP TABLE localNotifs`);
+//     await db.run(SQL`ALTER TABLE localNotifsNew RENAME TO localNotifs`);
 
-// Add notficiation
+//     await db.run(SQL`DROP TABLE DnD`);
+//     await db.run(SQL`ALTER TABLE DnDNew RENAME TO DnD`);
+//     console.log("Finished altering notifications.db");
+// })
 
-exports.add_global_notif = (user_id, keyword, keyexp, type) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT keyword FROM globalNotifs WHERE userID = ? AND keyword = ?",
-        [user_id, keyword], (err, row) => {
-            if (err) return reject(Error(err));
-            if (row) return resolve(false);
-            db.run("INSERT INTO globalNotifs VALUES (?, ?, ?, ?)", [user_id, keyword, keyexp, type.toUpperCase()], (err) => {
-                if (err) return reject(Error(err));
-                return resolve(true);
-            })
-        })
-    })
+exports.addGlobalNotif = async function(userID, keyword, keyexp, type) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`
+        INSERT OR IGNORE INTO globalNotifs 
+        VALUES (${userID}, ${keyword}, ${keyexp}, ${type})
+    `);
+    return statement.changes;
 }
 
-exports.add_local_notif = (guild_id, user_id, keyword, keyexp, type) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT keyword FROM localNotifs WHERE guildID = ? AND userID = ? AND keyword = ?",
-        [guild_id, user_id, keyword], (err, row) => {
-            if (err) return reject(Error(err));
-            if (row) return resolve(false);
-            db.run("INSERT INTO localNotifs VALUES (?, ?, ?, ?, ?)", [guild_id, user_id, keyword, keyexp, type.toUpperCase()], (err) => {
-                if (err) return reject(Error(err));
-                return resolve(true);
-            })
-        })
-    })
+exports.addLocalNotif = async function(guildID, userID, keyword, keyexp, type) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`
+        INSERT OR IGNORE INTO localNotifs
+        VALUES (${guildID}, ${userID}, ${keyword}, ${keyexp}, ${type})
+    `);
+    return statement.changes;
 }
 
-// Remove notification
+exports.removeGlobalNotif = async function(userID, keyword) {
+    const db = await dbopen;
 
-exports.remove_global_notif = (user_id, keyword) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT keyword FROM globalNotifs WHERE userID = ? AND keyword = ?",
-        [user_id, keyword], (err, row) => {
-            if (err) return reject(Error(err));
-            if (!row) return resolve(false);
-            db.run("DELETE FROM globalNotifs WHERE userID = ? AND keyword = ?", [user_id, keyword], (err) => {
-                if (err) return reject(Error(err));
-                return resolve(true);
-            })
-        })
-    })
+    let statement = await db.run(SQL`DELETE FROM globalNotifs WHERE userID = ${userID} AND keyword = ${keyword}`);
+    return statement.changes;
 }
 
-exports.remove_local_notif = (guild_id, user_id, keyword) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT keyword FROM localNotifs WHERE guildID = ? AND userID = ? AND keyword = ?",
-        [guild_id, user_id, keyword], (err, row) => {
-            if (err) return reject(Error(err));
-            if (!row) return resolve(false);
-            db.run("DELETE FROM localNotifs WHERE guildID = ? AND userID = ? AND keyword = ?", [guild_id, user_id, keyword], (err) => {
-                if (err) return reject(Error(err));
-                return resolve(true);
-            })
-        })
-    })
+exports.removeLocalNotif = async function(guildID, userID, keyword) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`
+        DELETE FROM localNotifs
+        WHERE guildID = ${guildID} AND userID = ${userID} AND keyword = ${keyword}
+    `);
+    return statement.changes;
 }
 
-// Get notifications
+exports.getGlobalNotifs = async function(userID) {
+    const db = await dbopen;
 
-exports.get_global_notifs = () => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM globalNotifs", (err, rows) => {
-            if (err) return reject(Error(err));
-            return resolve(rows);
-        })
-    })
+    let rows = await db.all(SQL`SELECT * FROM globalNotifs WHERE userID = ${userID}`);
+    return rows;
 }
 
-exports.get_local_notifs = (guild_id) => {
-    return new Promise((resolve, reject) => {
-        if (guild_id) {
-            db.all("SELECT * FROM localNotifs WHERE guildID = ?", [guild_id], (err, rows) => {
-                if (err) return reject(Error(err));
-                return resolve(rows);
-            })
-        } else {
-            db.all("SELECT * FROM localNotifs", (err, rows) => {
-                if (err) return reject(Error(err));
-                return resolve(rows);
-            })
-        }
-    })
+exports.getLocalNotifs = async function(guildID, userID) {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM localNotifs WHERE guildID = ${guildID} AND userID = ${userID}`);
+    return rows;
 }
 
-// Clear notifications
+exports.getAllGlobalNotifs = async function() {
+    const db = await dbopen;
 
-exports.clear_global_notifs = (user_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM globalNotifs WHERE userID = ?", [user_id], (err, row) => {
-            if (err) return reject(Error(err));
-            if (!row) return resolve(false);
-            db.run("DELETE FROM globalNotifs WHERE userID = ?", [user_id], err => {
-                if (err) return reject(Error(err));
-                return resolve(true);
-            })
-        })
-    })
+    let rows = await db.all(SQL`SELECT * FROM globalNotifs`);
+    return rows;
 }
 
-exports.clear_local_notifs = (guild_id, user_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT * FROM localNotifs WHERE guildID = ? AND userID = ?", [guild_id, user_id], (err, row) => {
-            if (err) return reject(Error(err));
-            if (!row) return resolve(false);
-            db.run("DELETE FROM localNotifs WHERE guildID = ? AND userID = ?", [guild_id, user_id], err => {
-                if (err) return reject(Error(err));
-                return resolve(true);
-            })
-        })
-    })
+exports.getAllLocalNotifs = async function(guildID) {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM localNotifs WHERE guildID = ${guildID}`);
+    return rows;
 }
 
-// channel blacklist
+exports.clearGlobalNotifs = async function(userID) {
+    const db = await dbopen;
 
-exports.ignore_channel = (user_id, channel_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT channelID FROM channelBlacklist WHERE userID = ? AND channelID = ?", [user_id, channel_id], (err, row) => {
-            if (err) return reject(Error(err));
-            if (row) {
-                db.run("DELETE FROM channelBlacklist WHERE userID = ? AND channelID = ?", [user_id, channel_id], err => {
-                    if (err) return reject(err);
-                    return resolve(false);
-                })
-            } else {
-                db.run("INSERT INTO channelBlacklist VALUES (?, ?)", [user_id, channel_id], err => {
-                    if (err) return reject(Error(err));
-                    resolve(true);
-                })
-            }
-            
-        })
-    })
+    let statement = await db.run(SQL`DELETE FROM globalNotifs WHERE userID = ${userID}`);
+    return statement.changes;
 }
 
-exports.get_ignored_channels = () => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM channelBlacklist", (err, rows) => {
-            if (err) return reject(Error(err));
-            return resolve(rows);
-        })
-    })
+exports.clearLocalNotifs = async function(guildID, userID) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`DELETE FROM localNotifs WHERE guildID = ${guildID} AND userID = ${userID}`);
+    return statement.changes;
 }
 
-// server blacklist
+exports.toggleChannel = async function(userID, channelID) {
+    const db = await dbopen;
 
-exports.ignore_server = (user_id, guild_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT guildID FROM serverBlacklist WHERE userID = ? AND guildID = ?", [user_id, guild_id], (err, row) => {
-            if (err) return reject(Error(err));
-            if (row) {
-                db.run("DELETE FROM serverBlacklist WHERE userID = ? AND guildID = ?", [user_id, guild_id], err => {
-                    if (err) return reject(err);
-                    return resolve(false);
-                })
-            } else {
-                db.run("INSERT INTO serverBlacklist VALUES (?, ?)", [user_id, guild_id], err => {
-                    if (err) return reject(Error(err));
-                    resolve(true);
-                })
-            }
-            
-        })
-    })
+    let statement = await db.run(SQL`INSERT OR IGNORE INTO channelBlacklist VALUES (${userID}, ${channelID})`);
+    if (!statement.changes) {
+        await db.run(SQL`DELETE FROM channelBlacklist WHERE userID = ${userID} AND channelID = ${channelID}`);
+    }
+    return statement.changes;
 }
 
-exports.get_ignored_servers = () => {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM serverBlacklist", (err, rows) => {
-            if (err) return reject(Error(err));
-            return resolve(rows);
-        })
-    })
+exports.getIgnoredChannels = async function() {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM channelBlacklist`);
+    return rows;
 }
 
-// Do not disturb
-exports.toggle_dnd = (user_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT dnd FROM DnD WHERE userID = ?", [user_id], (err, row) => {
-            if (err) return reject(Error(err));
-            if (row) {
-                let dnd = row.dnd ^ 1;
-                db.run("UPDATE DnD SET dnd = ? WHERE userID = ?", [dnd, user_id], err => {
-                    if (err) return reject(Error(err));
-                    return resolve(dnd);
-                })
-            } else {
-                db.run("INSERT INTO DnD VALUES (?, 1)", [user_id], err => {
-                    if (err) return reject(Error(err));
-                    return resolve(1);
-                })
-            }
-        })
-    })
+exports.toggleServer = async function(userID, guildID) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`INSERT OR IGNORE INTO serverBlacklist VALUES (${userID}, ${guildID})`);
+    if (!statement.changes) {
+        await db.run(SQL`DELETE FROM serverBlacklist WHERE userID = ${userID} AND guildID = ${guildID}`);
+    }
+    return statement.changes;
 }
 
-exports.get_dnd = (user_id) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT dnd FROM DnD WHERE userID = ?", [user_id], (err, row) => {
-            if (err) return reject(Error(err));
-            return resolve(row ? row.dnd : 0);
-        })
-    })
+exports.includeServer = async function(userID, guildID) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`DELETE FROM serverBlacklist WHERE userID = ${userID} AND guildID = ${guildID}`);
+    return statement.changes;
+}
+
+exports.getIgnoredServers = async function() {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM serverBlacklist`);
+    return rows;
+}
+
+exports.toggleDnD = async function(userID) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`INSERT OR IGNORE INTO DnD VALUES (${userID})`);
+    if (!statement.changes) {
+        await db.run(SQL`DELETE FROM DnD WHERE userID = ${userID}`);
+    }
+    return statement.changes;
+}
+
+exports.getDnD = async function(userID) {
+    const db = await dbopen;
+
+    let row = await db.get(SQL`SELECT * FROM DnD WHERE userID = ${userID}`);
+    return row;
 }
