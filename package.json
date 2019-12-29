@@ -1,7 +1,7 @@
 {
   "name": "haseul-bot",
-  "version": "1.1.0",
-  "description": "A general purpose Discord bot aimed at K-pop servers.",
+  "version": "1.5.0",
+  "description": "A general purpose Discord bot aimed at K-Pop servers.",
   "main": "haseul.js",
   "dependencies": {
     "axios": "^0.18.1",
@@ -9,6 +9,7 @@
     "hashset": "^0.0.6",
     "jsdom": "^15.1.1",
     "patreon": "^0.4.1",
+    "sqlite": "^3.0.3",
     "sqlite3": "^4.0.9"
   },
   "devDependencies": {},
