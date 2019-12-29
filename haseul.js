@@ -1,15 +1,13 @@
 const Discord = require("discord.js");
-const config = require("./config.json");
 const Client = new Discord.Client({disableEveryone: true});
 module.exports = { Client };
 
+const config = require("./config.json");
 const messages = require("./handlers/msg_handler.js");
 const border = require("./handlers/border_handler.js");
 const checklist = require("./handlers/ready_handler.js");
 
 let initialised = false;
-
-// -- Events --
 
 // Debugging
 
@@ -53,6 +51,10 @@ Client.on("guildMemberAdd", member => {
 
 Client.on("guildMemberRemove", member => {
     border.handleLeaves(member);
+})
+
+Client.on("guildCreate", guild => {
+    border.handleNewGuild(guild);
 })
 
 // -- Login --
