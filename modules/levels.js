@@ -1,67 +1,53 @@
-// Require modules
+const { Client } = require("../haseul.js");
 
-const Client = require("../haseul.js").Client;
-
+const levels = require("../functions/levels.js");
 const functions = require("../functions/functions.js");
-
 const database = require("../db_queries/levels_db.js");
 
-// Functions
+let lastMsgCache = new Map();
 
-function guildRank(xp) {
-    let lvl = Math.floor(Math.log(xp/1000+100)/Math.log(10) * 200 - 399);
-    let baseXp = Math.ceil(((10**((lvl+399)/200))-100)*1000);
-    let nextXp = Math.ceil(((10**((lvl+400)/200))-100)*1000);
-    return { lvl, baseXp, nextXp };
+function cleanMsgCache(lastMsgCache) {
+    let now = Date.now();
+    console.log("Clearing message timestamp cache...");
+    console.log("Cache size before: " + lastMsgCache.size);
+    for (let [userID, lastMsgTime] of lastMsgCache) {
+        if (now - lastMsgTime > 300000 /*5 mins*/) {
+            lastMsgCache.delete(userID);
+        }
+    }
+    console.log("Cache size after:  " + lastMsgCache.size);
 }
-
-function globalRank(xp) {
-    let lvl = Math.floor(Math.log(xp/1000+100)/Math.log(10) * 150 - 299);
-    let baseXp = Math.ceil(((10**((lvl+299)/150))-100)*1000);
-    let nextXp = Math.ceil(((10**((lvl+1+300)/150))-100)*1000);
-    return { lvl, baseXp, nextXp };
-}
+setInterval(cleanMsgCache, 300000 /*5 mins*/, lastMsgCache);
 
 async function updateUserXp(message) {
     
     let { author, guild, createdTimestamp } = message;
 
-    let globalXp = await database.get_global_xp(author.id);
-    if (!globalXp) {
-        await database.init_global_xp(author.id);
-        globalXp = await database.get_global_xp(author.id);
-    }
-
-    await database.set_last_msg(author.id, createdTimestamp);
-    await database.init_guild_xp(author.id, guild.id);
-
     let addXp = 5;
     let wordcount = message.content.split(/\s+/).length;
     if (wordcount > 12) {
         addXp += 10;
-    } 
-    else if (wordcount > 3) {
+    } else if (wordcount > 3) {
         addXp += 5;
     }
     if (message.attachments.size > 0) {
         addXp += 10;
     }
 
-    if (createdTimestamp - globalXp.lastMsgTimestamp < 15000 /*15 seconds*/) {
+    if (createdTimestamp - lastMsgCache.get(author.id) < 15000 /*15 seconds*/) {
         addXp = Math.floor(addXp/5);
     }
 
-    await database.update_global_xp(author.id, addXp);
-    await database.update_guild_xp(author.id, guild.id, addXp);
+    lastMsgCache.set(author.id, createdTimestamp);
+    database.updateGlobalXp(author.id, addXp);
+    database.updateGuildXp(author.id, guild.id, addXp);
 
 }
 
 exports.msg = async function(message, args) {
 
     updateUserXp(message);
-
-    // Handle commands
-
+    
     switch (args[0]) {
 
         case ".leaderboard":
@@ -101,8 +87,8 @@ exports.msg = async function(message, args) {
 async function leaderboard(message, local) {
 
     let { guild } = message;
-    let ranks = local ? await database.get_all_guild_xp(guild.id) :
-                        await database.get_all_global_xp();
+    let ranks = local ? await database.getAllGuildXp(guild.id) :
+                        await database.getAllGlobalXp();
 
     ranks = ranks.sort((a,b) => b.xp - a.xp).slice(0,100); // show only top 100
     for (let i = 0; i < ranks.length; i++) {
@@ -112,7 +98,7 @@ async function leaderboard(message, local) {
         let name = user ? user.username.replace(/([\`\*\~\_])/g, "\\$&") : rank.userID;
         ranks[i] = {
             userID: rank.userID, name: name,
-            lvl: local ? guildRank(rank.xp).lvl : globalRank(rank.xp).lvl, xp: rank.xp
+            lvl: local ? levels.guildRank(rank.xp).lvl : levels.globalRank(rank.xp).lvl, xp: rank.xp
         }
     }
 
@@ -153,6 +139,3 @@ async function leaderboard(message, local) {
     functions.pages(message, pages);
 
 }
-
-exports.guildRank = guildRank;
-exports.globalRank = globalRank;
