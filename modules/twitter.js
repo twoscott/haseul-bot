@@ -1,14 +1,10 @@
-// Require modules
-
-const Client = require("../haseul.js").Client;
-const config = require("../config.json");
+const { Client } = require("../haseul.js");
 
 const axios = require("axios");
 
+const config = require("../config.json");
 const functions = require("../functions/functions.js");
 const database = require("../db_queries/twitter_db.js");
-
-// Consts
 
 const twitter = axios.create({
     baseURL: 'https://api.twitter.com',
@@ -16,13 +12,9 @@ const twitter = axios.create({
     headers: {'authorization': 'Bearer ' + config.twt_bearer}
 })
 
-// Functions
-
 exports.msg = async function(message, args) {
 
     let perms;
-
-    // Handle commands
 
     switch (args[0]) {
 
@@ -106,7 +98,6 @@ exports.msg = async function(message, args) {
 
 }
 
-// add twitter notification
 async function twitter_notif_add(message, args) {
 
     let { guild } = message;
@@ -185,7 +176,7 @@ async function twitter_notif_add(message, args) {
     }
     let { id_str, screen_name } = response.data;
 
-    let twitterNotifs = await database.get_guild_twitter_channels(guild.id);
+    let twitterNotifs = await database.getGuildTwitterChannels(guild.id);
     let twitterIDs = new Set(twitterNotifs.map(x => x.twitterID));
     if (twitterIDs.size >= 3) {
         message.channel.send("⚠ No more than 3 Twitter accounts may be set up for notifications on a server.");
@@ -206,12 +197,12 @@ async function twitter_notif_add(message, args) {
         let createdAt = new Date(tweet.created_at).getTime();
         if (createdAt > (now - 1000*60)) continue; // don't add tweets in last minute; prevent conflicts with task
 
-        await database.add_tweet(id_str, tweet.id_str);
+        await database.addTweet(id_str, tweet.id_str);
     }
 
     let added;
     try {
-        added = await database.add_twitter_channel(guild.id, channel.id, id_str, screen_name, role ? role.id : null)
+        added = await database.addTwitterChannel(guild.id, channel.id, id_str, screen_name, role ? role.id : null)
     } catch(e) {
         console.error(Error(e));
         message.channel.send("⚠ Error occurred.");
@@ -265,7 +256,7 @@ async function twitter_notif_del(message, args) {
 
     let deleted;
     try {
-        deleted = await database.del_twitter_channel(channel.id, id_str);
+        deleted = await database.removeTwitterChannel(channel.id, id_str);
     } catch(e) {
         console.error(Error(e));
         message.channel.send("⚠ Error occurred.");
@@ -282,7 +273,7 @@ async function twitter_notif_list(message) {
 
     let { guild } = message;
 
-    let notifs = await database.get_guild_twitter_channels(guild.id)
+    let notifs = await database.getGuildTwitterChannels(guild.id)
     if (notifs.length < 1) {
         message.channel.send("⚠ There are no Twitter notifications added to this server.");
         return;
@@ -365,17 +356,25 @@ async function retweet_toggle(message, args) {
     }
     let { id_str, screen_name } = response.data;
 
-    let toggle;
+    let twitterChannel;
     try {
-        toggle = await database.toggle_retweets(channel.id, id_str)
-    } catch(e) {
+        twitterChannel = await database.getTwitterChannel(channel.id, id_str);
+    } catch (e) {
         console.error(Error(e));
         message.channel.send("⚠ Unknown error occurred.");
         return;
     }
-
-    if (toggle === null) {
+    if (!twitterChannel) {
         message.channel.send(`⚠ Twitter notifications for \`@${screen_name}\` are not set up in ${channel} on this server.`);
+        return;
+    }
+
+    let toggle;
+    try {
+        toggle = await database.toggleRetweets(channel.id, id_str)
+    } catch(e) {
+        console.error(Error(e));
+        message.channel.send("⚠ Unknown error occurred.");
         return;
     }
     

@@ -1,5 +1,3 @@
-// Import modules
-
 const Client = require("../haseul.js").Client;
 
 const imgMod = require("../functions/images.js");
@@ -12,22 +10,15 @@ const {
     stories_hash, 
     login
 } = require("../utils/instagram.js");
-
-// Consts
-
 const HOST = 'haseulbot.xyz';
-
-// Task loop
 
 exports.tasks = async function() {
 
-    await login();
+    // await login();
     instaLoop().catch(console.error);
     storyCleanup().catch(console.error);
 
 }
-
-// Task
 
 async function instaLoop() {
 
@@ -36,7 +27,7 @@ async function instaLoop() {
     console.log("Started checking Instagram at " + new Date(startTime).toUTCString());
 
     let accounts = new Map();
-    let channelNotifs = await database.get_all_insta_channels();
+    let channelNotifs = await database.getAllInstaChannels();
     let instaIDs = new Set(channelNotifs.map(x => x.instaID));
 
     await (async () => {
@@ -62,7 +53,7 @@ async function instaLoop() {
                 }
                 let recentPosts = data.user['edge_owner_to_timeline_media'].edges.map(edge => edge.node);
 
-                let oldPosts = await database.get_account_posts(instaID);
+                let oldPosts = await database.getAccountPosts(instaID);
                 let oldPostIDs = oldPosts.map(p => p.postID);
 
                 let newPosts = recentPosts.filter(post => !oldPostIDs.includes(post.id)).sort((a,b) => a.taken_at_timestamp - b.taken_at_timestamp) /*sort posts in date order*/
@@ -88,19 +79,19 @@ async function instaLoop() {
                         }
                     }
 
-                    await database.add_post(instaID, id);
+                    await database.addPost(instaID, id);
         
                     for (let data of targetData) {
                         let { guildID, channelID, mentionRoleID } = data;
         
                         let guild = Client.guilds.get(guildID);
                         if (!guild) {
-                            console.error(Error("Guild couldn't be retrieved to send VLIVE notif to."));
+                            console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
                             continue;
                         }
                         let channel = Client.channels.get(channelID) || guild.channels.get(channelID);
                         if (!channel) {
-                            console.error(Error("Channel couldn't be retrieved to send VLIVE notif to."));
+                            console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
                             continue;
                         }
 
@@ -148,7 +139,7 @@ async function instaLoop() {
                                 let field = "";
                                 for (let i = 0; i < images.length; i++) {
                                     let { id, display_url } = images[i];
-                                    await database.add_custom_image(id, display_url);
+                                    await database.addCustomImage(id, display_url);
                                     let link = `http://${HOST}/insta/img/${id}`;
                                     let text = ` [\`${i+1}\`:frame_photo:](${link} "Click to View Image")`;
                                     if (field.length + text.length > 1024) {
@@ -164,7 +155,7 @@ async function instaLoop() {
                                 let field = "";
                                 for (let i = 0; i < videos.length; i++) {
                                     let { id, video_url} = videos[i];
-                                    await database.add_custom_video(id, video_url);
+                                    await database.addCustomVideo(id, video_url);
                                     let link = `http://${HOST}/insta/vid/${id}`;
                                     let text = ` [\`${i+1}\`:film_frames:](${link} "Click to Watch Video")`;
                                     if (field.length + text.length > 1024) {
@@ -196,125 +187,125 @@ async function instaLoop() {
 
             })(instaID, targetData));
             
-            promises.push((async function processStories(instaID, targetData) {
+            // promises.push((async function processStories(instaID, targetData) {
 
-                let LOGGED_IN = false;
-                for (let i = 0; i < 3 && !LOGGED_IN; i++) {
-                    let { csrf_token, cookie } = require("../utils/instagram.js").credentials;
-                    try {
-                        response = await graphql.get('/query/', { 
-                            params: {
-                                query_hash: stories_hash, 
-                                variables: {
-                                    reel_ids: [instaID], precomposed_overlay: false, show_story_viewer_list: false, stories_video_dash_manifest: false 
-                                }
-                            },
-                            headers: { 'X-CSRFToken': csrf_token, 'Cookie': cookie }
-                        });
-                        LOGGED_IN = true;
-                    } catch(e) {
-                        if (e.response) {
-                            switch (e.response.status) {
-                                case 403:
-                                    await login();
-                                    break;
-                                case 429:
-                                    console.error("Instagram stories error, code: " + e.response.status);
-                                    return;
-                                default:
-                                    console.error("Instagram stories error, code: " + e.response.status);
-                                    LOGGED_IN = true;
-                                    break;
-                            }
-                        } else {
-                            console.error("Instagram stories error: " + e);
-                        }
-                    }
-                }
-                if (!LOGGED_IN) {
-                    console.error("Couldn't log in to Instagram after 3 attempts... skipping account");
-                    return;
-                }
+            //     let LOGGED_IN = false;
+            //     for (let i = 0; i < 3 && !LOGGED_IN; i++) {
+            //         let { csrf_token, cookie } = require("../utils/instagram.js").credentials;
+            //         try {
+            //             response = await graphql.get('/query/', { 
+            //                 params: {
+            //                     query_hash: stories_hash, 
+            //                     variables: {
+            //                         reel_ids: [instaID], precomposed_overlay: false, show_story_viewer_list: false, stories_video_dash_manifest: false 
+            //                     }
+            //                 },
+            //                 headers: { 'X-CSRFToken': csrf_token, 'Cookie': cookie }
+            //             });
+            //             LOGGED_IN = true;
+            //         } catch(e) {
+            //             if (e.response) {
+            //                 switch (e.response.status) {
+            //                     case 403:
+            //                         await login();
+            //                         break;
+            //                     case 429:
+            //                         console.error("Instagram stories error, code: " + e.response.status);
+            //                         return;
+            //                     default:
+            //                         console.error("Instagram stories error, code: " + e.response.status);
+            //                         LOGGED_IN = true;
+            //                         break;
+            //                 }
+            //             } else {
+            //                 console.error("Instagram stories error: " + e);
+            //             }
+            //         }
+            //     }
+            //     if (!LOGGED_IN) {
+            //         console.error("Couldn't log in to Instagram after 3 attempts... skipping account");
+            //         return;
+            //     }
 
-                let storyReel = response.data.data['reels_media'];
-                if (storyReel.length < 1) {
-                    return;
-                }
-                let recentStories = storyReel[0].items;
+            //     let storyReel = response.data.data['reels_media'];
+            //     if (storyReel.length < 1) {
+            //         return;
+            //     }
+            //     let recentStories = storyReel[0].items;
 
-                let oldStories = await database.get_account_stories(instaID);
-                let oldstoryIDs = oldStories.map(s => s.storyID);
+            //     let oldStories = await database.getAccountStories(instaID);
+            //     let oldstoryIDs = oldStories.map(s => s.storyID);
 
-                let newStories = recentStories.filter(story => !oldstoryIDs.includes(story.id)).sort((a,b) => a.taken_at_timestamp - b.taken_at_timestamp) /*sort stories in date order*/
+            //     let newStories = recentStories.filter(story => !oldstoryIDs.includes(story.id)).sort((a,b) => a.taken_at_timestamp - b.taken_at_timestamp) /*sort stories in date order*/
 
-                for (let story of newStories) {
+            //     for (let story of newStories) {
 
-                    let { id, owner, display_url, taken_at_timestamp, expiring_at_timestamp} = story;
+            //         let { id, owner, display_url, taken_at_timestamp, expiring_at_timestamp} = story;
 
-                    let timestamp = parseInt(taken_at_timestamp) * 1000;
-                    let type = story['__typename'];
+            //         let timestamp = parseInt(taken_at_timestamp) * 1000;
+            //         let type = story['__typename'];
 
-                    let user = accounts.get(instaID);
-                    if (!user) {
-                        let response;
-                        try {
-                            response = await instagram.get(`/${owner.username}/`, { params: {'__a': 1} });
-                            user = response.data.graphql.user;
-                            user = { full_name: user.full_name, profile_pic: user.profile_pic_url, username: user.username };
-                            accounts.set(instaID, user);
-                        } catch(e) {
-                            console.error(e);
-                        }
-                    }
+            //         let user = accounts.get(instaID);
+            //         if (!user) {
+            //             let response;
+            //             try {
+            //                 response = await instagram.get(`/${owner.username}/`, { params: {'__a': 1} });
+            //                 user = response.data.graphql.user;
+            //                 user = { full_name: user.full_name, profile_pic: user.profile_pic_url, username: user.username };
+            //                 accounts.set(instaID, user);
+            //             } catch(e) {
+            //                 console.error(e);
+            //             }
+            //         }
 
-                    await database.add_story(instaID, id, expiring_at_timestamp);
+            //         await database.addStory(instaID, id, expiring_at_timestamp);
 
-                    for (let data of targetData) {
-                        let { guildID, channelID, mentionRoleID, stories } = data;
+            //         for (let data of targetData) {
+            //             let { guildID, channelID, mentionRoleID, stories } = data;
 
-                        if (!stories) {
-                            continue;
-                        }
+            //             if (!stories) {
+            //                 continue;
+            //             }
 
-                        let guild = Client.guilds.get(guildID);
-                        if (!guild) {
-                            console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
-                            continue;
-                        }
-                        let channel = Client.channels.get(channelID) || guild.channels.get(channelID);
-                        if (!channel) {
-                            console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
-                            continue;
-                        }
+            //             let guild = Client.guilds.get(guildID);
+            //             if (!guild) {
+            //                 console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
+            //                 continue;
+            //             }
+            //             let channel = Client.channels.get(channelID) || guild.channels.get(channelID);
+            //             if (!channel) {
+            //                 console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
+            //                 continue;
+            //             }
 
-                        let message = `https://www.instagram.com/stories/${owner.username}/${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
+            //             let message = `https://www.instagram.com/stories/${owner.username}/${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
 
-                        let embed = {
-                            author: {
-                                name: user ? `${user.full_name} (@${user.username})` : owner.username,
-                                url: `https://www.instagram.com/${owner.username}/`
-                            },
-                            title: "New Story",
-                            fields: [],
-                            color: 0xe64c5b,
-                            image: { url: display_url },
-                            url: `https://www.instagram.com/stories/${owner.username}/`,
-                            footer: { icon_url: 'https://i.imgur.com/NNzsisb.png', text: 'Instagram Stories' },
-                            timestamp
-                        }
-                        if (user) embed.author.icon_url = user.profile_pic;
+            //             let embed = {
+            //                 author: {
+            //                     name: user ? `${user.full_name} (@${user.username})` : owner.username,
+            //                     url: `https://www.instagram.com/${owner.username}/`
+            //                 },
+            //                 title: "New Story",
+            //                 fields: [],
+            //                 color: 0xe64c5b,
+            //                 image: { url: display_url },
+            //                 url: `https://www.instagram.com/stories/${owner.username}/`,
+            //                 footer: { icon_url: 'https://i.imgur.com/NNzsisb.png', text: 'Instagram Stories' },
+            //                 timestamp
+            //             }
+            //             if (user) embed.author.icon_url = user.profile_pic;
     
-                        if (type == "GraphStoryVideo") {
-                            let { video_resources } = story;
-                            embed.description = `[\\▶ Video Link](${video_resources[video_resources.length - 1].src } "Click to Watch Video")`
-                        }
+            //             if (type == "GraphStoryVideo") {
+            //                 let { video_resources } = story;
+            //                 embed.description = `[\\▶ Video Link](${video_resources[video_resources.length - 1].src } "Click to Watch Video")`
+            //             }
 
-                        channel.send(message, {embed}).catch(console.error);
-                    }
+            //             channel.send(message, {embed}).catch(console.error);
+            //         }
                     
-                }
+            //     }
 
-            })(instaID, targetData));
+            // })(instaID, targetData));
 
             await Promise.all(promises);
         }   
@@ -331,7 +322,7 @@ async function storyCleanup() {
 
     let startTime = Date.now();
     console.log("Started cleaning out old Instagram stories at " + new Date(startTime).toUTCString());
-    await database.clear_old_stories();
+    await database.clearOldStories();
     console.log("Finished cleaning out old Instagram stories, took " + (Date.now() - startTime) / 1000 + "s");
     let waitTime = Math.max(1000 * 60 * 60 - (Date.now() - startTime), 0); // hourly
     setTimeout(storyCleanup, waitTime);

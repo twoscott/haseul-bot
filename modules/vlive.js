@@ -1,21 +1,15 @@
-// Require modules
+const { Client } = require("../haseul.js");
 
-const Client = require("../haseul.js").Client;
 const axios = require("axios");
 
 const functions = require("../functions/functions.js");
-
 const database = require("../db_queries/vlive_db.js");
-
-// Consts
 
 const vlive = axios.create({
     baseURL: 'http://api.vfan.vlive.tv/vproxy/channelplus/',
     timeout: 10000
 })
 const app_id = '8c6cc7b45d2568fb668be6e05b6e5a3b';
-
-// Functions
 
 function channel_search(channelList, query) {
 
@@ -37,7 +31,7 @@ function channel_search(channelList, query) {
 
 async function get_channel(query) {
 
-    let channelList = await database.get_channel_archive();
+    let channelList = await database.getChannelArchive();
     let chanResult = channel_search(channelList, query);
 
     if (!chanResult) {
@@ -52,7 +46,7 @@ async function get_channel(query) {
 
         channelList = response.data.result.items;
         for (let channel of channelList) {
-            database.add_update_archive_channel(channel.channelCode, channel.channelName, channel.channelPlusType);
+            database.updateArchiveChannel(channel.channelCode, channel.channelName, channel.channelPlusType);
         }
         chanResult = channel_search(channelList, query);
     }
@@ -64,8 +58,6 @@ async function get_channel(query) {
 exports.msg = async function(message, args) {
 
     let perms;
-
-    // Handle commands
 
     switch (args[0]) {
 
@@ -261,12 +253,12 @@ async function vlive_notif_add(message, args) {
         let releaseTimestamp = new Date(onAirStartAt + " UTC+9:00").getTime();
         if (releaseTimestamp > (now - 1000*60)) continue; // don't add videos in last minute; prevent conflicts with task
 
-        await database.add_video(videoSeq, channelSeq);
+        await database.addVideo(videoSeq, channelSeq);
     }
 
     let added;
     try {
-        added = await database.add_vlive_channel(guild.id, channel.id, channelSeq, channelCode, channelName, role ? role.id : null);
+        added = await database.addVliveChannel(guild.id, channel.id, channelSeq, channelCode, channelName, role ? role.id : null);
     } catch(e) {
         console.error(Error(e));
         message.channel.send("⚠ Error occurred.");
@@ -317,7 +309,7 @@ async function vlive_notif_del(message, args) {
 
     let deleted;
     try {
-        deleted = await database.del_vlive_channel(guild.id, channel.id, channelSeq);
+        deleted = await database.delVliveChannel(guild.id, channel.id, channelSeq);
     } catch(e) {
         console.error(Error(e));
         message.channel.send("⚠ Unknown error occurred.");
@@ -334,7 +326,7 @@ async function vlive_notif_list(message) {
 
     let { guild } = message;
 
-    let notifs = await database.get_guild_vlive_channels(guild.id);
+    let notifs = await database.getGuildVliveChannels(guild.id);
     if (notifs.length < 1) {
         message.channel.send("⚠ There are no VLIVE notifications added to this server.");
         return;
@@ -414,17 +406,25 @@ async function vpick_toggle(message, args) {
     }
     let { channelSeq } = response.data.result;
 
-    let toggle;
+    let vliveChannel;
     try {
-        toggle = await database.toggle_vpick(guild.id, channel.id, channelSeq);
-    } catch(e) {
+        vliveChannel = await database.getVliveChannel(channel.id, channelSeq);
+    } catch (e) {
         console.error(Error(e));
         message.channel.send("⚠ Unknown error occurred.");
         return;
     }
-
-    if (toggle === null) {
+    if (!vliveChannel) {
         message.channel.send(`⚠ VLIVE notifications for \`${channelName}\` are not set up in <#${discordChannel}> on this server.`);
+        return;
+    }
+
+    let toggle;
+    try {
+        toggle = await database.toggleVpick(channel.id, channelSeq);
+    } catch(e) {
+        console.error(Error(e));
+        message.channel.send("⚠ Unknown error occurred.");
         return;
     }
     

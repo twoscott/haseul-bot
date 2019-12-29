@@ -1,12 +1,7 @@
-// Require modules
-
 const { Client } = require("../haseul.js");
 
 const axios = require("axios");
-
 const functions = require("../functions/functions.js");
-
-// Functions 
 
 exports.msg = async function(message, args) {
     

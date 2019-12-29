@@ -1,16 +1,13 @@
-// Require modules
-
-const Client = require("../haseul.js").Client;
+const { Client } = require("../haseul.js");
 
 const functions = require("../functions/functions.js");
-const levels = require("../modules/levels.js");
+const levels = require("../functions/levels.js");
 
 // const database = require("../db_queries/profiles_db.js");
 const repsdb = require("../db_queries/reps_db.js");
 const levelsdb = require("../db_queries/levels_db.js");
 
 exports.msg = async function(message, args) {
-    // Handle commands
 
     switch (args[0]) {
 
@@ -25,7 +22,6 @@ exports.msg = async function(message, args) {
                 message.channel.stopTyping();
             })
             break;
-        
 
     }
 
@@ -58,12 +54,12 @@ async function profile_temp(message, args) {
         }
     }
 
-    let userReps = await repsdb.get_rep_profile(user_id);
-    let userGlobXp = await levelsdb.get_global_xp(user_id);
-    let userGuildXp = await levelsdb.get_guild_xp(user_id, guild.id)
+    let userReps = await repsdb.getRepProfile(user_id);
+    let userGlobXp = await levelsdb.getGlobalXp(user_id);
+    let userGuildXp = await levelsdb.getGuildXp(user_id, guild.id)
 
-    let userGlobRank = levels.globalRank(userGlobXp ? userGlobXp.xp : 0);
-    let userGuildRank = levels.guildRank(userGuildXp ? userGuildXp.xp : 0);
+    let userGlobRank = levels.globalRank(userGlobXp);
+    let userGuildRank = levels.guildRank(userGuildXp);
 
     member = member || await guild.fetchMember(user_id);
     let user = member ? member.user : Client.users.get(user_id) || await Client.fetchMember(user_id);
@@ -75,9 +71,9 @@ async function profile_temp(message, args) {
         fields: [
             { name: 'Rep', value: userReps ? userReps.rep: 0, inline: false },
             { name: 'Global Level', value: `Level ${userGlobXp ? userGlobRank.lvl: 1}`, inline: true },
-            { name: 'Global XP', value: `${userGlobXp ? (userGlobXp.xp - userGlobRank.baseXp) : 0}/${userGlobRank.nextXp - userGlobRank.baseXp}`, inline: true },
+            { name: 'Global XP', value: `${userGlobXp ? (userGlobXp - userGlobRank.baseXp) : 0}/${userGlobRank.nextXp - userGlobRank.baseXp}`, inline: true },
             { name: 'Server Level', value: `Level ${userGuildXp ? userGuildRank.lvl: 1}`, inline: true },
-            { name: 'Server XP', value: `${userGuildXp ? (userGuildXp.xp - userGuildRank.baseXp) : 0}/${userGuildRank.nextXp - userGuildRank.baseXp}`, inline: true }
+            { name: 'Server XP', value: `${userGuildXp ? (userGuildXp - userGuildRank.baseXp) : 0}/${userGuildRank.nextXp - userGuildRank.baseXp}`, inline: true }
         ],
         thumbnail: { url: user.displayAvatarURL },
         footer: { text: 'Full profiles coming soon.' }

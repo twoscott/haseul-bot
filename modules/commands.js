@@ -1,34 +1,22 @@
-// Require modules
-
 const functions = require("../functions/functions.js");
 const reservedCommands = require("../resources/JSON/commands.json");
 const serverSettings = require("./server_settings.js");
 
 const database = require("../db_queries/commands_db.js");
 
-// Functions
-
-async function cmdCheck(message, commandName, cmdsOn) {
-
-    if (!cmdsOn) return;
-    let cmd = await database.get_command(message.guild.id, commandName);
-    if (!cmd) return;
-
-    await message.channel.send(cmd);
-
+async function cmdCheck(message, commandName) {
+    let cmd = await database.getCommand(message.guild.id, commandName);
+    if (cmd) {
+        await message.channel.send(cmd);
+    }
 }
 
 exports.msg = async function(message, args) {
 
-    let cmdsOn = await serverSettings.get(message.guild.id, "commandsOn");
-
-    // Check if custom command
-
-    if (args[0].startsWith('.')) {
-        cmdCheck(message, args[0].replace(/^\./, ''), cmdsOn);
+    let cmdsOn = serverSettings.get(message.guild.id, "commandsOn");
+    if (cmdsOn && args[0].startsWith('.')) {
+        cmdCheck(message, args[0].slice(1), cmdsOn);
     }
-
-    // Handle commands
 
     let perms;
 
@@ -57,7 +45,7 @@ exports.msg = async function(message, args) {
                 case "delete":
                     if (cmdsOn) {
                         message.channel.startTyping();
-                        delCommand(message, args[2]).then(response => {
+                        removeCommand(message, args[2]).then(response => {
                             if (response) message.channel.send(response);
                             message.channel.stopTyping();
                         }).catch(error => {
@@ -175,18 +163,18 @@ async function addCommand(message, args) {
     let fileUrl = files[0] ? files[0].url : '';
     text = [text, fileUrl].join('\n');
     
-    let added = await database.add_command(message.guild.id, commandName, text);
+    let added = await database.addCommand(message.guild.id, commandName, text);
     return added ? `Command \`.${commandName}\` was added.` : `⚠ A command with the name \`${commandName}\` already exists.`;
 
 }
 
-async function delCommand(message, commandName) {
+async function removeCommand(message, commandName) {
 
     if (!commandName) {
         return "⚠ Please provide a command name to remove.";
     }
 
-    let removed = await database.remove_command(message.guild.id, commandName);
+    let removed = await database.removeCommand(message.guild.id, commandName);
     return removed ? `Command \`.${commandName}\` was removed.` : `⚠ No command with the name \`${commandName}\` was found.`;
 
 }
@@ -212,12 +200,12 @@ async function renameCommand(message, args) {
         return `⚠ \`.${newName}\` is a reserved command name, please use another name.`;
     }
 
-    let command = await database.get_command(message.guild.id, commandName);
+    let command = await database.getCommand(message.guild.id, commandName);
     if (!command) {
         return `⚠ \`.${commandName}\` does not exist.`;
     }
     
-    let renamed = await database.rename_command(message.guild.id, commandName, newName);
+    let renamed = await database.renameCommand(message.guild.id, commandName, newName);
     return renamed ? `\`.${commandName}\` was renamed to \`.${newName}\`.` : `⚠ \`.${newName}\` already exists.`;
 
 }
@@ -248,7 +236,7 @@ async function editCommand(message, args) {
     let fileUrl = files[0] ? files[0].url : '';
     text = [text, fileUrl].join('\n');
     
-    let edited = await database.edit_command(message.guild.id, commandName, text);
+    let edited = await database.editCommand(message.guild.id, commandName, text);
     return edited ? `Command \`.${commandName}\` was edited.` : `⚠ No command with the name \`${commandName}\` was found.`;
 
 }
@@ -256,7 +244,8 @@ async function editCommand(message, args) {
 async function listCommands(message) {
 
     let { guild } = message;
-    let commandNames = await database.get_commands(guild.id);
+    let commands = await database.getCommands(guild.id);
+    let commandNames = commands.map(x => x.command);
     if (commandNames.length < 1) {
         return "⚠ There are no commands added to this server.";
     }
@@ -309,7 +298,8 @@ async function searchCommands(message, query) {
     }
 
     let { guild } = message;
-    let commandNames = await database.get_commands(guild.id);
+    let commands = await database.getCommands(guild.id);
+    let commandNames = commands.map(x => x.command);
 
     if (commandNames.length < 1) {
         return "⚠ There are no commands added to this server.";

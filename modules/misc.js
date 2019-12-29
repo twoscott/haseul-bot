@@ -1,13 +1,8 @@
-// Require modules
-
 const html = require("../functions/html.js");
 const colours = require("../functions/colours.js");
 
-// Functions
-
 exports.msg = async function(message, args) {
 
-    // Handle commands
     switch (args[0]) {
 
         case ".colour":

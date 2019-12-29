@@ -1,15 +1,10 @@
-// Require modules
-
 const Discord = require("discord.js");
-const Client = require("../haseul.js").Client;
+const { Client } = require("../haseul.js");
 
 const serverSettings = require("../modules/server_settings.js");
 
-// Functions
-
 exports.msg = async function(message, args) {
 
-    // Handle commands
     switch (args[0]) {
 
         case ".serverinfo":
@@ -55,11 +50,13 @@ async function server_embed(guild) {
 
     let regions = {
         "amsterdam":   ":flag_nl: Amsterdam",    
-        "brazil":      ":flag_br: Brazil", 
+        "brazil":      ":flag_br: Brazil",
+        "europe":      ":flag_eu: Europe",
         "eu-central":  ":flag_eu: EU Central",   
         "eu-west":     ":flag_eu: EU West", 
         "frankfurt":   ":flag_de: Frankfurt",    
         "hongkong":    ":flag_hk: Hong Kong", 
+        "india":       ":flag_in: India",
         "japan":       ":flag_jp: Japan",        
         "london":      ":flag_gb: London", 
         "russia":      ":flag_ru: Russia",       
@@ -82,8 +79,12 @@ async function server_embed(guild) {
     let statusData = Object.values(statusObj);
     statusObj.offline.count = guild.memberCount - statusData.slice(0, 3).reduce((a, c) => a + c.count, 0);
     let statuses = statusData.map(d => d.emoji + d.count).join('  ');
-    let autoroleID = await serverSettings.get(guild.id, "autoroleID");
-    let autoroleColour = autoroleID ? guild.roles.get(autoroleID).color : null;
+    let autoroleID = serverSettings.get(guild.id, "autoroleID");
+    let autoroleColour = 0xdddddd;
+    if (autoroleID) {
+        let autorole = guild.roles.get(autoroleID);
+        autoroleColour = autorole ? autorole.color : 0xdddddd;
+    }
 
     let embed = new Discord.RichEmbed()
     .setAuthor(guild.name, guild.iconURL)
@@ -97,7 +98,7 @@ async function server_embed(guild) {
     .addField("Voice Channels", guild.channels.array().filter(c => c.type == 'voice').length, true)
     .addField("Members", guild.memberCount, true)
     .addField("Roles", guild.roles.size, true)
-    .addField("Region", regions[guild.region], true)
+    .addField("Region", regions[guild.region] || guild.region, true)
     .addField("Emojis", `${guild.emojis.size} (${guild.emojis.array().filter(e=>e.animated).length} animated)`, true);
 
     if (statuses) {

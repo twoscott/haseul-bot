@@ -1,28 +1,13 @@
-// Import modules
+const { Client } = require("../haseul.js");
 
-const Client = require("../haseul.js").Client;
 const config = require("../config.json");
-
-const axios = require("axios");
-
 const functions = require("../functions/functions.js");
 
-// Consts
-
-const patreon = axios.create({
-    baseURL: 'https://www.patreon.com/api/oauth2/v2',
-    timeout: 5000,
-    headers: { 
-        'authorization': 'Bearer ' + config.patreon_access_token,
-        'Content-Type': 'application/vnd.api+json'
-    }
-})
-
-// Init
+const {
+    patreon
+} = require("../utils/patreon.js");
 
 exports.msg = async function(message, args) {
-
-    // Handle commands
 
     switch (args[0]) {
 
@@ -52,7 +37,7 @@ async function patrons(message) {
     
     let response;
     try {
-        response = await patreon.get('/campaigns/'+config.haseulCampaignID+'/members?include=user&fields'+encodeURI('[member]')+'=full_name,patron_status,pledge_relationship_start&fields'+encodeURI('[user]')+'=social_connections');
+        response = await patreon.get('/campaigns/'+config.haseul_campaign_id+'/members?include=user&fields'+encodeURI('[member]')+'=full_name,patron_status,pledge_relationship_start&fields'+encodeURI('[user]')+'=social_connections');
     } catch(e) {
         console.error("Patreon error: " + e.response.status);
         message.channel.send('⚠ Error occurred.');
@@ -67,7 +52,9 @@ async function patrons(message) {
     }
 
     memberString = members.sort((a,b) => {
-        return a.attributes.pledge_relationship_start - b.attributes.pledge_relationship_start
+        let aPledgeTime = new Date(a.attributes.pledge_relationship_start).getTime();
+        let bPledgeTime = new Date(b.attributes.pledge_relationship_start).getTime();
+        return aPledgeTime - bPledgeTime; 
     }).filter(x => {
         let user = users.find(u => u.id == x.relationships.user.data.id);
         let socials = user.attributes.social_connections;

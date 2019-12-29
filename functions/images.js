@@ -1,9 +1,5 @@
-//Require modules
-
 const fs = require("fs");
 const html = require("../functions/html.js");
-
-//Classes
 
 class Image {
     constructor(data) {
@@ -63,8 +59,6 @@ class Image {
     }
 
 }
-
-// Functions
 
 async function createMediaCollage(media, width, height, col1w) {
 

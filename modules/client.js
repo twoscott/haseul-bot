@@ -1,17 +1,11 @@
-// Require modules
+const { Client } = require("../haseul.js");
 
 const fs = require('fs');
 const process = require('process');
-
-const Client = require("../haseul.js").Client;
-
 const functions = require("../functions/functions.js");
-
-// Functions
 
 exports.msg = async function(message, args) {
 
-    // Handle commands
     switch (args[0]) {
 
         case ".botinfo":
@@ -104,7 +98,7 @@ async function botinfo(message) {
 
 async function serverlist(message) {
 
-    let guildString = Client.guilds.array().map(guild => `${guild.name} (${guild.id})`).join('\n');
+    let guildString = Client.guilds.array().sort((a, b) => a.name.localeCompare(b.name)).map(guild => `${guild.name} (${guild.id})`).join('\n');
 
     let descriptions = [];
     while (guildString.length > 2048 || guildString.split('\n').length > 25) {

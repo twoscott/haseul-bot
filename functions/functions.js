@@ -1,5 +1,3 @@
-// Require modules
-
 const Discord = require("discord.js");
 const Client = require("../haseul").Client;
 
@@ -53,7 +51,7 @@ exports.searchMembers = async (guild, query) => {
     }
 
     if (memberResults.length > 1) {
-        let ranks = await levelsdb.get_all_guild_xp(guild.id);
+        let ranks = await levelsdb.getAllGuildXp(guild.id);
         memberResults = memberResults.sort((a,b) => {
             let aMem = ranks.find(x => x.userID == a.id);
             let bMem = ranks.find(x => x.userID == b.id);
@@ -74,19 +72,19 @@ exports.getTimeAgo = (time, limit) => {
     let timeAgoText;
     let timeAgo;
 
-    if (timeDiffSecs < 60 || limit == 'seconds') {            //60 = minute
+    if (timeDiffSecs < 60 || limit == 'seconds') {          //60 = minute
         timeAgo = Math.floor(timeDiffSecs);
         timeAgoText = timeAgo > 1 ? `${timeAgo}secs ago` : `${timeAgo}sec ago`;
-    } else if (timeDiffSecs < 3600 || limit == 'minutes') {   //3600 = hour
+    } else if (timeDiffSecs < 3600 || limit == 'minutes') { //3600 = hour
         timeAgo = Math.floor((timeDiffSecs) / 60);
         timeAgoText = timeAgo > 1 ? `${timeAgo}mins ago` : `${timeAgo}min ago`;
     } else if (timeDiffSecs < 86400 || limit == 'hours') {  //86400 = day
         timeAgo = Math.floor((timeDiffSecs) / 3600);
         timeAgoText = timeAgo > 1 ?  `${timeAgo}hrs ago` :  `${timeAgo}hr ago`;
-    } else if (timeDiffSecs < 604800 || limit == 'days') { //604800 = week
+    } else if (timeDiffSecs < 604800 || limit == 'days') {  //604800 = week
         timeAgo = Math.floor((timeDiffSecs) / 86400);
         timeAgoText = timeAgo > 1 ? `${timeAgo}days ago` : `${timeAgo}day ago`;
-    } else {                            //More than a week
+    } else {                                                //More than a week
         timeAgo = Math.floor((timeDiffSecs) / 604800)
         timeAgoText = timeAgo > 1 ?  `${timeAgo}wks ago` :  `${timeAgo}wk ago`;
     }

@@ -1,5 +1,3 @@
-//Require modules
-
 const client = require("../modules/client.js");
 const commands = require("../modules/commands.js");
 const emojis = require("../modules/emojis.js");
@@ -19,8 +17,6 @@ const twitter = require("../modules/twitter.js");
 const users = require("../modules/users.js");
 const utility = require("../modules/utility.js");
 const vlive = require("../modules/vlive.js");
-
-//Handle message
 
 exports.handleMsg = (message) => {
 

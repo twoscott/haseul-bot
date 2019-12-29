@@ -1,4 +1,3 @@
-
 exports.randomHexColour = (maxBright) => {
     
     let rgb = [];

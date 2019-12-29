@@ -1,14 +1,8 @@
-// Require modules
-
 const axios = require("axios");
 
 const functions = require("../functions/functions");
 
-// Functions
-
 exports.msg = async function(message, args) {
-
-    // Handle commands
 
     if (args.length < 1) return;
     switch (args[0].toLowerCase()) {    

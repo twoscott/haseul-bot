@@ -1,14 +1,14 @@
-// Require modules
-
 const Discord = require("discord.js");
+const { Client } = require("../haseul.js");
+
 const axios = require("axios")
 
 const config = require("../config.json");
-const helpmodules = require("../resources/JSON/help.json");
 const langs = require("../resources/JSON/languages.json");
 
 const functions = require("../functions/functions.js")
 
+const translate_key = config.trans_key;
 const units = {
     nm: ['nanometer', 'nanometre', 'nanometers', 'nanometres'],
     μm: ['um', 'micrometer', 'micrometre', 'micrometers', 'micrometres'],
@@ -21,7 +21,6 @@ const units = {
     yd: ['yard', 'yards'],
     mi: ['mile', 'miles']
 }
-
 const meter_const = {
 
     nm: 0.000000001,
@@ -38,16 +37,7 @@ const meter_const = {
 
 }
 
-// Init
-
-const translate_key = config.trans_key;
-// const strawpoll_timeouts = new Map();
-
-// Functions
-
 exports.msg = async function(message, args) {
-
-    // Handle commands
 
     switch (args[0]) {
 
@@ -84,19 +74,6 @@ exports.msg = async function(message, args) {
                 message.channel.stopTyping();
             })
             break;
-
-        // case ".strawpoll":
-        // case ".straw":
-        // case ".sp":
-        //     message.channel.startTyping();
-        //     strawpoll(message, args.slice(1)).then(response => {
-        //         message.channel.send(response);
-        //         message.channel.stopTyping();
-        //     }).catch(error => {
-        //         console.error(error);
-        //         message.channel.stopTyping();
-        //     })
-        //     break;
 
         case ".help":
             message.channel.startTyping();

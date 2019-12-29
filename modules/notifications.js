@@ -1,8 +1,3 @@
-// Require modules
-
-const Discord = require("discord.js");
-const Client = require("../haseul.js").Client;
-
 const HashSet = require("hashset");
 
 const database = require("../db_queries/notifications_db.js");
@@ -21,30 +16,26 @@ const notif_nums = {
     'o': '0'
 }
 
-// Functions
-
 async function notify(message) {
 
     // Fetch stored notifications
     let { guild, channel, author, content, member } = message;
     
-    let locals = await database.get_local_notifs(guild.id);
-    let globals = await database.get_global_notifs();
+    let locals = await database.getAllLocalNotifs(guild.id);
+    let globals = await database.getAllGlobalNotifs();
     let notifs = locals.concat(globals).filter(n => n.userID != author.id);
     if (notifs.length < 1) return;
     let matches = new Map();
 
-    let ignored_channels = await database.get_ignored_channels();
-    let ignored_servers = await database.get_ignored_servers();
+    let ignored_channels = await database.getIgnoredChannels();
+    let ignored_servers = await database.getIgnoredServers();
 
     let msg_url = `https://discordapp.com/channels/${guild.id}/${channel.id}/${message.id}`;
+    content = `[View Message](${msg_url})\n\n` + content;
     let embed = {
         author: { name: author.tag, icon_url: author.displayAvatarURL, url: msg_url},
-        description: `__[View Message](${msg_url})__`,
+        description: content.length < 1025 ? content : content.slice(0,1021).trim()+'...',
         color: member.displayColor || 0xffffff,
-        fields: [
-            { name: 'Content', value: content.length < 1025 ? content : content.slice(0,1021).trim()+'...' }
-        ],
         footer: { text: `#${channel.name}` },
         timestamp: message.createdAt
     }
@@ -55,7 +46,7 @@ async function notify(message) {
             continue;
         }
 
-        let dnd = await database.get_dnd(notif.userID);
+        let dnd = await database.getDnD(notif.userID);
         if (dnd) continue;
 
         let ignored_server = ignored_servers.find(x => x.userID == notif.userID && x.guildID == guild.id);
@@ -93,7 +84,6 @@ async function notify(message) {
                 break;
         }
 
-        // let regxp = new RegExp(notif.keyexp, 'i');
         let match = content.match(regexp);
         if (!match) continue;
 
@@ -130,11 +120,7 @@ async function notify(message) {
 
 exports.msg = async function(message, args) {
 
-    // Notify
-
     notify(message);
-
-    // Handle commands
 
     switch (args[0]) {
 
@@ -333,8 +319,8 @@ async function add_notification(message, args, global) {
     keyword = keyword.toLowerCase();
 
     let { guild, author } = message;
-    let addedNotif = global ? await database.add_global_notif(author.id, keyword, keyrgx, type)
-                            : await database.add_local_notif(guild.id, author.id, keyword, keyrgx, type);
+    let addedNotif = global ? await database.addGlobalNotif(author.id, keyword, keyrgx, type)
+                            : await database.addLocalNotif(guild.id, author.id, keyword, keyrgx, type);
     if (!addedNotif) {
         return "⚠ Notification with this keyword already added.";
     }
@@ -356,8 +342,8 @@ async function remove_notification(message, args, global) {
     message.delete(500);
 
     let { guild, author } = message;
-    let removed = global  ? await database.remove_global_notif(author.id, keyphrase)
-                          : await database.remove_local_notif(guild.id, author.id, keyphrase);
+    let removed = global  ? await database.removeGlobalNotif(author.id, keyphrase)
+                          : await database.removeLocalNotif(guild.id, author.id, keyphrase);
     if (!removed) {
         author.send(`Notification \`${keyphrase}\` does not exist. Please check for spelling errors.`);
         return `⚠ Notification does not exist.`;
@@ -373,14 +359,11 @@ async function clear_notifications(message, global) {
     let { author, guild } = message;
     let cleared;
     if (global) {
-        cleared = await database.clear_global_notifs(author.id);
+        cleared = await database.clearGlobalNotifs(author.id);
+        message.channel.send(cleared ? `All global notifications cleared.` : `⚠ No notifications to clear.`);
     } else {
-        cleared = await database.clear_local_notifs(guild.id, author.id);
-    }
-    if (!cleared) {
-        return global ? `⚠ No notifications to clear.` : `⚠ No notifications in \`${guild.name}\` to clear.`;
-    } else {
-        return global ? `All global notifications cleared.` : `All notifications in \`${guild.name}\` cleared.`;
+        cleared = await database.clearLocalNotifs(guild.id, author.id);
+        message.channel.send(cleared ? `All notifications in \`${guild.name}\` cleared.` : `⚠ No notifications in \`${guild.name}\` to clear.`);
     }
 
 }
@@ -388,14 +371,8 @@ async function clear_notifications(message, global) {
 async function list_notifications(message, global) {
 
     let { author, guild } = message;
-    let notifs;
-    if (global) {
-        notifs = await database.get_global_notifs()
-        notifs = notifs.filter(n => n.userID == author.id);
-    } else {
-        notifs = await database.get_local_notifs(guild.id)
-        notifs = notifs.filter(n => n.userID == author.id);
-    }
+    let notifs = global ? await database.getGlobalNotifs(author.id) :
+                          await database.getLocalNotifs(guild.id, author.id);
 
     if (notifs.length < 1) {
         return `⚠ You don't have any notifications${!global ? ` in ${message.guild.name}` : ``}!`;
@@ -446,7 +423,7 @@ async function ignore_channel(message, args) {
         return "⚠ Channel must be a text channel.";
     }
 
-    let ignored = await database.ignore_channel(author.id, channel.id);
+    let ignored = await database.toggleChannel(author.id, channel.id);
     return ignored ? `You will no longer be sent notifications for messages in ${channel}.`:
                      `You will now be sent notifications for messages in ${channel}.`;
 
@@ -455,7 +432,7 @@ async function ignore_channel(message, args) {
 async function ignore_server(message) {
 
     let { author, guild } = message;
-    let ignored = await database.ignore_server(author.id, guild.id);
+    let ignored = await database.toggleServer(author.id, guild.id);
     return ignored ? `You will no longer be sent notifications for messages in this server.`:
                      `You will now be sent notifications for messages in this server.`;
 
@@ -463,7 +440,7 @@ async function ignore_server(message) {
 
 async function toggle_dnd(message) {
 
-    let dnd = await database.toggle_dnd(message.author.id);
+    let dnd = await database.toggleDnD(message.author.id);
     return `Do not disturb turned ${dnd ? 'on':'off'}.`
 
 }

@@ -1,5 +1,3 @@
-// Import modules
-
 const config = require("../config.json");
 const Client = require("../haseul.js").Client;
 
@@ -8,15 +6,11 @@ const axios = require("axios");
 const images = require("../functions/images.js");
 const database = require("../db_queries/twitter_db.js");
 
-// Consts
-
 const twitter = axios.create({
     baseURL: 'https://api.twitter.com',
     timeout: 10000,
     headers: {'authorization': 'Bearer ' + config.twt_bearer}
 })
-
-// Task loop
 
 exports.tasks = async function() {
 
@@ -24,15 +18,13 @@ exports.tasks = async function() {
 
 }
 
-// Task
-
 async function twitterLoop() {
 
     let startTime = Date.now();
 
     console.log("Started checking Twitter at " + new Date(startTime).toUTCString());
 
-    let channelNotifs = await database.get_all_twitter_channels();
+    let channelNotifs = await database.getAllTwitterChannels();
     let twitterIDs = new Set(channelNotifs.map(x => x.twitterID));
 
     await (async () => {
@@ -52,7 +44,7 @@ async function twitterLoop() {
                 continue;
             }
 
-            let oldTweets = await database.get_account_tweets(twitterID);
+            let oldTweets = await database.getAccountTweets(twitterID);
             let oldTweetIDs = oldTweets.map(twt => twt.tweetID);
 
             let newTweets = recentTweets.filter(twt => !oldTweetIDs.includes(twt.id_str)).sort((a,b) => {
@@ -113,7 +105,7 @@ async function twitterLoop() {
                 //     options = { embed };
                 // }
 
-                await database.add_tweet(twitterID, id_str);
+                await database.addTweet(twitterID, id_str);
 
                 for (let data of targetData) {
                     let { guildID, channelID, mentionRoleID, retweets } = data;

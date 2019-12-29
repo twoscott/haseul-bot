@@ -1,5 +1,3 @@
-// Require modules
-
 const Discord = require("discord.js");
 
 const axios = require("axios");
@@ -15,11 +13,7 @@ const database = require("../db_queries/lastfm_db.js");
 
 const { Image } = require("../functions/images.js");
 
-// Init
-
 const api_key = config.lastfm_key;
-
-// Functions
 
 async function scrapeArtistImage(artist) {
 
@@ -42,8 +36,6 @@ async function scrapeArtistImage(artist) {
 }
 
 exports.msg = async function(message, args) {
-
-    // Handle commands
 
     switch (args[0]) {
 
@@ -289,14 +281,14 @@ async function set_lf_user(message, username) {
         return `⚠ ${message || "Invalid Last.fm username."}`;
     }
     
-    await database.set_lf_user(message.author.id, username);
+    await database.setLfUser(message.author.id, username);
     return `Last.fm username set to ${username}.`;
 
 }
 
 async function remove_lf_user(message) {
     
-    let removed = await database.remove_lf_user(message.author.id);
+    let removed = await database.removeLfUser(message.author.id);
     return removed ? `Last.fm username removed.` : `⚠ No Last.fm username found.`
 
 }
@@ -318,7 +310,7 @@ async function lf_recents(message, args, limit) {
     }
 
     if (!username) {
-        username = await database.get_lf_user(message.author.id);
+        username = await database.getLfUser(message.author.id);
     }
     if (!username) {
         return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`.";
@@ -521,7 +513,7 @@ async function lf_top_media(message, args, type) {
     
     let username = args.length > 2 ? args[2] : null;
     if (!username) {
-        username = await database.get_lf_user(message.author.id);
+        username = await database.getLfUser(message.author.id);
     }
     if (!username) {
         return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
@@ -605,7 +597,7 @@ async function lf_top_media(message, args, type) {
 async function lf_profile(message, username) {
 
     if (!username) {
-        username = await database.get_lf_user(message.author.id);
+        username = await database.getLfUser(message.author.id);
     }
     if (!username) {
         return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm profile <username>` to see the Last.fm profile of a specific user.";
@@ -655,7 +647,7 @@ async function lf_profile(message, username) {
 async function lf_avatar(message, username) {
 
     if (!username) {
-        username = await database.get_lf_user(message.author.id);
+        username = await database.getLfUser(message.author.id);
     }
     if (!username) {
         return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.";
@@ -692,7 +684,7 @@ async function lf_avatar(message, username) {
 async function lf_youtube(message, username) {
 
     if (!username) {
-        username = await database.get_lf_user(message.author.id);
+        username = await database.getLfUser(message.author.id);
     }
     if (!username) {
         return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.";
@@ -723,7 +715,7 @@ async function lf_youtube(message, username) {
 
 async function lf_chart(message, args, type = "album") {
 
-    let username = await database.get_lf_user(message.author.id);
+    let username = await database.getLfUser(message.author.id);
     if (!username) {
         return "⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.";
     }

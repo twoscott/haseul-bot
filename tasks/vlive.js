@@ -1,12 +1,6 @@
-// Require modules
-
 const Client = require("../haseul.js").Client;
-
 const axios = require("axios");
-
 const database = require("../db_queries/vlive_db.js");
-
-// Consts
 
 const vlive = axios.create({
     baseURL: 'http://api.vfan.vlive.tv/vproxy/channelplus/',
@@ -14,15 +8,11 @@ const vlive = axios.create({
 })
 const app_id = '8c6cc7b45d2568fb668be6e05b6e5a3b';
 
-// Task loop
-
 exports.tasks = async function() {
 
     vliveLoop().catch(console.error);
 
 }
-
-// Task
 
 async function vliveLoop() {
 
@@ -30,7 +20,7 @@ async function vliveLoop() {
 
     console.log("Started checking VLIVE at " + new Date(startTime).toUTCString());
 
-    let channelNotifs = await database.get_all_vlive_channels();
+    let channelNotifs = await database.getAllVliveChannels();
     let channelSeqs = new Set(channelNotifs.map(x => x.channelSeq));
 
     await (async () => {
@@ -56,7 +46,7 @@ async function vliveLoop() {
             let { channelInfo, videoList } = channelData;
             let { channelCode, channelProfileImage, backgroundColor } = channelInfo;
 
-            let oldVideos = await database.get_channel_vlive_videos(channelSeq);
+            let oldVideos = await database.getChannelVliveVideos(channelSeq);
             let oldVidSeqs = oldVideos.map(vid => vid.videoSeq);
 
             let newVideos = videoList.filter(vid => !oldVidSeqs.includes(vid.videoSeq)).sort((a,b) => {
@@ -71,7 +61,7 @@ async function vliveLoop() {
                 let { videoSeq, videoType, onAirStartAt, title, thumbnail, representChannelName } = video;
                 let releaseTimestamp = new Date(onAirStartAt + " UTC+9:00").getTime();
                 
-                await database.add_video(videoSeq, channelSeq);
+                await database.addVideo(videoSeq, channelSeq);
                 
                 if (!['VOD', 'LIVE'].includes(videoType)) {
                     console.log(videoSeq + ' was a playlist');

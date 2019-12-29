@@ -1,7 +1,5 @@
-// Require modules
-
-const Client = require("../haseul.js").Client;
 const Discord = require("discord.js");
+const { Client } = require("../haseul.js");
 
 const axios = require("axios");
 
@@ -10,14 +8,12 @@ const functions = require("../functions/functions.js");
 const serverSettings = require("./server_settings.js");
 const { Image } = require("../functions/images.js");
 
-// Functions
-
 async function log(member, colour, logEvent) {
 
     // Check if logs on
-    let logsOn = await serverSettings.get(member.guild.id, "joinLogsOn");
+    let logsOn = serverSettings.get(member.guild.id, "joinLogsOn");
     if (!logsOn) return;
-    let logChannelID = await serverSettings.get(member.guild.id, "joinLogsChan");
+    let logChannelID = serverSettings.get(member.guild.id, "joinLogsChan");
     if (!member.guild.channels.has(logChannelID)) return;
     if (logChannelID) logEvent(member, logChannelID, colour); //Log
 
@@ -64,18 +60,18 @@ async function welcome(member, colour) {
     } = member;
 
     if (user.bot) return;
-    let welcomeOn = await serverSettings.get(member.guild.id, "welcomeOn");
+    let welcomeOn = serverSettings.get(member.guild.id, "welcomeOn");
     if (!welcomeOn) return;
-    let welcomeChannelID = await serverSettings.get(member.guild.id, "welcomeChan");
+    let welcomeChannelID = serverSettings.get(member.guild.id, "welcomeChan");
     if (!member.guild.channels.has(welcomeChannelID)) return;
     if (!welcomeChannelID) return;
 
     let memNo = await getMemberNo(member);
     let defaultMsg = `**{username}**#{discriminator} has ${['arrived', 'joined', 'appeared'][Math.floor(Math.random() * 3)]}!`;
-    let welcomeMsg = await serverSettings.get(member.guild.id, "welcomeMsg");
+    let welcomeMsg = serverSettings.get(member.guild.id, "welcomeMsg");
 
     let embed = new Discord.RichEmbed()
-    .setAuthor(`New Member!`, null, user.displayAvatarURL)
+    .setTitle(`New Member!`)
     .setThumbnail(user.displayAvatarURL)
     .setDescription((welcomeMsg || defaultMsg).replace('{default}', defaultMsg).replace('{user}', user).replace('{username}', user.username).replace('{discriminator}', user.discriminator).replace('{usertag}', user.tag).replace('{server}', guild.name).replace('{memberno}', memNo))
     .setColor(colour)
@@ -138,8 +134,6 @@ const logLeave = async function (member, destination, colour) {
 exports.msg = async function(message, args) {
 
     let perms;
-
-    // Handle commands
     
     switch (args[0]) {
 

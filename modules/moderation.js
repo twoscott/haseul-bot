@@ -1,17 +1,13 @@
-// Require modules
-
-const Client = require("../haseul.js").Client;
+const { Client } = require("../haseul.js");
 
 const serverSettings = require("./server_settings.js");
 
-const database = require("../db_queries/mod_db.js");
-
-// Functions
+const database = require("../db_queries/server_db.js");
 
 async function poll(message) {
-    let pollOn = await serverSettings.get(message.guild.id, "pollOn");
+    let pollOn = serverSettings.get(message.guild.id, "pollOn");
     if (!pollOn) return;
-    let pollChannelIDs = await database.get_poll_channels(message.guild.id, "pollChannel");
+    let pollChannelIDs = await database.getPollChannels(message.guild.id, "pollChannel");
     if (pollChannelIDs.map(x => x.channelID).includes(message.channel.id)) {
         await message.react('✅');
         await message.react('❌');
@@ -19,15 +15,10 @@ async function poll(message) {
 }
 
 exports.msg = async function(message, args) {
-
-    // Check if poll channel
     
     poll(message);
 
-    // Handle commands
-
     let perms; 
-
     switch (args[0]) {
 
         case ".say":
@@ -310,7 +301,7 @@ async function addPollChannel(message, args) {
         return "⚠ Channel doesn't exist in this server.";
     }
 
-    added = await database.add_poll_channel(message.guild.id, channel_id);
+    added = await database.addPollChannel(message.guild.id, channel_id);
     return added ? `Poll channel added.` : `Poll channel already added.`;
 
 }
@@ -332,7 +323,7 @@ async function delPollChannel(message, args) {
         return "⚠ Channel doesn't exist in this server.";
     }
 
-    removed = await database.del_poll_channel(message.guild.id, channel_id);
+    removed = await database.removePollChannel(message.guild.id, channel_id);
     return removed ? `Poll channel removed.` : `Poll channel doesn't exist.`;
 
 }

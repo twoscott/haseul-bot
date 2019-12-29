@@ -1,20 +1,16 @@
-// Require modules
-
 const Discord = require("discord.js");
-const Client = require("../haseul.js").Client;
+const { Client } = require("../haseul.js");
 
 const functions = require("../functions/functions.js");
 const serverSettings = require("../modules/server_settings.js");
 
 const database = require("../db_queries/roles_db.js");
 
-// Functions
-
 async function autorole(member) {
 
-    let autoroleOn = await serverSettings.get(member.guild.id, "autoroleOn");
+    let autoroleOn = serverSettings.get(member.guild.id, "autoroleOn");
     if (!autoroleOn) return;
-    let role = await serverSettings.get(member.guild.id, "autoroleID");
+    let role = serverSettings.get(member.guild.id, "autoroleID");
     if (!member.guild.roles.has(role)) return;
     if (role) member.addRole(role);
 
@@ -27,19 +23,15 @@ exports.join = async function(member) {
 }
 
 async function roles(message) {
-    let rolesOn = await serverSettings.get(message.guild.id, "rolesOn");
+    let rolesOn = serverSettings.get(message.guild.id, "rolesOn");
     if (!rolesOn) return;
-    let rolesChannelID = await serverSettings.get(message.guild.id, "rolesChannel");
+    let rolesChannelID = serverSettings.get(message.guild.id, "rolesChannel");
     if (rolesChannelID == message.channel.id) assign_roles(message); //Assign roles if in roles channel
 }
 
 exports.msg = async function(message, args) {
-
-    // Check if roles on
     
     roles(message);
-
-    // Handle commands
 
     let perms;
 
@@ -613,7 +605,7 @@ async function update_roles_channel(message) {
 
     let message_id = data.messageID;
     let content = data.msg;
-    let channel_id = await serverSettings.get(message.guild.id, "rolesChannel");
+    let channel_id = serverSettings.get(message.guild.id, "rolesChannel");
     let channel = Client.channels.get(channel_id);
     let embed = await create_avarole_embed(message);
     
@@ -711,7 +703,7 @@ async function biaslist(message) {
     }
 
 
-    let autoroleID = await serverSettings.get(guild.id, "autoroleID");
+    let autoroleID = serverSettings.get(guild.id, "autoroleID");
     let autoroleColour = autoroleID ? guild.roles.get(autoroleID).color : null;
     let embed = {
         author: { name: `Bias List for ${guild.name}`, icon_url: 'https://i.imgur.com/9y33GZq.png' },
@@ -753,7 +745,7 @@ async function roleslist(message) {
     } 
     descriptions.push(roleString);
 
-    let autoroleID = await serverSettings.get(guild.id, "autoroleID");
+    let autoroleID = serverSettings.get(guild.id, "autoroleID");
     let autoroleColour = autoroleID ? guild.roles.get(autoroleID).color : null;
 
     let pages = descriptions.map((desc, i) => {

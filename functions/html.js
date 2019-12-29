@@ -1,8 +1,4 @@
-//Require modules
-
 const axios = require("axios");
-
-//Functions
 
 exports.toImage = async function (html, width, height, type="jpeg") {
     
