@@ -1,7 +1,5 @@
-// Require modules
-
 const Discord = require("discord.js");
-const Client = require("../haseul.js").Client;
+const { Client } = require("../haseul.js");
 
 const functions = require("../functions/functions.js");
 const colours = require("../functions/colours.js");
@@ -10,7 +8,6 @@ const database = require("../db_queries/reps_db.js");
 const levelsdb = require("../db_queries/levels_db.js");
 
 exports.msg = async function(message, args) {
-    // Handle commands
 
     switch (args[0]) {
 
@@ -19,16 +16,6 @@ exports.msg = async function(message, args) {
             switch (args[1]) {
 
                 case "status":
-                    message.channel.startTyping();
-                    repStatus(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-                
                 case undefined:
                     message.channel.startTyping();
                     repStatus(message).then(response => {
@@ -129,37 +116,29 @@ exports.msg = async function(message, args) {
 }
 
 async function rep(message, args) {
-
+    
     let { guild, author, createdTimestamp } = message;
-    let todayDate = new Date(createdTimestamp).getUTCDate();
+    let todayDate = Math.floor(createdTimestamp / 86400000);
 
-    let senderProfile = await database.get_rep_profile(author.id);
+    let senderProfile = await database.getRepProfile(author.id);
     if (!senderProfile) {
-        await database.init_rep_profile(author.id);
-        senderProfile = await database.get_rep_profile(author.id);
+        await database.setUserReps(author.id, 3);
+        senderProfile = await database.getRepProfile(author.id);
     }
     
     if (senderProfile.repsRemaining < 3) {
-        if (createdTimestamp - senderProfile.lastRepTimestamp > 24*60*60*1000/*24 hours*/) {
-            await database.set_user_reps(author.id, 3);
-        } else {
-            let lastRepDate = new Date(senderProfile.lastRepTimestamp).getUTCDate();
-            if (lastRepDate != todayDate) {
-                await database.set_user_reps(author.id, 3);
-            } else if (senderProfile.repsRemaining <= 0) {
-                let midnightUTC = new Date(createdTimestamp);
-                midnightUTC.setUTCDate(midnightUTC.getUTCDate() + 1);
-                midnightUTC.setUTCHours(0,0,0,0);
-                let timeFromNow = functions.getDelta(midnightUTC.getTime() - createdTimestamp, 'hours');
-                let fromNowText = ''
-                if (timeFromNow.hours) fromNowText += `${timeFromNow.hours}h `;
-                if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
-                if (timeFromNow.seconds) fromNowText += `${timeFromNow.seconds}s `;
-                return `⚠ You have no reps remaining today! Your reps will be replenished in ${fromNowText.trim()}.`; 
-            } // else 0 < reps < 3 
-
+        let lastRepDate = Math.floor(senderProfile.lastRepTimestamp / 86400000);
+        if (lastRepDate < todayDate) {
+            await database.setUserReps(author.id, 3);
+        } else if (senderProfile.repsRemaining <= 0) {
+            let midnightUTC = Math.floor(86400000 * (todayDate + 1));
+            let timeFromNow = functions.getDelta(midnightUTC - createdTimestamp, 'hours');
+            let fromNowText = "";
+            if (timeFromNow.hours) fromNowText += `${timeFromNow.hours}h `;
+            if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
+            if (timeFromNow.seconds) fromNowText += `${timeFromNow.seconds}s `;
+            return `⚠ You have no reps remaining today! Your reps will be replenished in ${fromNowText.trim()}.`; 
         }
-
     }
 
     if (args.length < 1) {
@@ -188,35 +167,32 @@ async function rep(message, args) {
         return `⚠ You may not rep a bot!`;
     }
 
-    let repStreak = await database.get_streak(author.id, recipient.id);
+    let repStreak = await database.getStreak(author.id, recipient.id);
     if (repStreak) {
         let sendingUser = Object.keys(repStreak).find(key => repStreak[key] == author.id);
         let senderLastRep = repStreak[`${sendingUser}LastRep`];
-        let lastUserRepDate = new Date(senderLastRep).getUTCDate();
+        let lastUserRepDate = Math.floor(senderLastRep / 86400000);
         if (senderLastRep && lastUserRepDate == todayDate) {
             return `⚠ You may not rep the same user twice in one day!`;
         }
     }
 
-    await database.init_rep_profile(recipient.id);
-    await database.rep_user(createdTimestamp, author.id, recipient.id);
+    await database.repUser(author.id, recipient.id, createdTimestamp);
+    let recipientProfile = await database.getRepProfile(recipient.id);
 
-    let recipientProfile = await database.get_rep_profile(recipient.id);
-
-    let newStreak = await database.update_streak(createdTimestamp, author.id, recipient.id);
+    let newStreak = await database.updateStreak(author.id, recipient.id, createdTimestamp);
     let xpRand = Math.floor(Math.random() * 500);
     let addXp = Math.round(Math.floor(((-10/(xpRand-500)) + 1) * 100 + (xpRand/10)) * (1 + (newStreak/100)));
 
-    await levelsdb.init_global_xp(recipient.id);
-    await levelsdb.update_global_xp(recipient.id, addXp);
-    let recipientXp = await levelsdb.get_global_xp(recipient.id);
+    await levelsdb.updateGlobalXp(recipient.id, addXp);
+    let recipientXp = await levelsdb.getGlobalXp(recipient.id);
 
     let d = newStreak > 1 ? 's':'';
     let embed = new Discord.RichEmbed()
         .setAuthor(`Report`, recipient.user.displayAvatarURL)
         .setColor(parseInt(colours.randomHexColour(true), 16))
         .addField(`Rep`, `${recipientProfile.rep} (+1)`, true)
-        .addField(`Exp`, `${recipientXp.xp.toLocaleString()} (+${addXp})`, true);
+        .addField(`Exp`, `${recipientXp.toLocaleString()} (+${addXp})`, true);
     if (newStreak) embed.addField(`Streak`, `${newStreak} day${d} :fire:`, false);
 
     message.channel.send(`You gave **${recipient.user.username}** a reputation point and **${addXp}** XP! ${addXp > 1000 ? ':confetti_ball:' : addXp > 600 ? ':star2:' : addXp > 300 ? ':star:':''}`, {embed: embed});
@@ -227,31 +203,25 @@ async function rep(message, args) {
 async function repStatus(message) {
 
     let { author, createdTimestamp } = message;
+    let todayDate = Math.floor(createdTimestamp / 86400000);
 
-    let repProfile = await database.get_rep_profile(author.id);
+    let repProfile = await database.getRepProfile(author.id);
     if (!repProfile) {
-        await database.init_rep_profile(author.id);
-        repProfile = await database.get_rep_profile(author.id);
+        await database.setUserReps(author.id, 3);
+        repProfile = await database.getRepProfile(author.id);
     }
     
     if (repProfile.repsRemaining < 3) {
-        if (createdTimestamp - repProfile.lastRepTimestamp > 24*60*60*1000/*24 hours*/) {
-            await database.set_user_reps(author.id, 3);
-        } else {
-            let todayDate = new Date(createdTimestamp).getUTCDate();
-            let lastRepDate = new Date(repProfile.lastRepTimestamp).getUTCDate();
-            if (lastRepDate != todayDate) {
-                await database.set_user_reps(author.id, 3);
-            }
+        let lastRepDate = Math.floor(repProfile.lastRepTimestamp / 86400000);
+        if (lastRepDate < todayDate) {
+            await database.setUserReps(author.id, 3);
         }
     }
 
-    repProfile = await database.get_rep_profile(author.id);
+    repProfile = await database.getRepProfile(author.id);
 
-    let midnightUTC = new Date(createdTimestamp);
-    midnightUTC.setUTCDate(midnightUTC.getUTCDate() + 1);
-    midnightUTC.setUTCHours(0,0,0,0);
-    let timeFromNow = functions.getDelta(midnightUTC.getTime() - createdTimestamp, 'hours');
+    let midnightUTC = Math.floor(86400000 * (todayDate + 1));
+    let timeFromNow = functions.getDelta(midnightUTC - createdTimestamp, 'hours');
     let fromNowText = '';
     if (timeFromNow.hours) fromNowText += `${timeFromNow.hours}h `;
     if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
@@ -264,7 +234,7 @@ async function repStatus(message) {
 async function repboard(message, local) {
 
     let guild = await message.guild.fetchMembers();
-    let reps = await database.get_reps();
+    let reps = await database.getReps();
     if (local) {
         reps = reps.filter(rep => guild.members.get(rep.userID) && rep.rep > 0);
     } else {
@@ -327,8 +297,8 @@ async function streaks(message) {
 
     let { author, createdTimestamp } = message;
 
-    await database.update_streaks(createdTimestamp);
-    let streaks = await database.get_user_streaks(author.id);
+    await database.updateStreaks(createdTimestamp);
+    let streaks = await database.getUserStreaks(author.id);
 
     if (streaks.length < 1) {
         return "⚠ You do not currently have any rep streaks!";
@@ -347,8 +317,10 @@ async function streaks(message) {
         if (time.minutes) timeText += `${time.minutes}m `;
         if (time.seconds) timeText += `${time.seconds}s `;
 
+        let streakDays = Math.floor((createdTimestamp - streak.firstRep) / 86400000 /* 24 Hours */);
+
         streaks[i] = {
-            userID: userID, name, streak: streak.streak, time: time.ms, timeText
+            userID: userID, name, streak: streakDays, time: time.ms, timeText
         }
     }
 
@@ -398,12 +370,12 @@ async function streakboard(message, local) {
     let { createdTimestamp } = message;
     let guild = await message.guild.fetchMembers();
     
-    await database.update_streaks(createdTimestamp);
-    let streaks = await database.get_all_streaks();
+    await database.updateStreaks(createdTimestamp);
+    let streaks = await database.getAllStreaks();
     if (local) {
-        streaks = streaks.filter(streak => guild.members.get(streak.user1) && guild.members.get(streak.user2) && streak.streak > 0);
+        streaks = streaks.filter(streak => guild.members.get(streak.user1) && guild.members.get(streak.user2) && createdTimestamp - streak.firstRep > 86400000 && streak.user1LastRep && streak.user2LastRep);
     } else {
-        streaks = streaks.filter(streak => streak.streak > 0);   
+        streaks = streaks.filter(streak => createdTimestamp - streak.firstRep > 86400000 && streak.user1LastRep && streak.user2LastRep);   
     }
 
     if (streaks.length < 1) {
@@ -420,9 +392,10 @@ async function streakboard(message, local) {
         let name2 = user2 ? user2.username.replace(/([\`\*\~\_])/g, "\\$&") : streak.user2;
 
         let time = createdTimestamp - streak.firstRep;
+        let streakDays = Math.floor(time / 86400000 /* 24 Hours */);
 
         streaks[i] = {
-            user1: streak.user1, user2: streak.user2, name1, name2, streak: streak.streak, time
+            user1: streak.user1, user2: streak.user2, name1, name2, streak: streakDays, time
         }
     }
 
