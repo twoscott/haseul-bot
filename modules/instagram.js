@@ -1,10 +1,15 @@
-// Require modules
-
-const Client = require("../haseul.js").Client;
+const { Client } = require("../haseul.js");
 
 const functions = require("../functions/functions.js");
+const config = require("../config.json");
+
 const database = require("../db_queries/instagram_db.js");
 
+const {
+    patreon,
+    tier1ID,
+    tier2ID
+} = require("../utils/patreon.js");
 const { 
     instagram, 
     graphql, 
@@ -13,13 +18,9 @@ const {
     login
 } = require("../utils/instagram.js");
 
-// Functions
-
 exports.msg = async function(message, args) {
 
     let perms;
-
-    // Handle commands
 
     switch (args[0]) {
 
@@ -163,25 +164,56 @@ async function insta_notif_add(message, args) {
         }
     }
 
-    let instaNotifs = await database.get_guild_insta_channels(guild.id)
+    let instaNotifs = await database.getGuildInstaChannels(guild.id)
     let instaIDs = new Set(instaNotifs.map(x => x.instaID));
+
+    let response;
+    try {
+        response = await patreon.get('/campaigns/'+config.haseul_campaign_id+'/members?include=user,currently_entitled_tiers&fields'+encodeURI('[member]')+'=full_name,patron_status,pledge_relationship_start,currently_entitled_amount_cents&fields'+encodeURI('[tier]')+'title,&fields'+encodeURI('[user]')+'=social_connections');
+    } catch(e) {
+        console.error("Patreon error: " + e.response.status);
+        message.channel.send('⚠ Error occurred.');
+        return;
+    }
+    
+    let patreonMembers = response.data.data;
+    let patreonUsers = response.data.included.filter(x => {
+        return x.type == 'user' && x.attributes.social_connections.discord
+    });
+
+    let ownerPatronT2 = false;
+    for (let i = 0; i < patreonUsers.length && !ownerPatronT2; i++) {
+        let user = patreonUsers[i];
+        let userDiscord = user.attributes.social_connections.discord;
+        let userDiscordID = userDiscord ? userDiscord.user_id : null;
+        if (userDiscordID == guild.ownerID) {
+            let member = patreonMembers.find(m => m.relationships.user.data.id == user.id);
+            let tier2Member = member.relationships.currently_entitled_tiers.data.find(t => t.id = tier2ID);
+            if (tier2Member) {
+                ownerPatronT2 = true;
+            }
+        }
+    }
+
     if (guild.id != '276766140938584085') {
-        if (guild.members.size < 100) {
-            message.channel.send("⚠ Due to Instagram's limitations, you must have more than 100 members in the server to use Instagram notifications!");
-            return;
-        } else if (guild.members.size < 500 && instaIDs.size >= 1) {
-            message.channel.send("⚠ Due to Instagram's limitations, you must have more than 500 members in the server to have 2 Instagram notifications on the server!");
-            return;
-        } else if (guild.members.size < 1000 && instaIDs.size >= 2) {
-            message.channel.send("⚠ Due to Instagram's limitations, you must have more than 1000 members in the server to have 3 Instagram notifications on the server!");
-            return;
-        } else if (instaIDs.size >= 3) {
+        if (!ownerPatronT2) {
+            if (guild.members.size < 100) {
+                message.channel.send("⚠ Due to Instagram's limitations, you must have more than 100 members in the server to use Instagram notifications!");
+                return;
+            } else if (guild.members.size < 500 && instaIDs.size >= 1) {
+                message.channel.send("⚠ Due to Instagram's limitations, you must have more than 500 members in the server to have 2 Instagram notifications on the server!");
+                return;
+            } else if (guild.members.size < 1000 && instaIDs.size >= 2) {
+                message.channel.send("⚠ Due to Instagram's limitations, you must have more than 1000 members in the server to have 3 Instagram notifications on the server!");
+                return;
+            }
+        } 
+        if (instaIDs.size >= 3) {
             message.channel.send("⚠ No more than 3 Instagram accounts may be set up for notifications on a server.");
             return;
         }
     }
 
-    let response;
     try {
         response = await instagram.get(`/${instaUser}/`, { params: {'__a': 1} })
     } catch(e) {
@@ -221,53 +253,53 @@ async function insta_notif_add(message, args) {
         let createdAt = new Date(post.taken_at_timestamp).getTime();
         if (createdAt > (now - 1000*60)) continue; // don't add posts in last minute; prevent conflicts with task
 
-        await database.add_post(id, post.id);
+        await database.addPost(id, post.id);
     }
 
     // store current stories
-    let LOGGED_IN = false;
-    for (let i = 0; i < 3 && !LOGGED_IN; i++) {
-        let { csrf_token, cookie } = require("../utils/instagram.js").credentials;
-        try {
-            response = await graphql.get('/query/', { 
-                params: {
-                    query_hash: stories_hash, 
-                    variables: {
-                        reel_ids: [id], precomposed_overlay: false, show_story_viewer_list: false, stories_video_dash_manifest: false 
-                    }
-                },
-                headers: { 'X-CSRFToken': csrf_token, 'Cookie': cookie }
-            });
-            LOGGED_IN = true;
-        } catch(e) {
-            switch (e.response.status) {
-                case 403:
-                    await login();
-                    break;
-            }
-            console.error(e);
-        } 
-    }
-    if (!LOGGED_IN) {
-        message.channel.send("⚠ Failed to log in to Instagram.");
-        return;
-    }
+    // let LOGGED_IN = false;
+    // for (let i = 0; i < 3 && !LOGGED_IN; i++) {
+    //     let { csrf_token, cookie } = require("../utils/instagram.js").credentials;
+    //     try {
+    //         response = await graphql.get('/query/', { 
+    //             params: {
+    //                 query_hash: stories_hash, 
+    //                 variables: {
+    //                     reel_ids: [id], precomposed_overlay: false, show_story_viewer_list: false, stories_video_dash_manifest: false 
+    //                 }
+    //             },
+    //             headers: { 'X-CSRFToken': csrf_token, 'Cookie': cookie }
+    //         });
+    //         LOGGED_IN = true;
+    //     } catch(e) {
+    //         switch (e.response.status) {
+    //             case 403:
+    //                 await login();
+    //                 break;
+    //         }
+    //         console.error(e);
+    //     } 
+    // }
+    // if (!LOGGED_IN) {
+    //     message.channel.send("⚠ Failed to log in to Instagram.");
+    //     return;
+    // }
 
-    let storyReel = response.data.data['reels_media'];
-    if (storyReel.length > 0) {
-        let stories = storyReel[0].items;
-        now = Date.now();
-        for (let story of stories) {
-            let createdAt = new Date(story.taken_at_timestamp).getTime();
-            if (createdAt > (now - 1000*60)) continue; // don't add story in last minute; prevent conflicts with task
+    // let storyReel = response.data.data['reels_media'];
+    // if (storyReel.length > 0) {
+    //     let stories = storyReel[0].items;
+    //     now = Date.now();
+    //     for (let story of stories) {
+    //         let createdAt = new Date(story.taken_at_timestamp).getTime();
+    //         if (createdAt > (now - 1000*60)) continue; // don't add story in last minute; prevent conflicts with task
 
-            await database.add_story(id, story.id, story.expiring_at_timestamp);
-        }
-    }
+    //         await database.addStory(id, story.id, story.expiring_at_timestamp);
+    //     }
+    // }
 
     let added;
     try {
-        added = await database.add_insta_channel(guild.id, channel.id, id, username, role ? role.id : null);
+        added = await database.addInstaChannel(guild.id, channel.id, id, username, role ? role.id : null);
     } catch(e) {
         console.error(Error(e));
         message.channel.send("⚠ Error occurred.");
@@ -323,7 +355,7 @@ async function insta_notif_del(message, args) {
 
     let deleted;
     try {
-        deleted = await database.del_insta_channel(channel.id, id);
+        deleted = await database.removeInstaChannel(channel.id, id);
     } catch(e) {
         console.error(Error(e));
         message.channel.send("⚠ Error occurred.");
@@ -340,7 +372,7 @@ async function insta_notif_list(message) {
 
     let { guild } = message;
 
-    let notifs = await database.get_guild_insta_channels(guild.id);
+    let notifs = await database.getGuildInstaChannels(guild.id);
     if (notifs.length < 1) {
         message.channel.send("⚠ There are no Instagram notifications added to this server.");
         return;
@@ -425,17 +457,26 @@ async function stories_toggle(message, args) {
     let { user } = response.data.graphql;
     let { username, id } = user;
 
-    let toggle;
+    let instaChannel;
     try {
-        toggle = await database.toggle_stories(channel.id, id)
-    } catch(e) {
+        instaChannel = await database.getInstaChannel(channel.id, id);
+    } catch (e) {
         console.error(Error(e));
         message.channel.send("⚠ Unknown error occurred.");
         return;
     }
 
-    if (toggle === null) {
+    if (!instaChannel) {
         message.channel.send(`⚠ Instagram notifications for \`@${screen_name}\` are not set up in ${channel} on this server.`);
+        return;
+    }
+
+    let toggle;
+    try {
+        toggle = await database.toggleStories(channel.id, id)
+    } catch(e) {
+        console.error(Error(e));
+        message.channel.send("⚠ Unknown error occurred.");
         return;
     }
     
