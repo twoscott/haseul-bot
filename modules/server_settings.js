@@ -1,24 +1,28 @@
-// Require modules
+const { Client } = require("../haseul.js");
 
 const database = require("../db_queries/server_db.js");
+
 let servers = new Object();
 
-// Init
+exports.ready = async function() {
+    for (let guild of Client.guilds.array()) {
+        await database.initServer(guild.id);
+    }
 
-async function init() {
     let rows = await database.getServers();
-    for (let i=0; i<rows.length; i++) {
-        let row = rows[i];
+    for (row of rows) {
         servers[row.guildID] = row;
     }
 }
 
-init();
+exports.newGuild = async function(guild) {
+    await database.initServer(guild.id);
+    let row = await database.getServer(guild.id);
+    servers[row.guildID] = row;
+}
 
-// Functions
-
-exports.get = async function(guildID, setting) {
-    return servers[guildID] ? servers[guildID][setting] : undefined;
+exports.get = function(guildID, setting) {
+    return servers[guildID] ? servers[guildID][setting] : null;
 }
 
 exports.set = async function(guildID, setting, value) {
@@ -26,8 +30,7 @@ exports.set = async function(guildID, setting, value) {
     await database.setVal(guildID, setting, value)
     if (servers[guildID]) {
         servers[guildID][setting] = value;
-    }
-    else {
+    } else {
         servers[guildID] = await database.getServer(guildID);
     }
 
@@ -38,8 +41,7 @@ exports.toggle = async function(guildID, toggle) {
     let tog = await database.toggle(guildID, toggle)
     if (servers[guildID]) {
         servers[guildID][toggle] = tog;
-    }
-    else {
+    } else {
         servers[guildID] = await database.getServer(guildID);
     }
     return tog;
