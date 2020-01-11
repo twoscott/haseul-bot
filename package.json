@@ -1,6 +1,6 @@
 {
   "name": "haseul-bot",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "A general purpose Discord bot aimed at K-Pop servers.",
   "main": "haseul.js",
   "dependencies": {

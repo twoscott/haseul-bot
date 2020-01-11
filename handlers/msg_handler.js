@@ -77,5 +77,6 @@ async function processMention(message, args) {
 async function processMessage(message) {
     levels.onMessage(message);
     notifications.onMessage(message);
+    roles.onMessage(message);
     servers.onMessage(message);
 }

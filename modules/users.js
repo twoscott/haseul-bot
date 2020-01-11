@@ -121,7 +121,7 @@ async function welcome(member, colour) {
     let embed = new Discord.RichEmbed()
     .setTitle(`New Member!`)
     .setThumbnail(user.displayAvatarURL)
-    .setDescription((welcomeMsg || defaultMsg).replace('{default}', defaultMsg).replace('{user}', user).replace('{username}', user.username).replace('{discriminator}', user.discriminator).replace('{usertag}', user.tag).replace('{server}', guild.name).replace('{memberno}', memNo))
+    .setDescription((welcomeMsg || defaultMsg).replace('{default}', defaultMsg).replace('{user}', user).replace('{username}', user.username).replace('{discriminator}', user.discriminator).replace('{usertag}', user.tag).replace('{server}', guild.name).replace('{memberno}', memberNumber))
     .setColor(colour)
     .setFooter(`Member #${memberNumber} 🎐`)
     .setTimestamp(member.joinedTimestamp);
