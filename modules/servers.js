@@ -1,30 +1,71 @@
 const Discord = require("discord.js");
+const { checkPermissions, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
+const database = require("../db_queries/server_db.js");
 const serverSettings = require("../modules/server_settings.js");
+const { parseChannelID } = require("../functions/functions.js");
 
-exports.msg = async function(message, args) {
+exports.onMessage = async function(message) {
+
+    poll(message);
+
+}
+
+exports.onCommand = async function(message, args) {
+
+    let { channel, member } = message;
 
     switch (args[0]) {
-
-        case ".serverinfo":
-        case ".sinfo":
-        case ".guildinfo":
-            message.channel.startTyping();
-            guildinfo(message, args[1]).then(response => {
-                if (response) message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
+        case "serverinfo":
+        case "sinfo":
+        case "guildinfo":
+            withTyping(channel, guildInfo, [message, args[1]]);
             break;
-
+        case "poll":
+            switch (args[1]) {
+                case "channel":
+                    switch (args[2]) {
+                        case "add":
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, addPollChannel, [message, args[3]]);
+                            break;
+                        case "remove":
+                        case "delete":
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, removePollChannel, [message, args[3]]);
+                            break;
+                    }
+                    break;
+                case "toggle":
+                    if (checkPermissions(member, ["MANAGE_GUILD"]))
+                        withTyping(channel, togglePoll, [message]);
+                    break;
+            }
+            break;
+        case "prefix":
+            switch (args[1]) {
+                case "set":
+                    if (checkPermissions(member, ["MANAGE_GUILD"]))
+                        withTyping(channel, setPrefix, [message, args[2]]);
+                    break;
+            }
+            break;
     }
 
 }
 
-async function guildinfo(message, target) {
+async function poll(message) {
+    let pollOn = serverSettings.get(message.guild.id, "pollOn");
+    if (!pollOn) return;
+    let pollChannelIDs = await database.getPollChannels(message.guild.id, "pollChannel");
+    if (pollChannelIDs.includes(message.channel.id)) {
+        await message.react('✅');
+        await message.react('❌');
+    }
+}
+
+async function guildInfo(message, target) {
 
     let guild;
     if (!target || message.author.id != '125414437229297664') {
@@ -32,19 +73,22 @@ async function guildinfo(message, target) {
     } else {
         let match = target.match(/^\d+$/);
         if (!match) {
-            return "⚠ Invalid guild or guild ID.";
+            message.channel.send("⚠ Invalid guild ID.");
+            return;
         }
         guild = Client.guilds.get(match[0])
         if (!guild) {
-            return "⚠ Invalid guild or bot is not in this server.";
+            message.channel.send("⚠ Invalid guild or bot is not in this server.");
+            return;
         }
     }
 
-    return server_embed(guild);
+    let embed = await serverEmbed(guild);
+    message.channel.send({ embed });
 
 }
 
-async function server_embed(guild) {
+async function serverEmbed(guild) {
 
     guild = await guild.fetchMembers();
 
@@ -61,7 +105,8 @@ async function server_embed(guild) {
         "london":      ":flag_gb: London", 
         "russia":      ":flag_ru: Russia",       
         "singapore":   ":flag_sg: Singapore", 
-        "southafrica": ":flag_za: South Africa", 
+        "southafrica": ":flag_za: South Africa",
+        "south-korea": ":flag_kr: South Korea", 
         "sydney":      ":flag_au: Sydney",
         "us-central":  ":flag_us: US Central",   
         "us-east":     ":flag_us: US East", 
@@ -106,5 +151,80 @@ async function server_embed(guild) {
     }
 
     return embed;
+
+}
+
+async function addPollChannel(message, channelArg) {
+
+    let channelID;
+    if (!channelArg) {
+        channelID = message.channel.id;
+    } else {
+        channelID = parseChannelID(channelArg);
+    }
+
+    if (!channelID) {
+        message.channel.send("⚠ Invalid channel or channel ID.");
+        return;
+    }
+    if (!message.guild.channels.has(channelID)) {
+        message.channel.send("⚠ Channel doesn't exist in this server.");
+        return;
+    }
+
+    added = await database.addPollChannel(message.guild.id, channelID);
+    message.channel.send(added ? `Poll channel added.` : `Poll channel already added.`);
+
+}
+
+async function removePollChannel(message, channelArg) {
+
+    let channelID;
+    if (!channelArg) {
+        channelID = message.channel.id;
+    } else {
+        channelID = parseChannelID(channelArg);
+    }
+
+    if (!channelID) {
+        message.channel.send("⚠ Invalid channel or channel ID.");
+        return;
+    }
+    if (!message.guild.channels.has(channelID)) {
+        message.channel.send("⚠ Channel doesn't exist in this server.");
+        return;
+    }
+
+    removed = await database.removePollChannel(message.guild.id, channelID);
+    message.channel.send(removed ? `Poll channel removed.` : `Poll channel doesn't exist.`);
+
+}
+
+async function togglePoll(message) {
+
+    let tog = await serverSettings.toggle(message.guild.id, "pollOn");
+    message.channel.send(`Poll setting turned ${tog ? "on":"off"}.`);
+
+}
+
+async function setPrefix(message, prefix) {
+
+    let { guild } = message;
+
+    if (!prefix) {
+        message.channel.send("⚠ Please provide a prefix for commands to use.");
+        return;
+    }
+    if (prefix.length > 1) {
+        message.channel.send("⚠ A prefix must be a single character.");
+        return;
+    }
+    if (prefix.match(/^\w+$/)) {
+        message.channel.send("⚠ A prefix cannot be a letter.");
+        return;
+    }
+
+    serverSettings.set(guild.id, "prefix", prefix);
+    message.channel.send(`Prefix set to \`${prefix}\``);
 
 }
