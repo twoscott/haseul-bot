@@ -1,6 +1,9 @@
-const HashSet = require("hashset");
+const { resolveMember, withTyping } = require("../functions/discord.js");
 
 const database = require("../db_queries/notifications_db.js");
+const { trimArgs } = require("../functions/functions.js");
+
+const HashSet = require("hashset");
 
 const notif_nums = {
     'i': '1!',
@@ -16,9 +19,83 @@ const notif_nums = {
     'o': '0'
 }
 
+exports.onMessage = async function(message) {
+
+    notify(message);
+
+}
+
+exports.onCommand = async function(message, args) {
+
+    let { channel } = message;
+
+    switch (args[0]) {
+        case "notifications":
+        case "notification":
+        case "notify":
+        case "notif":
+        case "noti":
+            switch (args[1]) {
+                case "global":
+                    switch (args[2]) {
+                        case "add":
+                            withTyping(channel, addNotification, [message, args, true]);
+                            break;
+                        case "remove":
+                        case "delete":
+                            withTyping(channel, removeNotification, [message, args, true]);
+                            break;
+                        case "clear":
+                        case "purge":
+                            withTyping(channel, clearNotifications, [message, true]);
+                            break;
+                        case "list":
+                            withTyping(channel, listNotifications, [message, true]);
+                            break;
+                    }
+                    break;
+                case "add":
+                    withTyping(channel, addNotification, [message, args]);
+                    break;
+                case "remove":
+                case "delete":
+                    withTyping(channel, removeNotification, [message, args]);
+                    break;
+                case "clear":
+                case "purge":
+                    withTyping(channel, clearNotifications, [message]);
+                    break;
+                case "donotdisturb":
+                case "dnd":
+                case "toggle":
+                    withTyping(channel, toggleDnD, [message]);
+                    break;
+                case "list":
+                    withTyping(channel, listNotifications, [message]);
+                    break;
+                case "blacklist":
+                case "ignore":
+                    switch (args[2]) {
+                        case "server":
+                            withTyping(channel, ignoreServer, [message]);
+                            break;
+                        case "channel":
+                            withTyping(channel, ignoreChannel, [message, args.slice(3)]);
+                            break;
+                    }
+                    break;
+                case "help":
+                default:
+                    channel.send("Help with notifications can be found here: https://haseulbot.xyz/#notifications");
+                    break;                    
+            }
+            break;
+    }
+
+}
+
 async function notify(message) {
 
-    // Fetch stored notifications
     let { guild, channel, author, content, member } = message;
     
     let locals = await database.getAllLocalNotifs(guild.id);
@@ -31,16 +108,15 @@ async function notify(message) {
     let ignored_servers = await database.getIgnoredServers();
 
     let msg_url = `https://discordapp.com/channels/${guild.id}/${channel.id}/${message.id}`;
-    content = `[View Message](${msg_url})\n\n` + content;
+    let desc = `[View Message](${msg_url})\n\n` + content;
     let embed = {
-        author: { name: author.tag, icon_url: author.displayAvatarURL, url: msg_url},
-        description: content.length < 1025 ? content : content.slice(0,1021).trim()+'...',
+        author: { name: author.tag, icon_url: author.displayAvatarURL, url: msg_url },
+        description: desc.length < 1025 ? desc : desc.slice(0,1021).trim()+'...',
         color: member.displayColor || 0xffffff,
         footer: { text: `#${channel.name}` },
         timestamp: message.createdAt
     }
 
-    // Filter notifications and notify valid users
     for (let notif of notifs) {
         if (notif.guildID && notif.guildID != guild.id) { 
             continue;
@@ -98,12 +174,7 @@ async function notify(message) {
 
     for (let userID of matches.keys()) {
 
-        let member;
-        try {
-            member = await guild.fetchMember(userID);
-        } catch (e) {
-            member = null;
-        }
+        let member = await resolveMember(guild, userID);
         if (!member) continue;
         
         let can_read = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
@@ -112,188 +183,17 @@ async function notify(message) {
         let set = matches.get(userID);
         let keywords = set.toArray().sort().join('`, `');
         let alert = `💬 **${author.username}** mentioned \`${keywords}\` in ${channel}`;
-        member.send(alert, {embed}).catch(console.error);
+        member.send(alert, {embed}).catch(e => console.error(Error(e)));
         
     }
 
 }
 
-exports.msg = async function(message, args) {
-
-    notify(message);
-
-    switch (args[0]) {
-
-        case ".notifications":
-        case ".notification":
-        case ".notify":
-        case ".notif":
-        case ".noti":
-            switch (args[1]) {
-
-                // Global
-                case "global":
-                    switch (args[2]) {
-                        
-                        case "add":
-                            message.channel.startTyping();
-                            add_notification(message, args, true).then(response => {
-                                if (response) message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-
-                        case "remove":
-                        case "delete":
-                            message.channel.startTyping();
-                            remove_notification(message, args, true).then(response => {
-                                if (response) message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-                            
-                        case "clear":
-                        case "purge":
-                            message.channel.startTyping();
-                            clear_notifications(message, true).then(response => {
-                                if (response) message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-
-                        case "list":
-                            message.channel.startTyping();
-                            list_notifications(message, true).then(response => {
-                                if (response) message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-
-                    }
-                    break;
-
-                // Local
-                case "add":
-                    message.channel.startTyping();
-                    add_notification(message, args).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-                case "remove":
-                case "delete":
-                    message.channel.startTyping();
-                    remove_notification(message, args).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-                case "clear":
-                case "purge":
-                    message.channel.startTyping();
-                    clear_notifications(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-                // Do not Disturb
-                case "donotdisturb":
-                case "dnd":
-                case "toggle":
-                    message.channel.startTyping();
-                    toggle_dnd(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-
-                // Misc
-                case "list":
-                    message.channel.startTyping();
-                    list_notifications(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-                
-                // ignore
-                case "blacklist":
-                case "ignore":
-                    switch (args[2]) {
-
-                        case "server":
-                            message.channel.startTyping();
-                            ignore_server(message).then(response => {
-                                if (response) message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-
-                        case "channel":
-                            message.channel.startTyping();
-                            ignore_channel(message, args.slice(3)).then(response => {
-                                if (response) message.channel.send(response);
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-
-                    }
-                    break;
-                
-                case "help":
-                default:
-                    message.channel.send("Help with notifications can be found here: https://haseulbot.xyz/#notifications");
-                    break;                    
-
-
-            }
-            break;
-
-    }
-
-}
-
-async function add_notification(message, args, global) {
+async function addNotification(message, args, global) {
 
     if (args.length < (global ? 4 : 3)) {
-        return "⚠ Please specify a key word or phrase to add."
+        message.channel.send("⚠ Please specify a key word or phrase to add.");
+        return;
     }
 
     message.delete(500);
@@ -303,16 +203,15 @@ async function add_notification(message, args, global) {
     let keyword;
     if (["STRICT", "NORMAL", "LENIENT", "ANARCHY"].includes(typeArg.toUpperCase()) && args.length > (global ? 4 : 3)) {
         type = typeArg.toUpperCase();
-        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 4 : 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-        keyword = message.content.slice(keyStart).trim()
+        keyword = trimArgs(args, global ? 4 : 3, message.content);
     } else {
         type = "NORMAL";
-        let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-        keyword = message.content.slice(keyStart).trim()
+        keyword = trimArgs(args, global ? 3 : 2, message.content);
     }
 
     if (keyword.length > 128) {
-        return "⚠ Keywords must not exceed 128 character in length.";
+        message.channel.send("⚠ Keywords must not exceed 128 character in length.");
+        return;
     }
 
     let keyrgx = keyword.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&");
@@ -322,23 +221,23 @@ async function add_notification(message, args, global) {
     let addedNotif = global ? await database.addGlobalNotif(author.id, keyword, keyrgx, type)
                             : await database.addLocalNotif(guild.id, author.id, keyword, keyrgx, type);
     if (!addedNotif) {
-        return "⚠ Notification with this keyword already added.";
+        message.channel.send("⚠ Notification with this keyword already added.");
+        return;
     }
 
     author.send(`You will now be notified when \`${keyword}\` is mentioned ${global ? `globally` : `in \`${guild.name}\``} with \`${type}\` search mode.`);
-    return `Notification added.`;
+    message.channel.send(`Notification added.`);
     
 }
 
-async function remove_notification(message, args, global) {
+async function removeNotification(message, args, global) {
 
     if (args.length < (global ? 4 : 3)) {
-        return "⚠ Please specify a key word or phrase to remove."
+        message.channel.send("⚠ Please specify a key word or phrase to remove.");
+        return;
     }
 
-    let keyStart = message.content.match(new RegExp(args.slice(0, global ? 3 : 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-    keyphrase = message.content.slice(keyStart).trim().toLowerCase();
-
+    let keyphrase = trimArgs(args, global ? 3 : 2, message.content);
     message.delete(500);
 
     let { guild, author } = message;
@@ -346,15 +245,16 @@ async function remove_notification(message, args, global) {
                           : await database.removeLocalNotif(guild.id, author.id, keyphrase);
     if (!removed) {
         author.send(`Notification \`${keyphrase}\` does not exist. Please check for spelling errors.`);
-        return `⚠ Notification does not exist.`;
+        message.channel.send(`⚠ Notification does not exist.`);
+        return;
     }
 
     author.send(`You will no longer be notified when \`${keyphrase}\` is mentioned${!global ? ` in \`${guild.name}\`.` : `.`}`)
-    return `Notification removed.`;
+    message.channel.send(`Notification removed.`);
 
 }
 
-async function clear_notifications(message, global) {
+async function clearNotifications(message, global) {
 
     let { author, guild } = message;
     let cleared;
@@ -368,14 +268,15 @@ async function clear_notifications(message, global) {
 
 }
 
-async function list_notifications(message, global) {
+async function listNotifications(message, global) {
 
     let { author, guild } = message;
     let notifs = global ? await database.getGlobalNotifs(author.id) :
                           await database.getLocalNotifs(guild.id, author.id);
 
     if (notifs.length < 1) {
-        return `⚠ You don't have any notifications${!global ? ` in ${message.guild.name}` : ``}!`;
+        message.channel.send(`⚠ You don't have any notifications${!global ? ` in ${message.guild.name}` : ``}!`);
+        return;
     }
 
     let notifString = [`**${global ? 'Global' : message.guild.name} Notifications List**\n__Type - Keyword__`].concat(notifs.map(notif => `\`${notif.type}\` - ${notif.keyword.toLowerCase()}`)).join('\n');
@@ -400,47 +301,50 @@ async function list_notifications(message, global) {
         await author.send(page);
     }
 
-    return "A list of your notifications has been sent to your DMs.";
+    message.channel.send("A list of your notifications has been sent to your DMs.");
 }
 
-async function ignore_channel(message, args) {
+async function ignoreChannel(message, args) {
 
     let { author, guild, channel } = message;
 
     if (args.length >= 1) {
         let channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return "⚠ Invalid channel or channel ID.";
+            message.channel.send("⚠ Invalid channel or channel ID.");
+            return;
         }
         channel_id = channel_id[1];
         channel = guild.channels.get(channel_id);
     }
 
     if (!channel) {
-        return "⚠ Channel doesn't exist in this server.";
+        message.channel.send("⚠ Channel doesn't exist in this server.");
+        return;
     }
     if (channel.type != "text") {
-        return "⚠ Channel must be a text channel.";
+        message.channel.send("⚠ Channel must be a text channel.");
+        return;
     }
 
     let ignored = await database.toggleChannel(author.id, channel.id);
-    return ignored ? `You will no longer be sent notifications for messages in ${channel}.`:
-                     `You will now be sent notifications for messages in ${channel}.`;
+    message.channel.send(ignored ? `You will no longer be sent notifications for messages in ${channel}.`:
+                                   `You will now be sent notifications for messages in ${channel}.`);
 
 }
 
-async function ignore_server(message) {
+async function ignoreServer(message) {
 
     let { author, guild } = message;
     let ignored = await database.toggleServer(author.id, guild.id);
-    return ignored ? `You will no longer be sent notifications for messages in this server.`:
-                     `You will now be sent notifications for messages in this server.`;
+    message.channel.send(ignored ? `You will no longer be sent notifications for messages in this server.`:
+                                   `You will now be sent notifications for messages in this server.`);
 
 }
 
-async function toggle_dnd(message) {
+async function toggleDnD(message) {
 
     let dnd = await database.toggleDnD(message.author.id);
-    return `Do not disturb turned ${dnd ? 'on':'off'}.`
+    message.channel.send(`Do not disturb turned ${dnd ? 'on':'off'}.`);
 
 }

@@ -1,68 +1,65 @@
+const { searchMembers, resolveMember, resolveUser, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
-const functions = require("../functions/functions.js");
 const levels = require("../functions/levels.js");
+const { parseUserID, trimArgs } = require("../functions/functions.js");
 
 // const database = require("../db_queries/profiles_db.js");
 const repsdb = require("../db_queries/reps_db.js");
 const levelsdb = require("../db_queries/levels_db.js");
 
-exports.msg = async function(message, args) {
+exports.onCommand = async function(message, args) {
+
+    let { channel } = message;
 
     switch (args[0]) {
-
-        case ".profile":
-        case ".rank":
-            message.channel.startTyping();
-            profile_temp(message, args.slice(1)).then(response => {
-                if (response) message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
+        case "profile":
+        case "rank":
+            withTyping(channel, profileTemp, [message, args]);
             break;
-
     }
 
 }
 
-async function profile_temp(message, args) {
+async function profileTemp(message, args) {
 
     let { author, guild } = message;
-    let target = args[0];
+    let target = args[1];
     let member;
-    let user_id;
+    let userID;
 
     if (!target) {
-        user_id = author.id;
+        userID = author.id;
     } else {
-        let match = target.match(/^<?@?!?(\d{8,})>?$/);
-        if (!match) {
-            let textStart = message.content.match(new RegExp(args.slice(0, 1).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-            target = message.content.slice(textStart).trim();
-            guild = await guild.fetchMembers();
+        userID = parseUserID(target);
+    }
 
-            member = await functions.searchMembers(guild, target)
-            if (!member) {
-                return "⚠ Invalid user or user ID.";
-            }
-                
-            user_id = member.id;
+    if (!userID) {
+        target = trimArgs(args, 1, message.content)
+        guild = await guild.fetchMembers();
+
+        member = await searchMembers(guild, target)
+        if (!member) {
+            message.channel.send("⚠ Invalid user or user ID.");
+            return;
         } else {
-            user_id = match[1];
+            userID = member.id;
         }
     }
 
-    let userReps = await repsdb.getRepProfile(user_id);
-    let userGlobXp = await levelsdb.getGlobalXp(user_id);
-    let userGuildXp = await levelsdb.getGuildXp(user_id, guild.id)
+    let userReps = await repsdb.getRepProfile(userID);
+    let userGlobXp = await levelsdb.getGlobalXp(userID);
+    let userGuildXp = await levelsdb.getGuildXp(userID, guild.id)
 
     let userGlobRank = levels.globalRank(userGlobXp);
     let userGuildRank = levels.guildRank(userGuildXp);
 
-    member = member || await guild.fetchMember(user_id);
-    let user = member ? member.user : Client.users.get(user_id) || await Client.fetchMember(user_id);
+    member = member || await resolveMember(guild, userID);
+    if (!member) {
+        message.channel.send("⚠ User is not in this server.");
+        return;
+    }
+    let user = member ? member.user : await resolveUser(userID);
     let colour = member ? member.displayColor || 0x6d5ffb : 0x6d5ffb;
 
     let embed = {

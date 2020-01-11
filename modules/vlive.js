@@ -1,8 +1,8 @@
+const { checkPermissions, embedPages, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
 const axios = require("axios");
 
-const functions = require("../functions/functions.js");
 const database = require("../db_queries/vlive_db.js");
 
 const vlive = axios.create({
@@ -11,7 +11,56 @@ const vlive = axios.create({
 })
 const app_id = '8c6cc7b45d2568fb668be6e05b6e5a3b';
 
-function channel_search(channelList, query) {
+exports.onCommand = async function(message, args) {
+
+    let { channel, member } = message;
+
+    switch (args[0]) {
+        case "vlive":
+            switch (args[1]) {
+                case "noti":
+                case "notif":
+                case "notifs":
+                case "notification":
+                    switch (args[2]) {
+                        case "add":
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, vliveNotifAdd, [message, args.slice(3)]);
+                            break;
+                        case "remove":
+                        case "delete":
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, vliveNotifRemove, [message, args.slice(3)]);
+                            break;
+                        case "list":
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, vliveNotifList, [message, args.slice(3)]);
+                            break;
+                    }
+                    break;
+                case "toggle":
+                    switch (args[2]) {
+                        case "vpick":
+                            if (checkPermissions(member, ["MANAGE_GUILD"]))
+                                withTyping(channel, vpickToggle, [message, args.slice(3)]);
+                            break;
+                    }
+                    break;
+                case "channelinfo":
+                case "channel":
+                    withTyping(channel, vliveChannelInfo, [message, args.slice(2)]);
+                    break;
+                case "help":
+                default:
+                    message.channel.send("Help with VLIVE can be found here: https://haseulbot.xyz/#vlive");
+                    break;
+            }
+            break;
+    }
+
+}
+
+function channelSearch(channelList, query) {
 
     let chanResult = channelList.find(chan => chan.channelCode == query);
     if (!chanResult) {
@@ -29,10 +78,10 @@ function channel_search(channelList, query) {
 
 }
 
-async function get_channel(query) {
+async function getChannel(query) {
 
     let channelList = await database.getChannelArchive();
-    let chanResult = channel_search(channelList, query);
+    let chanResult = channelSearch(channelList, query);
 
     if (!chanResult) {
         let response;
@@ -48,111 +97,14 @@ async function get_channel(query) {
         for (let channel of channelList) {
             database.updateArchiveChannel(channel.channelCode, channel.channelName, channel.channelPlusType);
         }
-        chanResult = channel_search(channelList, query);
+        chanResult = channelSearch(channelList, query);
     }
 
     return chanResult;
 
 }
 
-exports.msg = async function(message, args) {
-
-    let perms;
-
-    switch (args[0]) {
-
-        case ".vlive":
-            switch (args[1]) {
-
-                case "noti":
-                case "notif":
-                case "notifs":
-                case "notification":
-                    perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS"];
-                    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                    if (!perms.some(p => message.member.hasPermission(p))) break;
-                    switch (args[2]) {
-
-                        case "add":
-                            message.channel.startTyping();
-                            vlive_notif_add(message, args.slice(3)).then(response => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-
-                        case "remove":
-                        case "delete":
-                            message.channel.startTyping();
-                            vlive_notif_del(message, args.slice(3)).then(response => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-
-                        case "list":
-                            message.channel.startTyping();
-                            vlive_notif_list(message).then(response => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-
-                    }
-                    break;
-
-                case "toggle":
-                    switch (args[2]) {
-    
-                        case "vpick":
-                            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
-                            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                            if (!perms.some(p => message.member.hasPermission(p))) break;
-                            message.channel.startTyping();
-                            vpick_toggle(message, args.slice(3)).then(response => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
-                            break;
-    
-    
-                    }
-                    break;
-
-                case "channelinfo":
-                case "channel":
-                    message.channel.startTyping();
-                    vlive_channel_info(message, args.slice(2)).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-                
-                case "help":
-                default:
-                    message.channel.send("Help with VLIVE can be found here: https://haseulbot.xyz/#vlive");
-                    break;
-
-            }
-            break;
-        
-    }
-
-}
-
-// add vlive notification
-async function vlive_notif_add(message, args) {
+async function vliveNotifAdd(message, args) {
 
     let { guild } = message;
 
@@ -211,7 +163,7 @@ async function vlive_notif_add(message, args) {
     }
 
     let query = vliveQuery.toLowerCase();
-    let chanResult = await get_channel(query);    
+    let chanResult = await getChannel(query);    
     if (!chanResult) {
         message.channel.send(`⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`);
         return;
@@ -270,8 +222,8 @@ async function vlive_notif_add(message, args) {
 
 }
 
-// remove vlive notification
-async function vlive_notif_del(message, args) {
+
+async function vliveNotifRemove(message, args) {
 
     let { guild } = message;
 
@@ -291,7 +243,7 @@ async function vlive_notif_del(message, args) {
     }
 
     let query = vliveQuery.toLowerCase();
-    let chanResult = await get_channel(query);    
+    let chanResult = await getChannel(query);    
     if (!chanResult) {
         message.channel.send(`⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`);
         return;
@@ -309,7 +261,7 @@ async function vlive_notif_del(message, args) {
 
     let deleted;
     try {
-        deleted = await database.delVliveChannel(guild.id, channel.id, channelSeq);
+        deleted = await database.removeVliveChannel(channel.id, channelSeq);
     } catch(e) {
         console.error(Error(e));
         message.channel.send("⚠ Unknown error occurred.");
@@ -317,12 +269,12 @@ async function vlive_notif_del(message, args) {
     }
     
     message.channel.send(deleted ? `You will no longer be notified when \`${channelName}\` posts a new VLIVE in ${channel}.` :
-                     `⚠ VLIVE notifications for \`${channelName}\` are not set up in ${channel} on this server.`);
+                                   `⚠ VLIVE notifications for \`${channelName}\` are not set up in ${channel} on this server.`);
 
 }
 
-// list vlive notifications
-async function vlive_notif_list(message) {
+
+async function vliveNotifList(message) {
 
     let { guild } = message;
 
@@ -365,12 +317,12 @@ async function vlive_notif_list(message) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }
 
-// toggle vpick for vlchannel/dcchannel
-async function vpick_toggle(message, args) {
+
+async function vpickToggle(message, args) {
 
     let { guild } = message;
 
@@ -390,7 +342,7 @@ async function vpick_toggle(message, args) {
     }
 
     let query = vliveQuery.toLowerCase();
-    let chanResult = await get_channel(query);    
+    let chanResult = await getChannel(query);    
     if (!chanResult) {
         message.channel.send(`⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`);
         return;
@@ -433,8 +385,8 @@ async function vpick_toggle(message, args) {
 
 }
 
-// show vlive channel info
-async function vlive_channel_info(message, args) {
+
+async function vliveChannelInfo(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https?\:\/\/channels\.vlive\.tv\/)?(.+)(?:\/home\/?)?/i);
     if (!formatMatch) {
@@ -445,7 +397,7 @@ async function vlive_channel_info(message, args) {
     let vliveQuery = formatMatch[1];
     let query = vliveQuery.toLowerCase();
     
-    let chanResult = await get_channel(query);    
+    let chanResult = await getChannel(query);    
     if (!chanResult) {
         message.channel.send(`⚠ No VLIVE channel could be found matching the name \`${vliveQuery}\`.`);
         return;

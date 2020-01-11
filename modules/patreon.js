@@ -1,34 +1,24 @@
+const { embedPages, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
 const config = require("../config.json");
-const functions = require("../functions/functions.js");
+const { patreon } = require("../utils/patreon.js");
 
-const {
-    patreon
-} = require("../utils/patreon.js");
+exports.onCommand = async function(message, args) {
 
-exports.msg = async function(message, args) {
+    let { channel } = message;
 
     switch (args[0]) {
-
-        case ".donate":
-        case ".patreon":
+        case "donate":
+        case "patreon":
             message.channel.send("https://www.patreon.com/haseulbot");
             break;
-
-        case ".donors":
-        case ".donators":
-        case ".patrons":
-        case ".supporters":
-            message.channel.startTyping();
-            patrons(message).then(() => {
-                message.channel.stopTyping();
-            }).catch(err => {
-                console.error(err);
-                message.channel.stopTyping();
-            });
+        case "donors":
+        case "donators":
+        case "patrons":
+        case "supporters":
+            withTyping(channel, patrons, [message]);
             break;
-        
     }
 
 }
@@ -44,7 +34,7 @@ async function patrons(message) {
         return;
     }
 
-    let members = response.data.data;
+    let members = response.data.data.filter(m => m.attributes.patron_status != "former_patron");
     let users = response.data.included.filter(x => x.type == 'user');
     if (members.length < 1) {
         message.channel.send("Nobody is currently supporting Haseul Bot :pensive:");
@@ -98,5 +88,5 @@ async function patrons(message) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 }

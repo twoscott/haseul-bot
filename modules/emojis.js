@@ -1,65 +1,40 @@
+const { embedPages, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
 const axios = require("axios");
-const functions = require("../functions/functions.js");
 
-exports.msg = async function(message, args) {
+exports.onCommand = async function(message, args) {
+
+    let { channel } = message
     
     switch (args[0]) {
-
-        case ".emojis":
-        case ".emoji":
+        case "emojis":
+        case "emoji":
             switch (args[1]) {
-
                 case "list":
-                    message.channel.startTyping();
-                    listEmojis(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break; 
-                    
+                    withTyping(channel, listEmojis, [message]);
+                    break;    
                 case "search":
-                    message.channel.startTyping();
-                    searchEmojis(message, args[2]).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    withTyping(channel, searchEmojis, [message, args[2]]);
                     break;
-
                 case "help":
-                    message.channel.send("Help with emojis can be found here: https://haseulbot.xyz/#emoji");
+                    channel.send("Help with emojis can be found here: https://haseulbot.xyz/#emoji");
                     break;
-
                 default:
-                    emoji_function(message, args).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    withTyping(channel, largeEmoji, [message, args])
                     break;
-
             }
             break;
+    }
+}
 
+exports.onMention = async function(message, args) {
+    
+    switch (args[0]) {
         case `<@${Client.user.id}>`:
-            emoji_function(message, args).then(response => {
-                if (response) message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
+        case `<@!${Client.user.id}>`:
+            largeEmoji(message, args);
             break;
-
     }
 
 }
@@ -70,7 +45,8 @@ async function listEmojis(message) {
     let emojis = guild.emojis.array()
 
     if (emojis.length < 1) {
-        return "⚠ There are no emojis added to this server.";    
+        message.channel.send("⚠ There are no emojis added to this server.")
+        return;    
     }
 
     emojis = emojis.filter(x => x['_roles'].length < 1);
@@ -110,21 +86,23 @@ async function listEmojis(message) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }
 
 async function searchEmojis(message, query) {
 
     if (!query) {
-        return "⚠ Please provide a search query.";
+        message.channel.send("⚠ Please provide a search query.")
+        return;
     }
 
     let { guild } = message;
     let emojis = guild.emojis.array().filter(x => x.name.toLowerCase().includes(query.toLowerCase()));
 
     if (emojis.length < 1) {
-        return `⚠ No results were found searching for "${query}".`;
+        message.channel.send(`⚠ No results were found searching for "${query}".`)
+        return;
     }
     
     let emojiString = emojis.sort((a,b) => a.name.localeCompare(b.name)).sort((a, b)=> {
@@ -165,28 +143,27 @@ async function searchEmojis(message, query) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }
 
-async function emoji_function(message, args) {
+async function largeEmoji(message, args) {
 
-    if (args[0] == ".emoji") {
-        if (args.length < 2) {
-            return "⚠ Please provide an emoji to enlarge.";
-        }
-    } else {
-        if (message.mentions.length < 1 || args.length < 2) return;
+    if (args[0] == "emoji" && args.length < 2) {
+        message.channel.send("⚠ Please provide an emoji to enlarge.")
+        return;
+    } else if (message.mentions.length < 1 || args.length < 2) {
+        return;
     }
     
     let emojiMatch = args[1].match(/<(a)?:([^<>:]+):(\d+)>/i);
 
-    if (args[0] == ".emoji") {
-        if (!emojiMatch) {
-            return "⚠ Invalid emoji provided!";
+    if (!emojiMatch) {
+        if (args[0] == "emoji") {
+            message.channel.send("⚠ Invalid emoji provided!");
         }
+        return;
     }
-    if (!emojiMatch) return;
 
     message.channel.startTyping();
     let animated = emojiMatch[1];
@@ -194,9 +171,7 @@ async function emoji_function(message, args) {
     let emojiID = emojiMatch[3];
 
     let imageUrl = `https://cdn.discordapp.com/emojis/${emojiID}.${animated ? 'gif':'png'}`;
-    let b = Date.now()
     let response = await axios.head(imageUrl);
-    console.log('took ' + (Date.now() - b) + 'ms');
     let imageType = response.headers['content-type'].split('/')[1];
     let imageSize = Math.max(Math.round(response.headers['content-length']/10)/100, 1/100);
 
@@ -206,6 +181,7 @@ async function emoji_function(message, args) {
         footer: { text: `Type: ${imageType.toUpperCase()}  |  Size: ${imageSize}KB` }
     }
 
-    return {embed: embed};
+    message.channel.send({ embed });
+    message.channel.stopTyping();
 
 }

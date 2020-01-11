@@ -1,8 +1,7 @@
+const { checkPermissions, embedPages, resolveMember, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
-const functions = require("../functions/functions.js");
 const config = require("../config.json");
-
 const database = require("../db_queries/instagram_db.js");
 
 const {
@@ -18,97 +17,56 @@ const {
     login
 } = require("../utils/instagram.js");
 
-exports.msg = async function(message, args) {
+exports.onCommand = async function(message, args) {
 
-    let perms;
+    let { channel, member } = message;
 
     switch (args[0]) {
-
-        case ".instagram":
-        case ".insta":
+        case "instagram":
+        case "insta":
             switch (args[1]) {
-
                 case "noti":
                 case "notif":
                 case "notifs":
                 case "notification":
-                    perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS"];
-                    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                    if (!perms.some(p => message.member.hasPermission(p))) break;
                     switch (args[2]) {
-
                         case "add":
-                            message.channel.startTyping();
-                            insta_notif_add(message, args.slice(3)).then(() => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, instaNotifAdd, [message, args.slice(3)]);
                             break;
-
                         case "remove":
                         case "delete":
-                            message.channel.startTyping();
-                            insta_notif_del(message, args.slice(3)).then(() => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, instaNotifRemove, [message, args.slice(3)]);
                             break;
-
                         case "list":
-                            message.channel.startTyping();
-                            insta_notif_list(message).then(() => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, instaNotifList, [message]);
                             break;
-
                     }
                     break;
-
-                    case "toggle":
-                        switch (args[2]) {
-        
-                            case "stories":
-                            case "story":
-                                perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
-                                if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                                if (!perms.some(p => message.member.hasPermission(p))) break;
-                                message.channel.startTyping();
-                                stories_toggle(message, args.slice(3)).then(() => {
-                                    message.channel.stopTyping();
-                                }).catch(error => {
-                                    console.error(error);
-                                    message.channel.stopTyping();
-                                })
-                                break;
-        
-        
-                        }
-                        break;
-                
+                case "toggle":
+                    switch (args[2]) {
+                        case "stories":
+                        case "story":
+                            if (checkPermissions(member, ["MANAGE_GUILD"]))
+                                withTyping(channel, storiesToggle, [message, args.slice(3)]);
+                            break;
+                    }
+                    break;
                 case "help":
                 default:
                     message.channel.send("Help with Instagram can be found here: https://haseulbot.xyz/#instagram");
                     break;
-
             }
             break;
-        
     }
-
 }
 
 // add insta notification
-async function insta_notif_add(message, args) {
+async function instaNotifAdd(message, args) {
 
     let { guild } = message;
-    guild = await guild.fetchMembers();
 
     let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/www\.instagram\.com\/)?(.+?)(?:\/)?\s+<?#?(\d{8,})>?\s*((<@&)?(.+?)(>)?)?$/i);
     if (!formatMatch) {
@@ -130,12 +88,7 @@ async function insta_notif_add(message, args) {
         return;
     }
     
-    let member;
-    try {
-        member = await guild.fetchMember(Client.user.id);
-    } catch (e) {
-        member = null;
-    }
+    let member = await resolveMember(guild, Client.user.id);
     if (!member) {
         message.channel.send("⚠ Error occurred.");
         return;
@@ -312,7 +265,7 @@ async function insta_notif_add(message, args) {
 }
 
 // remove instagram notification
-async function insta_notif_del(message, args) {
+async function instaNotifRemove(message, args) {
 
     let { guild } = message;
 
@@ -368,7 +321,7 @@ async function insta_notif_del(message, args) {
 }
 
 // list insta notifications
-async function insta_notif_list(message) {
+async function instaNotifList(message) {
 
     let { guild } = message;
 
@@ -411,12 +364,12 @@ async function insta_notif_list(message) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }
 
 // toggle stories for insta/channel
-async function stories_toggle(message, args) {
+async function storiesToggle(message, args) {
 
     let { guild } = message;
 

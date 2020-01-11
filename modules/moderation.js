@@ -1,156 +1,67 @@
+const { 
+    checkPermissions,
+    resolveMember, 
+    resolveMessage, 
+    withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
-const serverSettings = require("./server_settings.js");
+const { parseChannelID, trimArgs } = require("../functions/functions.js");
 
-const database = require("../db_queries/server_db.js");
+exports.onCommand = async function(message, args) {
 
-async function poll(message) {
-    let pollOn = serverSettings.get(message.guild.id, "pollOn");
-    if (!pollOn) return;
-    let pollChannelIDs = await database.getPollChannels(message.guild.id, "pollChannel");
-    if (pollChannelIDs.map(x => x.channelID).includes(message.channel.id)) {
-        await message.react('✅');
-        await message.react('❌');
-    }
-}
+    let { channel, member } = message;
 
-exports.msg = async function(message, args) {
-    
-    poll(message);
-
-    let perms; 
     switch (args[0]) {
-
-        case ".say":
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_MESSAGES"];
-            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p)) && message.author.id != '125414437229297664') break;
-            message.channel.startTyping();
-            say(message, args).then(response => {
-                message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
+        case "say":
+            if (checkPermissions(member, ["MANAGE_MESSAGES"]))
+                withTyping(channel, say, [message, args]);
             break;
-        
-        case ".edit":
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_MESSAGES"];
-            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p)) && message.author.id != '125414437229297664') break;
-            message.channel.startTyping();
-            edit(message, args).then(response => {
-                message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
+        case "edit":
+            if (checkPermissions(member, ["MANAGE_MESSAGES"]))
+                withTyping(channel, edit, [message, args]);
             break;
-
-        case ".get":
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_MESSAGES"];
-            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p)) && message.author.id != '125414437229297664') break;
-            message.channel.startTyping();
-            get(message, args.slice(1)).then(response => {
-                message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
+        case "get":
+            if (checkPermissions(member, ["MANAGE_MESSAGES"]))
+                withTyping(channel, get, [message, args.slice(1)]);
             break;
-
-
-        case ".poll":
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS"];
-            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p))) break;
-            switch (args[1]) {
-
-                case "channel":
-
-                    switch (args[2]) {
-
-                        case "add":
-                            message.channel.startTyping();
-                            addPollChannel(message, args.slice(3)).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                        }).catch(error => {
-                            console.error(error);
-                            message.channel.stopTyping();
-                        })
-                            break;
-
-                        case "remove":
-                        case "delete":
-                            message.channel.startTyping();
-                            delPollChannel(message, args.slice(3)).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                        }).catch(error => {
-                            console.error(error);
-                            message.channel.stopTyping();
-                        })
-                            break;
-
-                    }
-                    break;
-                
-                case "toggle":
-                    message.channel.startTyping();
-                    togglePoll(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;                  
-                    
-            }
-            break;
-
     }
-}
 
-// Commands
+}
 
 async function say(message, args) {
 
     let { guild } = message;
 
     if (args.length < 2) {
-        return "⚠ No channel provided to send a message to.\nUsage: `.say {channel} {message}`";
+        message.channel.send("⚠ No channel provided to send a message to.\nUsage: `.say {channel} {message}`");
+        return;
     }
 
-    let channel_id = args[1].match(/<?#?!?(\d+)>?/);
-    if (!channel_id) {
-        return "⚠ Please provide a channel to send the message to.\nUsage: `.say {channel} {message}`";
+    let channelID = parseChannelID(args[1]);
+    if (!channelID) {
+        message.channel.send("⚠ Please provide a channel to send the message to.\nUsage: `.say {channel} {message}`");
+        return;
     }
-    channel_id = channel_id[1];
-
-    let channel = guild.channels.get(channel_id);
+    let channel = guild.channels.get(channelID);
     if (!channel) {
-        return "⚠ Invalid channel provided or channel is not in this server.";
+        message.channel.send("⚠ Invalid channel provided or channel is not in this server.");
+        return;
     }
 
-    let member;
-    try {
-        member = await guild.fetchMember(Client.user.id);
-    } catch (e) {
-        member = null;
-    }
+    let member = await resolveMember(guild, Client.user.id);
     if (!member) {
-        return "⚠ Error occurred.";
+        message.channel.send("⚠ Error occurred.");
+        return;
     }
     
-    let botCanRead = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
-    if (!botCanRead) {
-        return "⚠ I cannot see this channel!";
+    let botPerms = channel.permissionsFor(member);
+    if (!botPerms.has("VIEW_CHANNEL", true)) {
+        message.channel.send("⚠ I cannot see this channel!");
+        return;
+    }
+    if (!botPerms.has("SEND_MESSAGES", true)) {
+        message.channel.send("⚠ I cannot send messages to this channel!");
+        return;
     }
     
     let attachments = message.attachments.array();
@@ -162,16 +73,15 @@ async function say(message, args) {
     }
 
     if (args.length < 3 && files.length < 1) {
-        return "⚠ No message provided to be send.\nUsage: `.say {channel} {message}`";
+        message.channel.send("⚠ No message provided to be sent.\nUsage: `.say {channel} {message}`");
+        return;
     }
 
     channel.startTyping();
-    let contentStart = message.content.match(new RegExp(args.slice(0,2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-    let content = message.content.slice(contentStart).trim();
-
-    await channel.send(content, {files: files});
+    let content = trimArgs(args, 2, message.content);
+    await channel.send(content, { files });
     channel.stopTyping();
-    return `Message sent to <#${channel_id}>.`;
+    message.channel.send(`Message sent to <#${channelID}>.`);
 
 }
 
@@ -180,62 +90,58 @@ async function edit(message, args) {
     let { guild } = message;
 
     if (args.length < 2) {
-        return "⚠ No channel provided to edit a message from.";
+        message.channel.send("⚠ No channel provided to edit a message from.");
+        return;
     }
 
-    let channel_id = args[1].match(/<?#?!?(\d+)>?/);        
-    if (!channel_id) {
-        return "⚠ No channel provided to edit a message from.";
+    let channelID = parseChannelID(args[1]);      
+    if (!channelID) {
+        message.channel.send("⚠ No channel provided to edit a message from.");
+        return;
     }
-    channel_id = channel_id[1];
     
-    let channel = guild.channels.get(channel_id);
+    let channel = guild.channels.get(channelID);
     if (!channel) {
-        return "⚠ Invalid channel provided or channel is not in this server.";
+        message.channel.send("⚠ Invalid channel provided or channel is not in this server.");
+        return;
     }
 
-    let member;
-    try {
-        member = await guild.fetchMember(Client.user.id);
-    } catch (e) {
-        member = null;
-    }
+    let member = await resolveMember(guild, Client.user.id);
     if (!member) {
-        return "⚠ Error occurred.";
+        message.channel.send("⚠ Error occurred.");
+        return;
     }
     
-    let botCanRead = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
-    if (!botCanRead) {
-        return "⚠ I cannot see this channel!";
+    let botPerms = channel.permissionsFor(member);
+    if (!botPerms.has("VIEW_CHANNEL", true)) {
+        message.channel.send("⚠ I cannot see this channel!");
+        return;
     }
 
     if (args.length < 3) {
-        return "⚠ No message ID provided to edit.";
+        message.channel.send("⚠ No message ID provided to edit.");
     }
 
-    let message_id = args[2].match(/^\d+$/);
-    if (!message_id) {
-        return "⚠ No message ID provided.";
+    let messageID = args[2].match(/^\d+$/);
+    if (!messageID) {
+        message.channel.send("⚠ No message ID provided.");
+        return;
     }
 
-    let msg = channel.messages.get(message_id);
+    let msg = await resolveMessage(channel, messageID);
     if (!msg) {
-        try {
-            msg = await channel.fetchMessage(message_id);
-        } catch (e) {
-            return "⚠ Invalid message ID provided.";
-        }
+        message.channel.send("⚠ Invalid message ID provided.");
+        return;
     }
 
     if (args.length < 4) {
-        return "⚠ No content provided to edit the message with.\nUsage: `.edit {channel id} {message id} <new message content>`";
+        message.channel.send("⚠ No content provided to edit the message with.\nUsage: `.edit {channel id} {message id} <new message content>`");
+        return;
     }
 
-    let contentStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-    let content = message.content.slice(contentStart).trim();
-
+    let content = trimArgs(args, 3, message.content);
     await msg.edit(content);
-    return "Message edited.";
+    message.channel.send("Message edited.");
 
 }
 
@@ -244,93 +150,50 @@ async function get(message, args) {
     let { guild } = message;
 
     if (args.length < 1) {
-        return "⚠ Please provide a message ID to be fetched.";
+        message.channel.send("⚠ Please provide a message ID to be fetched.");
+        return;
     }
 
-    let channel_id = args[0].match(/<?#?!?(\d+)>?/);        
-    if (!channel_id) {
-        return "⚠ Please provide a message's channel to fetch.\nUsage: `.get {channel id} {message id}`";
+    let channelID = parseChannelID(args[0]);        
+    if (!channelID) {
+        message.channel.send("⚠ Please provide a message's channel to fetch.\nUsage: `.get {channel id} {message id}`");
+        return;
     }
-    channel_id = channel_id[1];
     
-    let channel = guild.channels.get(channel_id);
+    let channel = guild.channels.get(channelID);
     if (!channel) {
-        return "⚠ Invalid channel provided or channel is not in this server.";
+        message.channel.send("⚠ Invalid channel provided or channel is not in this server.");
+        return;
     }
 
-    let member;
-    try {
-        member = await guild.fetchMember(Client.user.id);
-    } catch (e) {
-        member = null;
-    }
+    let member = await resolveMember(guild, Client.user.id);
     if (!member) {
-        return "⚠ Error occurred.";
+        message.channel.send("⚠ Error occurred.");
+        return;
     }
     
-    let botCanRead = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
-    if (!botCanRead) {
-        return "⚠ I cannot see this channel!";
+    let botPerms = channel.permissionsFor(member);
+    if (!botPerms.has("VIEW_CHANNEL", true)) {
+        message.channel.send("⚠ I cannot see this channel!");
+        return;
     }
 
-    let message_id = args[1].match(/^\d+$/);
-    if (!message_id) {
-        return "⚠ No message ID provided.";
+    let messageID = args[1].match(/^\d+$/);
+    if (!messageID) {
+        message.channel.send("⚠ No message ID provided.");
+        return;
     }
 
-    let msg = await channel.fetchMessage(message_id);
-    if (!msg) return "⚠ Invalid message provided.";
-    if (msg.content.length < 1) return "⚠ Message has no content.";
+    let msg = await resolveMessage(channel, messageID);
+    if (!msg) {
+        message.channel.send("⚠ Invalid message ID provided.");
+        return;
+    }
+    if (msg.content.length < 1) {
+        message.channel.send("⚠ Message has no content.");
+        return;
+    }
+
     message.channel.send(`${msg.content.includes('```') ? `\` \`\`\`‌‌\` -> \`'''\`\n`:``}\`\`\`${msg.content.replace(/```/g, "'''").slice(0,2048)}\`\`\``);
-
-}
-
-async function addPollChannel(message, args) {
-
-    let channel_id;
-    if (args.length < 1) {
-        channel_id = message.channel.id;
-    } else {
-        channel_id = args[0].match(/<?#?!?(\d+)>?/);
-        if (!channel_id) {
-            return "⚠ Invalid channel or channel ID.";
-        }
-        channel_id = channel_id[1];
-    }
-    if (!message.guild.channels.has(channel_id)) {
-        return "⚠ Channel doesn't exist in this server.";
-    }
-
-    added = await database.addPollChannel(message.guild.id, channel_id);
-    return added ? `Poll channel added.` : `Poll channel already added.`;
-
-}
-
-async function delPollChannel(message, args) {
-
-    let channel_id;
-    if (args.length < 1) {
-        channel_id = message.channel.id;
-    } 
-    else {
-        channel_id = args[0].match(/<?#?!?(\d+)>?/);
-        if (!channel_id) {
-            return "⚠ Invalid channel or channel ID.";
-        }
-        channel_id = channel_id[1];
-    }
-    if (!message.guild.channels.has(channel_id)) {
-        return "⚠ Channel doesn't exist in this server.";
-    }
-
-    removed = await database.removePollChannel(message.guild.id, channel_id);
-    return removed ? `Poll channel removed.` : `Poll channel doesn't exist.`;
-
-}
-
-async function togglePoll(message) {
-
-    let tog = await serverSettings.toggle(message.guild.id, "pollOn");
-    return `Poll setting turned ${tog ? "on":"off"}.`;
 
 }

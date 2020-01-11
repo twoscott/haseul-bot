@@ -1,25 +1,39 @@
+const { embedPages, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
-const levels = require("../functions/levels.js");
-const functions = require("../functions/functions.js");
 const database = require("../db_queries/levels_db.js");
+const { globalRank, guildRank, cleanMsgCache } = require("../functions/levels.js");
 
 let lastMsgCache = new Map();
+setInterval(cleanMsgCache, 300000, lastMsgCache);
 
-function cleanMsgCache(lastMsgCache) {
-    let now = Date.now();
-    console.log("Clearing message timestamp cache...");
-    console.log("Cache size before: " + lastMsgCache.size);
-    for (let [userID, lastMsgTime] of lastMsgCache) {
-        if (now - lastMsgTime > 300000 /*5 mins*/) {
-            lastMsgCache.delete(userID);
-        }
-    }
-    console.log("Cache size after:  " + lastMsgCache.size);
+exports.onMessage = async function(message) {
+
+    updateUserXp(message);
+
 }
-setInterval(cleanMsgCache, 300000 /*5 mins*/, lastMsgCache);
 
-async function updateUserXp(message) {
+exports.onCommand = async function(message, args) {
+
+    let { channel } = message;
+    
+    switch (args[0]) {
+        case "leaderboard":
+            switch (args[1]) {
+                case "global":
+                    withTyping(channel, leaderboard, [message, false]);
+                    break;                
+                case "local":
+                default:
+                    withTyping(channel, leaderboard, [message, true]);
+                    break;
+            }
+            break;
+    }
+
+}
+
+function updateUserXp(message) {
     
     let { author, guild, createdTimestamp } = message;
 
@@ -44,52 +58,13 @@ async function updateUserXp(message) {
 
 }
 
-exports.msg = async function(message, args) {
-
-    updateUserXp(message);
-    
-    switch (args[0]) {
-
-        case ".leaderboard":
-            switch(args[1]) {
-
-                case "global":
-                    message.channel.startTyping();
-                    leaderboard(message, false).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-                
-                case "local":
-                default:
-                    message.channel.startTyping();
-                    leaderboard(message, true).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-            }
-            break;
-        
-
-    }
-
-}
-
 async function leaderboard(message, local) {
 
     let { guild } = message;
     let ranks = local ? await database.getAllGuildXp(guild.id) :
                         await database.getAllGlobalXp();
 
+    let entries = ranks.length;
     ranks = ranks.sort((a,b) => b.xp - a.xp).slice(0,100); // show only top 100
     for (let i = 0; i < ranks.length; i++) {
         let rank = ranks[i]
@@ -98,7 +73,7 @@ async function leaderboard(message, local) {
         let name = user ? user.username.replace(/([\`\*\~\_])/g, "\\$&") : rank.userID;
         ranks[i] = {
             userID: rank.userID, name: name,
-            lvl: local ? levels.guildRank(rank.xp).lvl : levels.globalRank(rank.xp).lvl, xp: rank.xp
+            lvl: local ? guildRank(rank.xp).lvl : globalRank(rank.xp).lvl, xp: rank.xp
         }
     }
 
@@ -130,12 +105,12 @@ async function leaderboard(message, local) {
                 description: desc,
                 color: 0x6d5ffb,
                 footer: {
-                    text: `Entries: ${ranks.length}  |  Avg. Lvl: ${Math.round(ranks.reduce((acc, curr) => acc + curr.lvl, 0) / ranks.length)}  |  Page ${i+1} of ${descriptions.length}`
+                    text: `Entries: ${entries}  |  Avg. Lvl: ${Math.round(ranks.reduce((acc, curr) => acc + curr.lvl, 0) / ranks.length)}  |  Page ${i+1} of ${descriptions.length}`
                 }
             }}
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }

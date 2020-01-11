@@ -1,44 +1,31 @@
+const { embedPages, resolveMember, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
 const fs = require('fs');
 const process = require('process');
-const functions = require("../functions/functions.js");
+const { getDelta } = require("../functions/functions.js");
 
-exports.msg = async function(message, args) {
+exports.onCommand = async function(message, args) {
+    let { channel } = message;
 
     switch (args[0]) {
 
-        case ".botinfo":
-        case ".binfo":
-        case ".clientinfo":
-            message.channel.startTyping();
-            botinfo(message).then(() => {
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
-            break;
-
-        case ".serverlist":
-        case ".guildlist":
-            if (message.author.id != '125414437229297664') {
-                break;
-            }
-            message.channel.startTyping();
-            serverlist(message).then(() => {
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
+        case "botinfo":
+        case "binfo":
+        case "clientinfo":
+            withTyping(channel, botInfo, [message]);
+            break
+        case "serverlist":
+        case "guildlist":
+            if (message.author.id === '125414437229297664')
+                withTyping(channel, serverList, [message]);
             break;
 
     }
 
 }
 
-async function botinfo(message) {
+async function botInfo(message) {
 
     let { guild } = message;
 
@@ -52,10 +39,14 @@ async function botinfo(message) {
     }
     let statArray = stat.toString().split(/(?<!\(\w+)\s(?!\w+\))/i);
     let memory = Math.round((parseInt(statArray[23]) * 4096)/10000)/100;
-    let threads = statArray[19];
+    // let threads = statArray[19];
 
-    let botMember = await guild.fetchMember(Client.user.id);
-    let uptime = functions.getDelta(Client.uptime, 'days');
+    let botMember = await resolveMember(guild, Client.user.id);
+    if (!botMember) {
+        message.channel.send("⚠ Error occurred.");
+        return;
+    }
+    let uptime = getDelta(Client.uptime, 'days');
     let uptimeString = "";
     if (uptime.days) uptimeString += `${uptime.days}d `;
     if (uptime.hours) uptimeString += `${uptime.hours}h `;
@@ -86,7 +77,6 @@ async function botinfo(message) {
             { name: 'Server Count', value: Client.guilds.size, inline: true },
             { name: 'Cached Users', value: Client.users.size, inline: true },
             { name: 'Memory', value: memory + 'MB', inline: true },
-            { name: 'Threads', value: threads, inline: true },
             { name: 'Links', value: '[Website](https://haseulbot.xyz/) - [Discord](https://discord.gg/w4q5qux) - [Patreon](https://www.patreon.com/haseulbot)' }
         ],
         footer: { text: 'Type .help for help' }
@@ -96,9 +86,9 @@ async function botinfo(message) {
 
 }
 
-async function serverlist(message) {
+async function serverList(message) {
 
-    let guildString = Client.guilds.array().sort((a, b) => a.name.localeCompare(b.name)).map(guild => `${guild.name} (${guild.id})`).join('\n');
+    let guildString = Client.guilds.array().sort((a, b) => a.name.localeCompare(b.name)).map(guild => `${guild.name} (${guild.id}) (${guild.memberCount} members)`).join('\n');
 
     let descriptions = [];
     while (guildString.length > 2048 || guildString.split('\n').length > 25) {
@@ -120,7 +110,7 @@ async function serverlist(message) {
         return {
             content: undefined,
             options: {embed: {
-                author: { name: "Server List" },
+                title: "Server List",
                 description: desc,
                 color: 0xffffff,
                 footer: {
@@ -130,6 +120,6 @@ async function serverlist(message) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }

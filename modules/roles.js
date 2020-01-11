@@ -1,20 +1,11 @@
 const Discord = require("discord.js");
+const { checkPermissions, embedPages, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
-const functions = require("../functions/functions.js");
+const { trimArgs } = require("../functions/functions.js");
 const serverSettings = require("../modules/server_settings.js");
 
 const database = require("../db_queries/roles_db.js");
-
-async function autorole(member) {
-
-    let autoroleOn = serverSettings.get(member.guild.id, "autoroleOn");
-    if (!autoroleOn) return;
-    let role = serverSettings.get(member.guild.id, "autoroleID");
-    if (!member.guild.roles.has(role)) return;
-    if (role) member.addRole(role);
-
-}
 
 exports.join = async function(member) {
 
@@ -22,228 +13,119 @@ exports.join = async function(member) {
 
 }
 
+exports.onMessage = async function(message) {
+
+    roles(message);
+
+}
+
+exports.onCommand = async function(message, args) {
+
+    let { channel, member } = message;
+
+    switch (args[0]) {
+        case "autorole":
+            switch (args[1]) {
+                case "set":
+                    if (checkPermissions(member, ["MANAGE_ROLES"]))
+                        withTyping(channel, setAutorole, [message, args]);
+                    break;
+                case "toggle":
+                    if (checkPermissions(member, ["MANAGE_GUILD"]))
+                        withTyping(channel, toggleAutorole, [message]);
+                    break;
+                default:
+                    message.channel.send("Help with roles can be found here: https://haseulbot.xyz/#roles");
+                    break;
+            }
+            break;
+        case "roles":
+            switch (args[1]) {
+                case "list":
+                    withTyping(channel, roleslist, [message]);
+                    break;
+                case "toggle":
+                    if (checkPermissions(member, ["MANAGE_GUILD"]))
+                        withTyping(channel, toggleRoles, [message]);
+                    break;
+                case "add":
+                    if (checkPermissions(member, ["MANAGE_ROLES"]))
+                        withTyping(channel, add_role, [message, args]);
+                    break;
+                case "remove":
+                case "delete":
+                    if (checkPermissions(member, ["MANAGE_ROLES"]))
+                        withTyping(channel, remove_role, [message, args]);
+                    break;
+                case "message":
+                case "msg":
+                    switch (args[2]) {
+                        case "set":
+                        if (checkPermissions(member, ["MANAGE_GUILD"]))
+                            withTyping(channel, set_roles_msg, [message, args]);
+                        break;
+                    }
+                    break;
+                case "channel":
+                    switch (args[2]) {
+                        case "set":
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, set_roles_channel, [message, args.slice(3)]);
+                            break;
+                        case "update":
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, update_roles_channel, [message]);
+                            break;
+                    }
+                    break;
+                case "pairs":
+                    switch (args[2]) {
+                        case "list":
+                            if (checkPermissions(member, ["MANAGE_ROLES"]))
+                                withTyping(channel, list_roles, [message]);
+                            break;
+                    }
+                    break;
+                case "help":
+                default:
+                    message.channel.send("Help with roles can be found here: https://haseulbot.xyz/#roles");
+                    break;
+            }
+            break;
+        case "avarole":
+            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES"];
+            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!perms.some(p => message.member.hasPermission(p))) break;
+            if (checkPermissions(member, ["MANAGE_ROLES"]))
+                withTyping(channel, toggle_available_role, [message, args]);
+            break;
+        case "biaslist":
+            withTyping(channel, biaslist, [message]);
+            break;
+        case "bias":
+            switch (args[1]) {
+                case "list":
+                    withTyping(channel, biaslist, [message]);
+                    break;
+            }
+            break;
+
+    }
+}
+
+async function autorole(member) {
+    let autoroleOn = serverSettings.get(member.guild.id, "autoroleOn");
+    if (!autoroleOn) return;
+    let role = serverSettings.get(member.guild.id, "autoroleID");
+    if (!member.guild.roles.has(role)) return;
+    if (role) member.addRole(role);
+}
+
 async function roles(message) {
     let rolesOn = serverSettings.get(message.guild.id, "rolesOn");
     if (!rolesOn) return;
     let rolesChannelID = serverSettings.get(message.guild.id, "rolesChannel");
     if (rolesChannelID == message.channel.id) assign_roles(message); //Assign roles if in roles channel
-}
-
-exports.msg = async function(message, args) {
-    
-    roles(message);
-
-    let perms;
-
-    switch (args[0]) {
-
-        case ".autorole":
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES"];
-            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p))) break;
-            switch (args[1]) {
-
-                case "set":
-                    message.channel.startTyping();
-                    setAutorole(message, args).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-                case "toggle":
-                    message.channel.startTyping();
-                    toggleAutorole(message).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-                default:
-                    message.channel.send("Help with roles can be found here: https://haseulbot.xyz/#roles");
-                    break;
-
-            }
-            break;
-
-        case ".roles":
-            switch (args[1]) {
-
-                case "list":
-                    message.channel.startTyping();
-                    roleslist(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-            }
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES"];
-            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p))) break;
-            switch (args[1]) {
-
-                case "list":
-                    break;
-
-                case "toggle":
-                    message.channel.startTyping();
-                    toggleRoles(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-                    
-
-                case "add":
-                    message.channel.startTyping();
-                    add_role(message, args).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-                case "remove":
-                case "delete":
-                    message.channel.startTyping();
-                    remove_role(message, args).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-                case "message":
-                case "msg":
-                    switch (args[2]) {
-                        case "set":
-                            message.channel.startTyping();
-                            set_roles_msg(message, args).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                        }).catch(error => {
-                            console.error(error);
-                            message.channel.stopTyping();
-                        })
-                        break;
-                    }
-                    break;
-
-                case "channel":
-                    switch (args[2]) {
-
-                        case "set":
-                            message.channel.startTyping();
-                            set_roles_channel(message, args.slice(3)).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                        }).catch(error => {
-                            console.error(error);
-                            message.channel.stopTyping();
-                        })
-                            break;
-
-                        case "update":
-                            message.channel.startTyping();
-                            update_roles_channel(message, args.slice(3)).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                        }).catch(error => {
-                            console.error(error);
-                            message.channel.stopTyping();
-                        })
-                            break;
-
-                    }
-                    break;
-
-                case "pairs":
-                    switch (args[2]) {
-
-                        case "list":
-                            message.channel.startTyping();
-                            list_roles(message).then(response => {
-                            if (response) message.channel.send(response);
-                            message.channel.stopTyping();
-                        }).catch(error => {
-                            console.error(error);
-                            message.channel.stopTyping();
-                        })
-                            break;
-
-                    }
-                    break;
-                
-                case "help":
-                default:
-                    message.channel.send("Help with roles can be found here: https://haseulbot.xyz/#roles");
-                    break;
-
-            }
-            break;
-
-        // Available roles
-
-        case ".avarole":
-            perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES"];
-            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-            if (!perms.some(p => message.member.hasPermission(p))) break;
-            message.channel.startTyping();
-            toggle_available_role(message, args).then(response => {
-                message.channel.send(response);
-                message.channel.stopTyping();
-            })    .catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
-            break;
-
-        case ".biaslist":
-            message.channel.startTyping();
-            biaslist(message).then(response => {
-                message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
-            break;
-            
-        case ".bias":
-            switch (args[1]) {
-
-                case "list":
-                    message.channel.startTyping();
-                    biaslist(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;
-
-            }
-            break;
-
-    }
 }
 
 function roles_response(responses) {
@@ -404,15 +286,16 @@ async function create_avarole_embed(message) {
 async function add_role(message, args) {
 
     if (args.length < 4) {
-        return "⚠ Missing arguments.\nUsage: .roles add [role type] [role command]: [role name]";
+        message.channel.send("⚠ Missing arguments.\nUsage: .roles add [role type] [role command]: [role name]");
+        return;
     }
     let type = args[2]
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
-        return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
+        message.channel.send("⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
+        return;
     }
 
-    let textStart = message.content.match(new RegExp(args.slice(0, 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-    let roles_text = message.content.slice(textStart).trim();
+    let roles_text = trimArgs(args, 3, message.content);
     let pairs = roles_text.split(",");
     let errors = [];
     let roles_added = [];
@@ -443,25 +326,27 @@ async function add_role(message, args) {
         }
     }
 
-    return roles_response({
+    message.channel.send(roles_response({
         "Role commands added": roles_added, 
         "Role commands already paired": roles_exist, 
         "Errors": errors
-    });
+    }));
 
 }
 
 async function remove_role(message, args) {
 
     if (args.length < 4) {
-        return "⚠ Missing arguments.\nUsage: .roles remove [role type] [role command]";
+        message.channel.send("⚠ Missing arguments.\nUsage: .roles remove [role type] [role command]");
+        return;
     }
     let type = args[2];
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
-        return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
+        message.channel.send("⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
+        return;
     }
-    let textStart = message.content.match(new RegExp(args.slice(0, 3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-    let roles_text = message.content.slice(textStart).trim();
+    
+    let roles_text = trimArgs(args, 3, message.content);
     let role_commands = roles_text.split(",");
 
     let roles_removed = [];
@@ -482,25 +367,26 @@ async function remove_role(message, args) {
         }
     }
 
-    return roles_response({
+    message.channel.send(roles_response({
         "Role commands removed": roles_removed, 
         "Role commands nonexistent": roles_nonexistent, 
         "Errors": errors
-    });
+    }));
 
 }
 
 async function toggle_available_role(message, args) {
 
     if (args.length < 3) {
-        return "⚠ Missing arguments.\nUsage: .avarole [role type] [role name]";
+        message.channel.send("⚠ Missing arguments.\nUsage: .avarole [role type] [role name]");
+        return;
     }
     let type = args[1]
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
-        return "⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other";
+        message.channel.send("⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
+        return;
     }
-    let textStart = message.content.match(new RegExp(args.slice(0, 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-    let roles_text = message.content.slice(textStart).trim();
+    let roles_text = trimArgs(args, 2, message.content);
     let role_names = roles_text.split(",");
 
     let roles_added = [];
@@ -523,11 +409,11 @@ async function toggle_available_role(message, args) {
         }
     }
 
-    return roles_response({
+    message.channel.send(roles_response({
         "Role names added" : roles_added, 
         "Role names removed": roles_removed, 
         "Errors": errors
-    });
+    }));
 
 }
 
@@ -553,7 +439,7 @@ async function list_roles(message) {
     sub_roles = "__**Sub Roles**__\n" + sub_roles.join(" **|** ") + "\n";
     other_roles = "__**Other Roles**__\n" + other_roles.join(" **|** ") + "\n";
     let list = [main_roles, sub_roles, other_roles].join("\n");
-    return list;
+    message.channel.send(list);
 
 }
 
@@ -566,17 +452,20 @@ async function set_roles_channel(message, args) {
     } else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            return "⚠ Invalid channel or channel ID.";
+            message.channel.send("⚠ Invalid channel or channel ID.");
+            return;
         }
         channel_id = channel_id[1];
     }
     if (!message.guild.channels.has(channel_id)) {
-        return "⚠ Channel doesn't exist in this server.";
+        message.channel.send("⚠ Channel doesn't exist in this server.");
+        return;
     }
     
     let data = await database.get_roles_msg(message.guild.id);
     if (!data || !data.msg) {
-        return "⚠ No roles channel message assigned.";
+        message.channel.send("⚠ No roles channel message assigned.");
+        return;
     }
 
     let channel = Client.channels.get(channel_id);
@@ -592,7 +481,7 @@ async function set_roles_channel(message, args) {
 
     await database.set_msg_id(message.guild.id, msg.id)
     await serverSettings.set(message.guild.id, "rolesChannel", channel_id);
-    return `Roles channel set to <#${channel_id}>.`;
+    message.channel.send(`Roles channel set to <#${channel_id}>.`);
 
 }
 
@@ -600,7 +489,8 @@ async function update_roles_channel(message) {
 
     let data = await database.get_roles_msg(message.guild.id);
     if (!data || !data.msg) {
-        return "⚠ No roles channel message assigned.";
+        message.channel.send("⚠ No roles channel message assigned.");
+        return;
     }
 
     let message_id = data.messageID;
@@ -613,7 +503,7 @@ async function update_roles_channel(message) {
     old_message.delete();
     let msg = await channel.send(content, {embed: embed});
     await database.set_msg_id(message.guild.id, msg.id);
-    return `Roles channel message updated.`;
+    message.channel.send(`Roles channel message updated.`);
 
 }
 
@@ -621,30 +511,32 @@ async function update_roles_channel(message) {
 async function set_roles_msg(message, args) {
 
     if (args.length < 4) {
-        return "⚠ Please provide a message.";
+        message.channel.send("⚠ Please provide a message.");
+        return;
     }
-    let msgStart = message.content.match(new RegExp(args.slice(0,3).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-    let msg = message.content.slice(msgStart).trim();
+    
+    let msg = trimArgs(args, 3, message.content);
     await database.set_roles_msg(message.guild.id, msg);
-    return "Roles message set.";
+    message.channel.send("Roles message set.");
 
 }
 
 async function setAutorole(message, args) {
 
     if (args.length < 1) {
-        return "⚠ Please provide a role name.";
+        message.channel.send("⚠ Please provide a role name.");
+        return;
     }
 
-    let roleStart = message.content.match(new RegExp(args.slice(0, 2).map(x=>x.replace(/([\\\|\[\]\(\)\{\}\.\^\$\?\*\+])/g, "\\$&")).join('\\s+')))[0].length;
-    let roleName = message.content.slice(roleStart).trim();
+    let roleName = trimArgs(args, 2, message.content);
     let role = message.guild.roles.find(role => role.name == roleName);
     if (!role) {
-        return "⚠ This role does not exist on the server!";
+        message.channel.send("⚠ This role does not exist on the server!");
+        return;
     }
 
     serverSettings.set(message.guild.id, "autoroleID", role.id);
-    return `Autorole set to \`${role.name}\`.`;
+    message.channel.send(`Autorole set to \`${role.name}\`.`);
     
 }
 
@@ -653,14 +545,14 @@ async function setAutorole(message, args) {
 async function toggleAutorole(message) {
 
     let tog = await serverSettings.toggle(message.guild.id, "autoroleOn");
-    return `Autorole turned ${tog ? "on":"off"}.`;
+    message.channel.send(`Autorole turned ${tog ? "on":"off"}.`);
     
 }
 
 async function toggleRoles(message) {
 
     let tog = await serverSettings.toggle(message.guild.id, "rolesOn");
-    return `Roles assignment turned ${tog ? "on":"off"}.`;
+    message.channel.send(`Roles assignment turned ${tog ? "on":"off"}.`);
 
 }
 
@@ -670,7 +562,8 @@ async function biaslist(message) {
 
     let roleData = await database.get_all_roles(guild.id);
     if (roleData.length < 1) {
-        return '⚠ No bias roles are set up on this server!';
+        message.channel.send('⚠ No bias roles are set up on this server!');
+        return;
     }
 
     let guildRoles = guild.roles.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
@@ -689,7 +582,8 @@ async function biaslist(message) {
     }).map(role => `${role} - ${role.members.size} member${role.members.size != 1 ? 's':''}`).join('\n');
     
     if (mainRoles.length < 1 && subRoles.length < 1) {
-        return '⚠ No bias roles are set up on this server!';
+        message.channel.send('⚠ No bias roles are set up on this server!');
+        return;
     }
     if (mainRoles.length > 1024) {
         mainRoles = mainRoles.substring(0, 1024);
@@ -714,7 +608,7 @@ async function biaslist(message) {
     if (mainRoles) embed.fields.push({ name: 'Main Biases', value: mainRoles });
     if (subRoles) embed.fields.push({ name: 'Sub Biases', value: subRoles });
 
-    return {embed};
+    message.channel.send({ embed });
 
 }
 
@@ -724,7 +618,8 @@ async function roleslist(message) {
 
     let guildRoles = guild.roles.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
     if (guildRoles.length < 1) {
-        return '⚠ This server has no roles to list!';
+        message.channel.send('⚠ This server has no roles to list!');
+        return;
     }
 
     let roleString = guildRoles.map(role => `${role} - ${role.members.size} member${role.members.size != 1 ? 's':''} \`${role.hexColor.toUpperCase()}\``).join('\n');
@@ -752,7 +647,8 @@ async function roleslist(message) {
         return {
             content: undefined,
             options: {embed: {
-                fields: [{ name: `Roles List for ${guild.name}`, value: desc}],
+                title: `Roles List for ${guild.name}`,
+                description: desc,
                 color: autoroleColour || 0xf986ba,
                 footer: {
                     text: `Roles: ${guildRoles.length} | Page ${i+1} of ${descriptions.length}`
@@ -761,6 +657,6 @@ async function roleslist(message) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }

@@ -1,37 +1,24 @@
+const { withTyping } = require("../functions/discord.js");
+
 const html = require("../functions/html.js");
 const colours = require("../functions/colours.js");
 
-exports.msg = async function(message, args) {
+exports.onCommand = async function(message, args) {
+
+    let { channel } = message;
 
     switch (args[0]) {
-
-        case ".colour":
-        case ".color":
+        case "colour":
+        case "color":
             switch (args[1]) {
-
                 case "random":
-                    message.channel.startTyping();
-                    colourRandom(message).then(() => {
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    withTyping(channel, colourRandom, [message]);
                     break;
-
                 default:
-                    message.channel.startTyping();
-                    colour(message, args.slice(1)).then(() => {
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    withTyping(channel, colour, [message, args.slice(1)]);
                     break;
-
             }
             break;
-
     }
 
 }

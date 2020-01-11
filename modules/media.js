@@ -1,46 +1,43 @@
+const { embedPages, withTyping } = require("../functions/discord.js");
+
+const { trimArgs } = require("../functions/functions.js");
+
 const axios = require("axios");
 
-const functions = require("../functions/functions");
+const letterboxd = axios.create({
+    baseURL: "https://letterboxd.com",
+    timeout: 5000,
+    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36" }
+})
 
-exports.msg = async function(message, args) {
+const youtube = axios.create({
+    baseURL: "https://youtube.com",
+    timeout: 5000
+});
 
-    if (args.length < 1) return;
-    switch (args[0].toLowerCase()) {    
+exports.onCommand = async function(message, args) {
 
-        case ".youtube":
-        case ".yt":
-            message.channel.startTyping();
-            yt_pages(message, args.slice(1).join(" ")).then(response => {
-                if (response) message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
+    let { channel } = message;
+
+    switch (args[0]) {
+        case "youtube":
+        case "yt":
+            withTyping(channel, ytPages, [message, args]);
             break;
-        
-        case ".letterboxd":
-        case ".lb":
-            message.channel.startTyping();
-            lb_movie_query(args.slice(1).join(" ")).then(response => {
-                if (response) message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
+        case "letterboxd":
+        case "lb":
+            withTyping(channel, lbMovieQuery, [message, args]);
             break;
-
     }
+
 }
 
-async function yt_vid_query(query) {
+async function ytVidQuery(query) {
 
     if (!query) {
-        resolve("⚠ Please provide a query to search for!");
-        return;
+        return "⚠ Please provide a query to search for!";
     }
-    let response = await axios.get(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`);
+    let response = await youtube.get(`/results?search_query=${encodeURIComponent(query)}`);
     let search = response.data.match(/<div class="yt-lockup-content"><h3 class="yt-lockup-title "><a href="\/watch\?v=([^&"]+)/i);
     if (!search) {
         return "⚠ No results found for this search!";
@@ -50,12 +47,15 @@ async function yt_vid_query(query) {
 
 }
 
-async function yt_pages(message, query) {
+async function ytPages(message, args) {
 
-    if (!query) {
-        return "⚠ Please provide a query to search for!";
+    if (args.length < 2) {
+        message.channel.send("⚠ Please provide a query to search for!");
+        return;
     }
-    let { data } = await axios.get(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`);
+
+    let query = trimArgs(args, 1, message.content);
+    let { data } = await youtube.get(`/results?search_query=${encodeURIComponent(query)}`);
     let regExp = /<div class="yt-lockup-content"><h3 class="yt-lockup-title "><a href="\/watch\?v=([^&"]+)/ig;
     let pages = [];
 
@@ -65,29 +65,28 @@ async function yt_pages(message, query) {
         search = regExp.exec(data);
     }
     if (pages.length < 1) {
-        return "⚠ No results found for this query!";
+        message.channel.send("⚠ No results found for this query!");
+        return;
     }
 
-    functions.pages(message, pages, true);
+    embedPages(message, pages, true);
     
 }
 
-async function lb_movie_query(query) {
+async function lbMovieQuery(message, args) {
     
-    if (!query) {
-        return "⚠ Please provide a query to search for!";
+    if (args.length < 2) {
+        message.channel.send("⚠ Please provide a query to search for!");
+        return;
     }
-    let user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36";
-    const letterboxd = axios.create({
-        baseURL: 'https://letterboxd.com',
-        timeout: 5000,
-        headers: { "User-Agent": user_agent }
-    })
+
+    let query = trimArgs(args, 1, message.content);
     let { data } = await letterboxd.get(`/search/films/${encodeURIComponent(query)}`);
     let regExp = /<ul class="results">[^]*?data-film-link="(.*?)"/i;
     let result = data.match(regExp);
-    return result ? "https://letterboxd.com" + result[1] : "⚠ No results found.";
+    
+    message.channel.send(result ? "https://letterboxd.com" + result[1] : "⚠ No results found.");
 
 }
 
-exports.yt_vid_query = yt_vid_query;
+exports.ytVidQuery = ytVidQuery;

@@ -1,116 +1,55 @@
 const Discord = require("discord.js");
+const { embedPages, resolveMember, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
-const functions = require("../functions/functions.js");
 const colours = require("../functions/colours.js");
+const { getDelta, parseUserID } = require("../functions/functions.js");
 
 const database = require("../db_queries/reps_db.js");
 const levelsdb = require("../db_queries/levels_db.js");
 
-exports.msg = async function(message, args) {
+exports.onCommand = async function(message, args) {
+
+    let { channel } = message;
 
     switch (args[0]) {
-
-        case ".rep":
-
+        case "rep":
             switch (args[1]) {
-
                 case "status":
                 case undefined:
-                    message.channel.startTyping();
-                    repStatus(message).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    withTyping(channel, repStatus, [message]);
                     break;
-                
                 default:
-                    message.channel.startTyping();
-                    rep(message, args.slice(1)).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
-                    break;    
-
+                    withTyping(channel, rep, [message, args.slice(1)]);
+                    break;
             }
             break;
-
-        case ".repboard":
-            switch(args[1]) {
-
+        case "repboard":
+            switch (args[1]) {
                 case "global":
-                    message.channel.startTyping();
-                    repboard(message, false).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    withTyping(channel, repboard, [message, false]);
                     break;
-                
                 case "local":
                 default:
-                    message.channel.startTyping();
-                    repboard(message, true).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    withTyping(channel, repboard, [message, true]);
                     break;
-
             }
             break;
-
-        case ".streaks":
-        case ".streak":
-            message.channel.startTyping();
-            streaks(message).then(response => {
-                if (response) message.channel.send(response);
-                message.channel.stopTyping();
-            }).catch(error => {
-                console.error(error);
-                message.channel.stopTyping();
-            })
+        case "streaks":
+        case "streak":
+            withTyping(channel, streaks, [message]);
             break;
-
-        case ".streakboard":
-            switch(args[1]) {
-
+        case "streakboard":
+            switch (args[1]) {
                 case "global":
-                    message.channel.startTyping();
-                    streakboard(message, false).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    withTyping(channel, streakboard, [message, false]);
                     break;
-                
                 case "local":
                 default:
-                    message.channel.startTyping();
-                    streakboard(message, true).then(response => {
-                        if (response) message.channel.send(response);
-                        message.channel.stopTyping();
-                    }).catch(error => {
-                        console.error(error);
-                        message.channel.stopTyping();
-                    })
+                    withTyping(channel, streakboard, [message, true]);
                     break;
-
             }
             break;
-
     }
 
 }
@@ -132,39 +71,43 @@ async function rep(message, args) {
             await database.setUserReps(author.id, 3);
         } else if (senderProfile.repsRemaining <= 0) {
             let midnightUTC = Math.floor(86400000 * (todayDate + 1));
-            let timeFromNow = functions.getDelta(midnightUTC - createdTimestamp, 'hours');
+            let timeFromNow = getDelta(midnightUTC - createdTimestamp, 'hours');
             let fromNowText = "";
             if (timeFromNow.hours) fromNowText += `${timeFromNow.hours}h `;
             if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
             if (timeFromNow.seconds) fromNowText += `${timeFromNow.seconds}s `;
-            return `⚠ You have no reps remaining today! Your reps will be replenished in ${fromNowText.trim()}.`; 
+            message.channel.send(`⚠ You have no reps remaining today! Your reps will be replenished in ${fromNowText.trim()}.`);
+            return; 
         }
     }
 
     if (args.length < 1) {
-        return `⚠ Please provide a user to rep!`;
+        message.channel.send(`⚠ Please provide a user to rep!`);
+        return;
     }
 
-    let target = args[0];
-    let match = target.match(/^<?@?!?(\d{8,})>?$/);
-    if (!match) {
-        return `⚠ Please provide a valid user to rep!`;
+    let userID = parseUserID(args[0]);
+    if (!userID) {
+        message.channel.send(`⚠ Please provide a valid user to rep!`);
+        return;
+    }
+    if (userID == author.id) {
+        message.channel.send(`⚠ You may not rep yourself!`);
+        return;
+    }
+    if (userID == Client.user.id) {
+        message.channel.send(`⚠ I'm delighted but you cannot rep me!`);
+        return;
     }
 
-    let userId = match[1];
-    if (userId === author.id) {
-        return `⚠ You may not rep yourself!`;
-    }
-    if (userId === Client.user.id) {
-        return `⚠ I'm delighted but you cannot rep me!`;
-    }
-
-    let recipient = await guild.fetchMember(userId);
+    let recipient = await resolveMember(guild, userID);
     if (!recipient) {
-        return `⚠ The user provided is not in this server or does not exist.`;
+        message.channel.send(`⚠ The user provided is not in this server or does not exist.`);
+        return;
     }
     if (recipient.user.bot) {
-        return `⚠ You may not rep a bot!`;
+        message.channel.send(`⚠ You may not rep a bot!`);
+        return;
     }
 
     let repStreak = await database.getStreak(author.id, recipient.id);
@@ -173,7 +116,8 @@ async function rep(message, args) {
         let senderLastRep = repStreak[`${sendingUser}LastRep`];
         let lastUserRepDate = Math.floor(senderLastRep / 86400000);
         if (senderLastRep && lastUserRepDate == todayDate) {
-            return `⚠ You may not rep the same user twice in one day!`;
+            message.channel.send(`⚠ You may not rep the same user twice in one day!`);
+            return;
         }
     }
 
@@ -195,7 +139,8 @@ async function rep(message, args) {
         .addField(`Exp`, `${recipientXp.toLocaleString()} (+${addXp})`, true);
     if (newStreak) embed.addField(`Streak`, `${newStreak} day${d} :fire:`, false);
 
-    message.channel.send(`You gave **${recipient.user.username}** a reputation point and **${addXp}** XP! ${addXp > 1000 ? ':confetti_ball:' : addXp > 600 ? ':star2:' : addXp > 300 ? ':star:':''}`, {embed: embed});
+    let emote = addXp > 1000 ? ':confetti_ball:' : addXp > 600 ? ':star2:' : addXp > 300 ? ':star:':''
+    message.channel.send(`You gave **${recipient.user.username}** a reputation point and **${addXp}** XP! ${emote}`, {embed: embed});
     return;
 
 }
@@ -221,13 +166,14 @@ async function repStatus(message) {
     repProfile = await database.getRepProfile(author.id);
 
     let midnightUTC = Math.floor(86400000 * (todayDate + 1));
-    let timeFromNow = functions.getDelta(midnightUTC - createdTimestamp, 'hours');
+    let timeFromNow = getDelta(midnightUTC - createdTimestamp, 'hours');
     let fromNowText = '';
     if (timeFromNow.hours) fromNowText += `${timeFromNow.hours}h `;
     if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
     if (timeFromNow.seconds) fromNowText += `${timeFromNow.seconds}s `;
     
-    return `You have **${repProfile.repsRemaining}** rep${repProfile.repsRemaining != 1 ? 's':''} remaining to give! ${repProfile.repsRemaining <= 0 ? `Your reps will be replenished in ${fromNowText.trim()}.`:``}`;
+    message.channel.send(`You have **${repProfile.repsRemaining}** rep${repProfile.repsRemaining != 1 ? 's':''} remaining to give! ${repProfile.repsRemaining <= 0 ? `Your reps will be replenished in ${fromNowText.trim()}.`:``}`);
+    return;
 
 }
 
@@ -242,7 +188,8 @@ async function repboard(message, local) {
     }
 
     if (streaks.length < 1) {
-        return `⚠ Nobody${local ? ' on this server ':' '}currently has any reps!`;
+        message.channel.send(`⚠ Nobody${local ? ' on this server ':' '}currently has any reps!`);
+        return;
     }
 
     for (let i = 0; i < reps.length; i++) {
@@ -289,7 +236,7 @@ async function repboard(message, local) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }
 
@@ -301,7 +248,8 @@ async function streaks(message) {
     let streaks = await database.getUserStreaks(author.id);
 
     if (streaks.length < 1) {
-        return "⚠ You do not currently have any rep streaks!";
+        message.channel.send("⚠ You do not currently have any rep streaks!");
+        return;
     }
 
     for (let i = 0; i < streaks.length; i++) {
@@ -311,7 +259,7 @@ async function streaks(message) {
         if (!user) user = await Client.fetchUser(userID);
         let name = user ? user.username.replace(/([\`\*\~\_])/g, "\\$&") : userID;
 
-        let time = functions.getDelta((Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) + 36*60*60*1000) - createdTimestamp, 'hours');
+        let time = getDelta((Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) + 36*60*60*1000) - createdTimestamp, 'hours');
         let timeText = ''
         if (time.hours) timeText += `${time.hours}h `;
         if (time.minutes) timeText += `${time.minutes}m `;
@@ -361,7 +309,7 @@ async function streaks(message) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }
 
@@ -379,7 +327,8 @@ async function streakboard(message, local) {
     }
 
     if (streaks.length < 1) {
-        return `⚠ Nobody${local ? ' on this server ':' '}currently has any rep streaks!`;
+        message.channel.send(`⚠ Nobody${local ? ' on this server ':' '}currently has any rep streaks!`);
+        return;
     }
 
     for (let i = 0; i < streaks.length; i++) {
@@ -433,6 +382,6 @@ async function streakboard(message, local) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }

@@ -1,9 +1,9 @@
+const { checkPermissions, embedPages, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
 const axios = require("axios");
 
 const config = require("../config.json");
-const functions = require("../functions/functions.js");
 const database = require("../db_queries/twitter_db.js");
 
 const twitter = axios.create({
@@ -12,93 +12,54 @@ const twitter = axios.create({
     headers: {'authorization': 'Bearer ' + config.twt_bearer}
 })
 
-exports.msg = async function(message, args) {
+exports.onCommand = async function(message, args) {
 
-    let perms;
+    let { channel, member } = message;
 
     switch (args[0]) {
-
-        case ".twitter":
-        case ".twt":
+        case "twitter":
+        case "twt":
             switch (args[1]) {
-
                 case "noti":
                 case "notif":
                 case "notifs":
                 case "notification":
-                    perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS"];
-                    if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                    if (!perms.some(p => message.member.hasPermission(p))) break;
                     switch (args[2]) {
-
                         case "add":
-                            message.channel.startTyping();
-                            twitter_notif_add(message, args.slice(3)).then(() => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, twitterNotifAdd, [message, args.slice(3)]);
                             break;
-
                         case "remove":
                         case "delete":
-                            message.channel.startTyping();
-                            twitter_notif_del(message, args.slice(3)).then(() => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, twitterNotifRemove, [message, args.slice(3)]);
                             break;
-
                         case "list":
-                            message.channel.startTyping();
-                            twitter_notif_list(message).then(() => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (checkPermissions(member, ["MANAGE_CHANNELS"]))
+                                withTyping(channel, twitterNotifList, [message]);
                             break;
-
                     }
                     break;
-
                 case "toggle":
                     switch (args[2]) {
-    
                         case "retweets":
                         case "rts":
-                            perms = ["ADMINISTRATOR", "MANAGE_GUILD"];
-                            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
-                            if (!perms.some(p => message.member.hasPermission(p))) break;
-                            message.channel.startTyping();
-                            retweet_toggle(message, args.slice(3)).then(() => {
-                                message.channel.stopTyping();
-                            }).catch(error => {
-                                console.error(error);
-                                message.channel.stopTyping();
-                            })
+                            if (checkPermissions(member, ["MANAGE_GUILD"]))
+                                withTyping(channel, retweetToggle, [message, args.slice(3)]);
                             break;
-    
-    
                     }
                     break;
-                
                 case "help":
                 default:
-                    message.channel.send("Help with Twitter can be found here: https://haseulbot.xyz/#twitter");
+                    channel.send("Help with Twitter can be found here: https://haseulbot.xyz/#twitter");
                     break;
-
             }
             break;
-        
     }
 
 }
 
-async function twitter_notif_add(message, args) {
+async function twitterNotifAdd(message, args) {
 
     let { guild } = message;
 
@@ -214,8 +175,7 @@ async function twitter_notif_add(message, args) {
 
 }
 
-// remove twitter notification
-async function twitter_notif_del(message, args) {
+async function twitterNotifRemove(message, args) {
 
     let { guild } = message;
 
@@ -268,8 +228,7 @@ async function twitter_notif_del(message, args) {
 
 }
 
-// list twitter notifications
-async function twitter_notif_list(message) {
+async function twitterNotifList(message) {
 
     let { guild } = message;
 
@@ -312,12 +271,11 @@ async function twitter_notif_list(message) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }
 
-// toggle retweets for twitter/channel
-async function retweet_toggle(message, args) {
+async function retweetToggle(message, args) {
 
     let { guild } = message;
 
