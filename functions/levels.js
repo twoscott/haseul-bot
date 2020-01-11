@@ -11,3 +11,15 @@ exports.globalRank = function(xp) {
     let nextXp = Math.ceil(((10**((lvl+1+300)/150))-100)*1000);
     return { lvl, baseXp, nextXp };
 }
+
+exports.cleanMsgCache = function(lastMsgCache) {
+    let now = Date.now();
+    console.log("Clearing message timestamp cache...");
+    console.log("Cache size before: " + lastMsgCache.size);
+    for (let [userID, lastMsgTime] of lastMsgCache) {
+        if (now - lastMsgTime > 300000 /*5 mins*/) {
+            lastMsgCache.delete(userID);
+        }
+    }
+    console.log("Cache size after:  " + lastMsgCache.size);
+}

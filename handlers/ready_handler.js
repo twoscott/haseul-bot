@@ -4,7 +4,7 @@ const instagram = require("../tasks/instagram.js");
 const twitter = require("../tasks/twitter.js");
 const vlive = require("../tasks/vlive.js");
 
-exports.handleTasks = () => {
+exports.handleTasks = async function() {
     
     console.log("Initialising modules...");
     serverSettings.ready();

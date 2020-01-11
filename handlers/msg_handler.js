@@ -1,3 +1,6 @@
+const { resolveMember } = require("../functions/discord.js");
+const { Client } = require("../haseul.js");
+
 const client = require("../modules/client.js");
 const commands = require("../modules/commands.js");
 const emojis = require("../modules/emojis.js");
@@ -18,36 +21,61 @@ const users = require("../modules/users.js");
 const utility = require("../modules/utility.js");
 const vlive = require("../modules/vlive.js");
 
-exports.handleMsg = (message) => {
+const serverSettings = require("../modules/server_settings.js");
 
-    let { system, author, channel, content } = message
+exports.handleMsg = async function(message) {
 
-    if (system) return;
-    if (author.bot) return;
-    if (channel.type === "dm") return;
+    if (message.system) return;
+    if (message.author.bot) return;
+    if (message.channel.type === "dm") return;
 
-    let args = content.trim().split(/\s+/);
+    let { author, content, guild } = message;
+    let prefix = serverSettings.get(guild.id, "prefix");
 
-    //Pass message to modules
-    client.msg(message, args);
-    commands.msg(message, args);
-    emojis.msg(message, args);
-    instagram.msg(message, args);
-    lastfm.msg(message, args);
-    levels.msg(message, args);
-    moderation.msg(message, args);
-    media.msg(message, args);
-    misc.msg(message, args);
-    notifications.msg(message, args);
-    patreon.msg(message, args);
-    profiles.msg(message, args);
-    reps.msg(message, args);
-    roles.msg(message, args);
-    servers.msg(message, args);
-    twitter.msg(message, args);
-    users.msg(message, args);
-    utility.msg(message, args);
-    vlive.msg(message, args);
+    if (content.startsWith(prefix)) {
+        let args = content.slice(1).split(/\s+/);
+        message.member = await resolveMember(guild, author.id, message.member);
+        processCommand(message, args);
+    }
+
+    if (message.mentions.users.has(Client.user.id)) {
+        let args = content.split(/\s+/);
+        message.member = await resolveMember(guild, author.id, message.member);
+        processMention(message, args);
+    }
+
+    processMessage(message);
 
 }
 
+async function processCommand(message, args) {
+    client.onCommand(message, args);
+    commands.onCommand(message, args);
+    emojis.onCommand(message, args);
+    instagram.onCommand(message, args);
+    lastfm.onCommand(message, args);
+    levels.onCommand(message, args);
+    media.onCommand(message, args);
+    misc.onCommand(message, args);
+    moderation.onCommand(message, args);
+    notifications.onCommand(message, args);
+    patreon.onCommand(message, args);
+    profiles.onCommand(message, args);
+    reps.onCommand(message, args);
+    roles.onCommand(message, args);
+    servers.onCommand(message, args);
+    twitter.onCommand(message, args);
+    users.onCommand(message, args);
+    utility.onCommand(message, args);
+    vlive.onCommand(message, args);
+}
+
+async function processMention(message, args) {
+    emojis.onMention(message, args);
+}
+
+async function processMessage(message) {
+    levels.onMessage(message);
+    notifications.onMessage(message);
+    servers.onMessage(message);
+}
