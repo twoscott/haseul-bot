@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const { withTyping } = require("../functions/discord.js");
+const { embedPages, withTyping } = require("../functions/discord.js");
 
 const axios = require("axios");
 const fs = require("fs");
@@ -85,6 +85,7 @@ exports.onCommand = async function(message, args) {
         case "chart":
             switch (args[1]) {
                 case "artist":
+                case "artists":
                     withTyping(channel, lfChart, [message, args.slice(2), "artist"]);
                     break;
                 
@@ -315,7 +316,7 @@ async function recentListPages (message, tracks, lfUser) {
         }
     });
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
     return;
 
 }
@@ -436,7 +437,7 @@ async function lfTopMedia(message, args, type) {
         }
     })
 
-    functions.pages(message, pages);
+    embedPages(message, pages);
 
 }
 
