@@ -1,4 +1,6 @@
 const { Client } = require("../haseul.js");
+const { getAllGuildXp } = require("../db_queries/levels_db.js");
+
 
 exports.checkPermissions = function(member, permissions) {
     if (!member) {
@@ -128,7 +130,7 @@ exports.searchMembers = async function(guild, query) {
     }
 
     if (memberResults.length > 1) {
-        let ranks = await levelsdb.getAllGuildXp(guild.id);
+        let ranks = await getAllGuildXp(guild.id);
         memberResults = memberResults.sort((a,b) => {
             let aMem = ranks.find(x => x.userID == a.id);
             let bMem = ranks.find(x => x.userID == b.id);
