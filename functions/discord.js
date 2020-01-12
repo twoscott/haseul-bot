@@ -1,7 +1,6 @@
 const { Client } = require("../haseul.js");
 const { getAllGuildXp } = require("../db_queries/levels_db.js");
 
-
 exports.checkPermissions = function(member, permissions) {
     if (!member) {
         let err = new Error("Invalid member to check permissions for");
