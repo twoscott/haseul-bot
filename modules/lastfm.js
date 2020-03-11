@@ -165,8 +165,8 @@ async function lfRecents(message, args, limit) {
     try {
         response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=${limit}`);
     } catch (e) {
-        let { message } = e.response.data;
-        message.channel.send(`⚠ ${message || "Unknown Error Occurred."}`);
+        e = e.response.data;
+        message.channel.send(`⚠ ${e.message || "Unknown Error Occurred."}`);
         return;
     }
 
@@ -230,7 +230,9 @@ async function recent1Embed(message, track, lfUser, playCount, loved) {
         footer: { text: `${+loved ? '❤ Loved  |  ':''}Track Plays: ${playCount}` }
     }
 
-    if (track.album) embed.fields.push({ name: 'Album', value: track.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")});
+    if (track.album && track.album['#text']) {
+        embed.fields.push({ name: 'Album', value: track.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")});
+    }
     if (!np && track.date) {
         embed.timestamp = new Date(0).setSeconds(track.date.uts);
     }
@@ -242,9 +244,9 @@ async function recent1Embed(message, track, lfUser, playCount, loved) {
 async function recent2Embed (message, tracks, lfUser, playCount) {
 
     let field1 = `${tracks[0].artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${tracks[0].name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(tracks[0].artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(tracks[0].name).replace(/\)/g, "\\)")})`;
-    if (tracks[0].album) field1 += ` | **${tracks[0].album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`;
+    if (tracks[0].album && tracks[0].album['#text']) field1 += ` | **${tracks[0].album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`;
     let field2 = `${tracks[1].artist["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")} - [${tracks[1].name.replace(/([\[\]\`\*\~\_])/g, "\\$&")}](https://www.last.fm/music/${encodeURIComponent(tracks[1].artist["#text"]).replace(/\)/g, "\\)")}/_/${encodeURIComponent(tracks[1].name).replace(/\)/g, "\\)")})`;
-    if (tracks[1].album) field2 += ` | **${tracks[1].album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`;
+    if (tracks[1].album && tracks[1].album['#text']) field2 += ` | **${tracks[1].album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")}**`;
     let np = tracks[0]['@attr'] && tracks[0]['@attr'].nowplaying ? true : false;
     let p = lfUser[lfUser.length-1].toLowerCase() == 's' ? "'" : "'s";
 
