@@ -35,7 +35,7 @@ exports.onCommand = async function(message, args) {
                         withTyping(channel, toggleAutorole, [message]);
                     break;
                 default:
-                    message.channel.send("Help with roles can be found here: https://haseulbot.xyz/#roles");
+                    message.channel.send(`Help with roles can be found here: https://haseulbot.xyz/#roles`);
                     break;
             }
             break;
@@ -88,13 +88,13 @@ exports.onCommand = async function(message, args) {
                     break;
                 case "help":
                 default:
-                    message.channel.send("Help with roles can be found here: https://haseulbot.xyz/#roles");
+                    message.channel.send(`Help with roles can be found here: https://haseulbot.xyz/#roles`);
                     break;
             }
             break;
         case "avarole":
             perms = ["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES"];
-            if (!message.member) message.member = await message.guild.fetchMember(message.author.id);
+            if (!message.member) message.member = await message.guild.members.fetch(message.author.id);
             if (!perms.some(p => message.member.hasPermission(p))) break;
             if (checkPermissions(member, ["MANAGE_ROLES"]))
                 withTyping(channel, toggle_available_role, [message, args]);
@@ -117,8 +117,8 @@ async function autorole(member) {
     let autoroleOn = serverSettings.get(member.guild.id, "autoroleOn");
     if (!autoroleOn) return;
     let role = serverSettings.get(member.guild.id, "autoroleID");
-    if (!member.guild.roles.has(role)) return;
-    if (role) member.addRole(role);
+    if (!member.guild.roles.cache.has(role)) return;
+    if (role) member.roles.add(role);
 }
 
 async function roles(message) {
@@ -137,7 +137,7 @@ function roles_response(responses) {
 }
 
 function roles_embed(responses) {
-    let embed = new Discord.RichEmbed();
+    let embed = new Discord.MessageEmbed();
     for (let [key, val] of Object.entries(responses)) {
         if (val.length > 0) embed.addField(key, val.join(", "), false);
     }
@@ -150,17 +150,17 @@ async function assign_roles(message) {
 
     // Safety net
     
-    message.delete(10000).catch(() => {});
+    message.delete({ timeout: 10000 }).catch(() => {});
 
     // Process commands
 
     let args = message.content.trim().split(" ");
-    if (args.length < 2) {message.delete(timeout=1000).catch(() => {}); return;}
+    if (args.length < 2) {message.delete({ timeout: 1000 }).catch(() => {}); return;}
     let prefix = message.content.trim().match(/^(?:\+|\-)\s*(main|sub|other)/i);
     if (!prefix) {
         message.reply("Invalid formatting. Please read the instructions above.").then(reply => {
-            reply.delete(4000).catch(() => {});
-            message.delete(4000).catch(() => {});
+            reply.delete({ timeout: 4000 }).catch(() => {});
+            message.delete({ timeout: 4000 }).catch(() => {});
         }) 
         return;
     }
@@ -176,7 +176,7 @@ async function assign_roles(message) {
     if (message.member) {
         member = message.member;
     } else {
-        member = await message.guild.fetchMember(message.author.id);
+        member = await message.guild.members.fetch(message.author.id);
     }
 
     // Parse role commands
@@ -185,7 +185,10 @@ async function assign_roles(message) {
     for (i = 0; i < role_commands.length; i++) {
         let role_command = role_commands[i].trim();
         let role_id = await database.get_role_id(role_command, message.guild.id, type);
-        let role = message.guild.roles.get(role_id);
+        let role;
+        if (role_id) {
+            role = await message.guild.roles.fetch(role_id);
+        }
 
         // Process role
 
@@ -195,18 +198,18 @@ async function assign_roles(message) {
             switch (modifier) {
                 
                 case "+":
-                    if (member.roles.has(role_id) && !roles_unsuccessful.includes(role)) {
+                    if (member.roles.cache.has(role_id) && !roles_unsuccessful.includes(role)) {
                         roles_unsuccessful.push(role);
-                    } else if (!member.roles.has(role_id) && !roles_successful.includes(role)) {
+                    } else if (!member.roles.cache.has(role_id) && !roles_successful.includes(role)) {
                         roles_to_process.push(role_id);
                         roles_successful.push(role);
                     }
                     break;
 
                 case "-":
-                    if (!member.roles.has(role_id) && !roles_unsuccessful.includes(role)) {
+                    if (!member.roles.cache.has(role_id) && !roles_unsuccessful.includes(role)) {
                         roles_unsuccessful.push(role);
-                    } else if (member.roles.has(role_id) && !roles_successful.includes(role)) {
+                    } else if (member.roles.cache.has(role_id) && !roles_successful.includes(role)) {
                         roles_to_process.push(role_id);
                         roles_successful.push(role);
                     }
@@ -224,26 +227,26 @@ async function assign_roles(message) {
     switch (modifier) {
 
         case "+":
-            member.addRoles(roles_to_process)
+            member.roles.add(roles_to_process)
             // Respond
             var responses = {"Assigned Roles": roles_successful, "Current Roles": roles_unsuccessful, "Invalid Roles": errors};
             var embed = roles_embed(responses);
             embed.setColor(colour);
             message.reply({embed: embed}).then(reply => {
-                reply.delete(embed.fields.length * 2000 + 2000)
-                message.delete(embed.fields.length * 2000 + 2000)
+                reply.delete({ timeout: embed.fields.length * 2000 + 2000 })
+                message.delete({ timeout: embed.fields.length * 2000 + 2000 })
             })
             break;
 
         case "-":
-            member.removeRoles(roles_to_process)
+            member.roles.remove(roles_to_process)
             // Respond
             var responses = {"Removed Roles": roles_successful, "Roles Not Assigned": roles_unsuccessful, "Invalid Roles": errors};
             var embed = roles_embed(responses);
             embed.setColor(colour);
             message.reply({embed: embed}).then(reply => {
-                reply.delete(embed.fields.length * 2000 + 2000)
-                message.delete(embed.fields.length * 2000 + 2000)
+                reply.delete({ timeout: embed.fields.length * 2000 + 2000 })
+                message.delete({ timeout: embed.fields.length * 2000 + 2000 })
             })
             break;
 
@@ -255,8 +258,8 @@ async function assign_roles(message) {
 
 async function create_avarole_embed(message) {
 
-    let guild = Client.guilds.get(message.guild.id);
-    let sender = await guild.fetchMember(Client.user.id);
+    let guild = Client.guilds.cache.get(message.guild.id);
+    let sender = await guild.members.fetch(Client.user.id);
     let role_rows = await database.get_available_roles(message.guild.id);
     if (!role_rows || !role_rows.length) return;
 
@@ -272,9 +275,10 @@ async function create_avarole_embed(message) {
         }
     }
 
-    let embed = new Discord.RichEmbed()
-    .setTitle("__Available Roles__")
-    .setColor(sender && sender.colorRole ? sender.colorRole.color : 0xffffff);
+    let embed = new Discord.MessageEmbed({
+        title: "__Available Roles__",
+        color: sender && sender.roles.color ? sender.roles.color.color : 0xffffff
+    });
     if (main_roles.length) embed.addField("Main Roles", main_roles.join(", "), false);
     if (sub_roles.length) embed.addField("Sub Roles", sub_roles.join(", "), false);
     if (other_roles.length) embed.addField("Other Roles", other_roles.join(", "), false);
@@ -286,12 +290,12 @@ async function create_avarole_embed(message) {
 async function add_role(message, args) {
 
     if (args.length < 4) {
-        message.channel.send("⚠ Missing arguments.\nUsage: .roles add [role type] [role command]: [role name]");
+        message.channel.send(`⚠ Missing arguments.\nUsage: .roles add [role type] [role command]: [role name]`);
         return;
     }
     let type = args[2]
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
-        message.channel.send("⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
+        message.channel.send(`⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other`);
         return;
     }
 
@@ -310,10 +314,10 @@ async function add_role(message, args) {
         let roles = pair.split(":", 2);
         let role_command = roles[0].trim();
         let role_name = roles[1].trim();
-        let role = message.guild.roles.find(role => role.name == role_name);
+        let role = message.guild.roles.cache.find(role => role.name == role_name);
         if (role_command.length < 1 || role_name.length < 1) {
             errors.push(role_command);
-        } else if (!role || !message.guild.roles.has(role.id)) {
+        } else if (!role || !message.guild.roles.cache.has(role.id)) {
             errors.push(role_command);
         } else {
             let role_id = role.id
@@ -337,12 +341,12 @@ async function add_role(message, args) {
 async function remove_role(message, args) {
 
     if (args.length < 4) {
-        message.channel.send("⚠ Missing arguments.\nUsage: .roles remove [role type] [role command]");
+        message.channel.send(`⚠ Missing arguments.\nUsage: .roles remove [role type] [role command]`);
         return;
     }
     let type = args[2];
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
-        message.channel.send("⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
+        message.channel.send(`⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other`);
         return;
     }
     
@@ -378,12 +382,12 @@ async function remove_role(message, args) {
 async function toggle_available_role(message, args) {
 
     if (args.length < 3) {
-        message.channel.send("⚠ Missing arguments.\nUsage: .avarole [role type] [role name]");
+        message.channel.send(`⚠ Missing arguments.\nUsage: .avarole [role type] [role name]`);
         return;
     }
     let type = args[1]
     if (!["MAIN", "SUB", "OTHER"].includes(type.toUpperCase())) {
-        message.channel.send("⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other");
+        message.channel.send(`⚠ Role type not specified or role type isn't one of the following: Main, Sub, Other`);
         return;
     }
     let roles_text = trimArgs(args, 2, message.content);
@@ -427,7 +431,7 @@ async function list_roles(message) {
     for (i = 0; i < rows.length; i++) {
         let row = rows[i];
         command = row.roleCommand;
-        name = guild.roles.get(row.roleID).name;
+        name = guild.roles.cache.get(row.roleID).name;
         switch (row.type) {
             case "MAIN": main_roles.push(`${command}: ${name}`); break;
             case "SUB": sub_roles.push(`${command}: ${name}`); break;
@@ -452,31 +456,28 @@ async function set_roles_channel(message, args) {
     } else {
         channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            message.channel.send("⚠ Invalid channel or channel ID.");
+            message.channel.send(`⚠ Invalid channel or channel ID.`);
             return;
         }
         channel_id = channel_id[1];
     }
-    if (!message.guild.channels.has(channel_id)) {
-        message.channel.send("⚠ Channel doesn't exist in this server.");
+    if (!message.guild.channels.cache.has(channel_id)) {
+        message.channel.send(`⚠ Channel doesn't exist in this server.`);
         return;
     }
     
     let data = await database.get_roles_msg(message.guild.id);
     if (!data || !data.msg) {
-        message.channel.send("⚠ No roles channel message assigned.");
+        message.channel.send(`⚠ No roles channel message assigned.`);
         return;
     }
 
-    let channel = Client.channels.get(channel_id);
+    let channel = Client.channels.cache.get(channel_id);
     let embed = await create_avarole_embed(message);
-    let msg = await channel.send(data.msg, {embed: embed})
+    let msg = await channel.send(data.msg, {embed: embed});
     if (data && data.messageID) {
-        serverSettings.get(message.guild.id, "rolesChannel").then(rolesChannel => {
-            Client.channels.get(rolesChannel)
-            .fetchMessage(data.messageID)
-            .then(msg => msg.delete());
-        })
+        let rolesChannel = serverSettings.get(message.guild.id, "rolesChannel");
+        Client.channels.cache.get(rolesChannel).messages.fetch(data.messageID).then(msg => msg.delete());
     }
 
     await database.set_msg_id(message.guild.id, msg.id)
@@ -489,17 +490,17 @@ async function update_roles_channel(message) {
 
     let data = await database.get_roles_msg(message.guild.id);
     if (!data || !data.msg) {
-        message.channel.send("⚠ No roles channel message assigned.");
+        message.channel.send(`⚠ No roles channel message assigned.`);
         return;
     }
 
     let message_id = data.messageID;
     let content = data.msg;
     let channel_id = serverSettings.get(message.guild.id, "rolesChannel");
-    let channel = Client.channels.get(channel_id);
+    let channel = Client.channels.cache.get(channel_id);
     let embed = await create_avarole_embed(message);
     
-    let old_message = await channel.fetchMessage(message_id);
+    let old_message = await channel.messages.fetch(message_id);
     old_message.delete();
     let msg = await channel.send(content, {embed: embed});
     await database.set_msg_id(message.guild.id, msg.id);
@@ -511,27 +512,27 @@ async function update_roles_channel(message) {
 async function set_roles_msg(message, args) {
 
     if (args.length < 4) {
-        message.channel.send("⚠ Please provide a message.");
+        message.channel.send(`⚠ Please provide a message.`);
         return;
     }
     
     let msg = trimArgs(args, 3, message.content);
     await database.set_roles_msg(message.guild.id, msg);
-    message.channel.send("Roles message set.");
+    message.channel.send(`Roles message set.`);
 
 }
 
 async function setAutorole(message, args) {
 
     if (args.length < 1) {
-        message.channel.send("⚠ Please provide a role name.");
+        message.channel.send(`⚠ Please provide a role name.`);
         return;
     }
 
     let roleName = trimArgs(args, 2, message.content);
-    let role = message.guild.roles.find(role => role.name == roleName);
+    let role = message.guild.roles.cache.find(role => role.name == roleName);
     if (!role) {
-        message.channel.send("⚠ This role does not exist on the server!");
+        message.channel.send(`⚠ This role does not exist on the server!`);
         return;
     }
 
@@ -562,11 +563,11 @@ async function biaslist(message) {
 
     let roleData = await database.get_all_roles(guild.id);
     if (roleData.length < 1) {
-        message.channel.send('⚠ No bias roles are set up on this server!');
+        message.channel.send(`⚠ No bias roles are set up on this server!`);
         return;
     }
 
-    let guildRoles = guild.roles.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
+    let guildRoles = guild.roles.cache.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
     
     let mainRoles = guildRoles.filter(role => {
         let dataMatch = roleData.find(data => data.roleID == role.id);
@@ -582,7 +583,7 @@ async function biaslist(message) {
     }).map(role => `${role} - ${role.members.size} member${role.members.size != 1 ? 's':''}`).join('\n');
     
     if (mainRoles.length < 1 && subRoles.length < 1) {
-        message.channel.send('⚠ No bias roles are set up on this server!');
+        message.channel.send(`⚠ No bias roles are set up on this server!`);
         return;
     }
     if (mainRoles.length > 1024) {
@@ -598,12 +599,12 @@ async function biaslist(message) {
 
 
     let autoroleID = serverSettings.get(guild.id, "autoroleID");
-    let autoroleColour = autoroleID ? guild.roles.get(autoroleID).color : null;
-    let embed = {
-        author: { name: `Bias List for ${guild.name}`, icon_url: 'https://i.imgur.com/9y33GZq.png' },
+    let autoroleColour = autoroleID ? guild.roles.cache.get(autoroleID, true).color : null;
+    let embed = new Discord.MessageEmbed({
+        title: `Bias List for ${guild.name}`,
         fields: [],
         color: autoroleColour || 0xf986ba
-    }
+    });
 
     if (mainRoles) embed.fields.push({ name: 'Main Biases', value: mainRoles });
     if (subRoles) embed.fields.push({ name: 'Sub Biases', value: subRoles });
@@ -616,9 +617,9 @@ async function roleslist(message) {
 
     let { guild } = message;
 
-    let guildRoles = guild.roles.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
+    let guildRoles = guild.roles.cache.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
     if (guildRoles.length < 1) {
-        message.channel.send('⚠ This server has no roles to list!');
+        message.channel.send(`⚠ This server has no roles to list!`);
         return;
     }
 
@@ -641,7 +642,7 @@ async function roleslist(message) {
     descriptions.push(roleString);
 
     let autoroleID = serverSettings.get(guild.id, "autoroleID");
-    let autoroleColour = autoroleID ? guild.roles.get(autoroleID).color : null;
+    let autoroleColour = autoroleID ? guild.roles.cache.get(autoroleID).color : null;
 
     let pages = descriptions.map((desc, i) => {
         return {

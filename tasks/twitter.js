@@ -32,7 +32,7 @@ async function twitterLoop() {
             
             let response;
             try {
-                response = await twitter.get('/1.1/statuses/user_timeline.json', { params: {user_id: twitterID, count: 20, exclude_replies: 1, tweet_mode: 'extended'} })
+                response = await twitter.get('/1.1/statuses/user_timeline.json', { params: {user_id: twitterID, count: 20, exclude_replies: 0, tweet_mode: 'extended'} })
             } catch(e) {
                 console.error(twitterID + ' ' + Error(e));
                 continue;
@@ -56,55 +56,6 @@ async function twitterLoop() {
             for (let tweet of newTweets) {
 
                 let { retweeted_status, id_str, user } = tweet;
-                
-                // if (retweeted_status) tweet = retweeted_status;
-                // let text = tweet.full_text || tweet.text;
-
-                // if (text) {
-                //     text = text
-                //     .replace(/&apos;/g, "'")
-                //     .replace(/&quot;/g, '"')
-                //     .replace(/&gt;/g, '>')
-                //     .replace(/&lt;/g, '<')
-                //     .replace(/&amp;/g, '&')
-                //     .replace(/([`\*~_<>])/g, "\\$&");
-                // }
-
-                // let options;
-                // let embed = {
-                //     author: {
-                //         name: `${tweet.user.name} (@${tweet.user.screen_name})`,
-                //         icon_url: tweet.user.profile_image_url_https,
-                //         url: `https://twitter.com/${tweet.user.screen_name}/`
-                //     },
-                //     url: `https://twitter.com/${user.screen_name}/status/${id_str}/`,
-                //     description: text,
-                //     footer: { icon_url: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png', text: 'Twitter' },
-                // }
-
-                // if (tweet.extended_entities) {
-                //     let { media } = tweet.extended_entities;
-                //     if (media.length == 1) {
-                //         switch (media[0].type) {
-                //             case "video":
-                //             case "animated_gif":
-                //                 break;
-                //             case "photo":
-                //                 embed.description = text.split(RegExp('https://t.co/[a-zA-Z0-9]+$'), 1)[0];
-                //                 embed.image = { url: media[0].media_url_https }
-                //                 options = { embed };
-                //                 break;
-                //         }
-                //     } else {
-                //         let collage = await images.createMediaCollage(media.map(m => m.media_url_https), 800, 600);
-                //         let files = [{attachment: collage, name: `${tweet.id_str}-media-collage.png`}];
-                //         embed.image = { url: 'attachment://' + files[0].name};
-                //         options = { embed, files };
-                //     }
-                // } else {
-                //     options = { embed };
-                // }
-
                 await database.addTweet(twitterID, id_str);
 
                 for (let data of targetData) {
@@ -114,14 +65,20 @@ async function twitterLoop() {
                         continue;
                     }
 
-                    let guild = Client.guilds.get(guildID);
+                    let guild = Client.guilds.cache.get(guildID);
                     if (!guild) {
-                        console.error(Error("Guild couldn't be retrieved to send Twitter notif to."));
+                        // console.log(`No guild found for ${guildID}, removing notification.`);
+                        // database.removeTwitterChannel(channelID, twitterID);
+                        // continue;
+                        console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
                         continue;
                     }
-                    let channel = Client.channels.get(channelID) || guild.channels.get(channelID);
+                    let channel = Client.channels.cache.get(channelID) || guild.channels.cache.get(channelID);
                     if (!channel) {
-                        console.error(Error("Channel couldn't be retrieved to send Twitter notif to."));
+                        // console.log(`No channel found for ${channelID} in ${guildID}, removing notification.`);
+                        // database.removeTwitterChannel(channelID, twitterID);
+                        // continue;
+                        console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
                         continue;
                     }
 

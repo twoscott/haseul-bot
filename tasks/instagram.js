@@ -1,3 +1,4 @@
+const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 
 const imgMod = require("../functions/images.js");
@@ -16,7 +17,7 @@ exports.tasks = async function() {
 
     // await login();
     instaLoop().catch(console.error);
-    storyCleanup().catch(console.error);
+    // storyCleanup().catch(console.error);
 
 }
 
@@ -47,10 +48,11 @@ async function instaLoop() {
                 }
 
                 let data = response.data.data;
-                if (!data) {
+                if (!data || !data.user) {
                     console.error("couldn't resolve recent Instagram posts for " + instaID);
                     return;
                 }
+                
                 let recentPosts = data.user['edge_owner_to_timeline_media'].edges.map(edge => edge.node);
 
                 let oldPosts = await database.getAccountPosts(instaID);
@@ -84,12 +86,12 @@ async function instaLoop() {
                     for (let data of targetData) {
                         let { guildID, channelID, mentionRoleID } = data;
         
-                        let guild = Client.guilds.get(guildID);
+                        let guild = Client.guilds.cache.get(guildID);
                         if (!guild) {
                             console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
                             continue;
                         }
-                        let channel = Client.channels.get(channelID) || guild.channels.get(channelID);
+                        let channel = Client.channels.cache.get(channelID) || guild.channels.cache.get(channelID);
                         if (!channel) {
                             console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
                             continue;
@@ -98,7 +100,7 @@ async function instaLoop() {
                         let message = `https://www.instagram.com/p/${shortcode}/${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
                         
                         let options;
-                        let embed = {
+                        let embed = new Discord.MessageEmbed({
                             author: {
                                 name: user ? `${user.full_name} (@${owner.username})` : owner.username,
                                 url: `https://www.instagram.com/${owner.username}/`
@@ -109,7 +111,7 @@ async function instaLoop() {
                             url: `https://www.instagram.com/p/${shortcode}/`,
                             footer: { icon_url: 'https://i.imgur.com/NNzsisb.png', text: 'Instagram' },
                             timestamp
-                        }
+                        });
                         
                         if (caption) {
                             let captionHyperlinked = caption.replace(/@([^ \n!-/:-@[-^`\{-~]+)/gi, `[@$1](https://www.instagram.com/$1/ "View @$1 on Instagram")`)
@@ -267,12 +269,12 @@ async function instaLoop() {
             //                 continue;
             //             }
 
-            //             let guild = Client.guilds.get(guildID);
+            //             let guild = Client.guilds.cache.get(guildID);
             //             if (!guild) {
             //                 console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
             //                 continue;
             //             }
-            //             let channel = Client.channels.get(channelID) || guild.channels.get(channelID);
+            //             let channel = Client.channels.cache.get(channelID) || guild.channels.cache.get(channelID);
             //             if (!channel) {
             //                 console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
             //                 continue;

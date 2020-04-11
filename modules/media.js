@@ -34,23 +34,22 @@ exports.onCommand = async function(message, args) {
 
 async function ytVidQuery(query) {
 
-    if (!query) {
-        return "⚠ Please provide a query to search for!";
+    if (query) {
+        let response = await youtube.get(`/results?search_query=${encodeURIComponent(query)}`);
+        let search = response.data.match(/<div class="yt-lockup-content"><h3 class="yt-lockup-title "><a href="\/watch\?v=([^&"]+)/i);
+        if (!search) {
+            return null;
+        }
+        let video_id = search[1];
+        return video_id;
     }
-    let response = await youtube.get(`/results?search_query=${encodeURIComponent(query)}`);
-    let search = response.data.match(/<div class="yt-lockup-content"><h3 class="yt-lockup-title "><a href="\/watch\?v=([^&"]+)/i);
-    if (!search) {
-        return "⚠ No results found for this search!";
-    }
-    let video_id = search[1];
-    return video_id;
 
 }
 
 async function ytPages(message, args) {
 
     if (args.length < 2) {
-        message.channel.send("⚠ Please provide a query to search for!");
+        message.channel.send(`⚠ Please provide a query to search for!`);
         return;
     }
 
@@ -65,7 +64,7 @@ async function ytPages(message, args) {
         search = regExp.exec(data);
     }
     if (pages.length < 1) {
-        message.channel.send("⚠ No results found for this query!");
+        message.channel.send(`⚠ No results found for this query!`);
         return;
     }
 
@@ -76,7 +75,7 @@ async function ytPages(message, args) {
 async function lbMovieQuery(message, args) {
     
     if (args.length < 2) {
-        message.channel.send("⚠ Please provide a query to search for!");
+        message.channel.send(`⚠ Please provide a query to search for!`);
         return;
     }
 

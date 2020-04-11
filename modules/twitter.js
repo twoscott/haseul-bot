@@ -51,7 +51,7 @@ exports.onCommand = async function(message, args) {
                     break;
                 case "help":
                 default:
-                    channel.send("Help with Twitter can be found here: https://haseulbot.xyz/#twitter");
+                    channel.send(`Help with Twitter can be found here: https://haseulbot.xyz/#twitter`);
                     break;
             }
             break;
@@ -65,7 +65,7 @@ async function twitterNotifAdd(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/twitter\.com\/)?@?(.+?)(?:\/media\/?)?\s+<?#?(\d{8,})>?\s*((<@&)?(.+?)(>)?)?$/i);
     if (!formatMatch) {
-        message.channel.send("⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter");
+        message.channel.send(`⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter`);
         return;
     }
 
@@ -73,43 +73,43 @@ async function twitterNotifAdd(message, args) {
     let channelID = formatMatch[2];
     let mentionRole = formatMatch[3];
 
-    let channel = guild.channels.get(channelID);
+    let channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send("⚠ The channel provided does not exist in this server.");
+        message.channel.send(`⚠ The channel provided does not exist in this server.`);
         return;
     }
     if (channel.type != "text") {
-        message.channel.send("⚠ Please provide a text channel to send notifications to.");
+        message.channel.send(`⚠ Please provide a text channel to send notifications to.`);
         return;
     }
 
     let member;
     try {
-        member = await guild.fetchMember(Client.user.id);
+        member = await guild.members.fetch(Client.user.id);
     } catch (e) {
         member = null;
     }
     if (!member) {
-         message.channel.send("⚠ Error occurred.");
+         message.channel.send(`⚠ Error occurred.`);
          return;
     }
     
     let botCanRead = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
     if (!botCanRead) {
-        message.channel.send("⚠ I cannot see this channel!");
+        message.channel.send(`⚠ I cannot see this channel!`);
         return;
     }
 
     let role;
     if (mentionRole) {
         if (formatMatch[4] && formatMatch[6]) {
-            role = guild.roles.get(formatMatch[5])
+            role = await guild.roles.fetch(formatMatch[5])
             if (!role) {
                 message.channel.send(`⚠ A role with the ID \`${formatMatch[5]}\` does not exist in this server.`);
                 return;
             }
         } else {
-            role = guild.roles.find(role => role.name == formatMatch[5]);
+            role = guild.roles.cache.find(role => role.name == formatMatch[5]);
             if (!role) {
                 message.channel.send(`⚠ The role \`${formatMatch[5]}\` does not exist in this server.`);
                 return;
@@ -140,7 +140,7 @@ async function twitterNotifAdd(message, args) {
     let twitterNotifs = await database.getGuildTwitterChannels(guild.id);
     let twitterIDs = new Set(twitterNotifs.map(x => x.twitterID));
     if (twitterIDs.size >= 3) {
-        message.channel.send("⚠ No more than 3 Twitter accounts may be set up for notifications on a server.");
+        message.channel.send(`⚠ No more than 3 Twitter accounts may be set up for notifications on a server.`);
         return;
     }
 
@@ -148,7 +148,7 @@ async function twitterNotifAdd(message, args) {
         response = await twitter.get('/1.1/statuses/user_timeline.json', { params: {user_id: id_str, count: 20, trim_user: 1, exclude_replies: 1} })
     } catch(e) {
         console.error(e);
-        message.channel.send("⚠ Unknown error occurred.");
+        message.channel.send(`⚠ Unknown error occurred.`);
         return;
     }
     let recentTweets = response.data;
@@ -166,7 +166,7 @@ async function twitterNotifAdd(message, args) {
         added = await database.addTwitterChannel(guild.id, channel.id, id_str, screen_name, role ? role.id : null)
     } catch(e) {
         console.error(Error(e));
-        message.channel.send("⚠ Error occurred.");
+        message.channel.send(`⚠ Error occurred.`);
         return;
     }
     
@@ -181,16 +181,16 @@ async function twitterNotifRemove(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/twitter\.com\/)?@?(.+?)(?:\/media\/?)?\s+<?#?(\d{8,})>?/i);
     if (!formatMatch) {
-        message.channel.send("⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter");
+        message.channel.send(`⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter`);
         return;
     }
 
     let screenName = formatMatch[1];
     let channelID = formatMatch[2];
 
-    let channel = guild.channels.get(channelID);
+    let channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send("⚠ The channel provided does not exist in this server.");
+        message.channel.send(`⚠ The channel provided does not exist in this server.`);
         return;
     }
 
@@ -219,7 +219,7 @@ async function twitterNotifRemove(message, args) {
         deleted = await database.removeTwitterChannel(channel.id, id_str);
     } catch(e) {
         console.error(Error(e));
-        message.channel.send("⚠ Error occurred.");
+        message.channel.send(`⚠ Error occurred.`);
         return;
     }
     
@@ -234,7 +234,7 @@ async function twitterNotifList(message) {
 
     let notifs = await database.getGuildTwitterChannels(guild.id)
     if (notifs.length < 1) {
-        message.channel.send("⚠ There are no Twitter notifications added to this server.");
+        message.channel.send(`⚠ There are no Twitter notifications added to this server.`);
         return;
     }
     notifString = notifs.sort((a,b) => a.screenName.localeCompare(b.screenName)).map(x => `<#${x.channelID}> - [@${x.screenName}](https://twitter.com/${x.screenName}/)${x.retweets ? ` + <:retweet:618184292820058122>`:``}${x.mentionRoleID ? ` <@&${x.mentionRoleID}>`:``}`).join('\n');
@@ -281,16 +281,16 @@ async function retweetToggle(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/twitter\.com\/)?@?(.+?)(?:\/media\/?)?\s+<?#?(\d{8,})>?/i);
     if (!formatMatch) {
-        message.channel.send("⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter");
+        message.channel.send(`⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter`);
         return;
     }
 
     let screenName = formatMatch[1];
     let channelID = formatMatch[2];
 
-    let channel = guild.channels.get(channelID);
+    let channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send("⚠ The channel provided does not exist in this server.");
+        message.channel.send(`⚠ The channel provided does not exist in this server.`);
         return;
     }
 
@@ -319,7 +319,7 @@ async function retweetToggle(message, args) {
         twitterChannel = await database.getTwitterChannel(channel.id, id_str);
     } catch (e) {
         console.error(Error(e));
-        message.channel.send("⚠ Unknown error occurred.");
+        message.channel.send(`⚠ Unknown error occurred.`);
         return;
     }
     if (!twitterChannel) {
@@ -332,7 +332,7 @@ async function retweetToggle(message, args) {
         toggle = await database.toggleRetweets(channel.id, id_str)
     } catch(e) {
         console.error(Error(e));
-        message.channel.send("⚠ Unknown error occurred.");
+        message.channel.send(`⚠ Unknown error occurred.`);
         return;
     }
     

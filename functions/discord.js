@@ -1,13 +1,12 @@
 const { Client } = require("../haseul.js");
 const { getAllGuildXp } = require("../db_queries/levels_db.js");
 
-exports.checkPermissions = function(member, permissions) {
+exports.checkPermissions = function(member, permissions, checkAdmin=true) {
     if (!member) {
         let err = new Error("Invalid member to check permissions for");
         console.error(err);
-        return false;
     } else {
-        let hasPerms = permissions.some(p => member.hasPermission(p, false, true, true));
+        let hasPerms = permissions.some(p => member.hasPermission(p, { checkAdmin, checkOwner: true }));
         return hasPerms;
     }
 }
@@ -17,39 +16,37 @@ exports.getMemberNumber = async function(member) {
         let err = new Error("Invalid member given.");
         console.error(err);
     } else {
-        let guild = await member.guild.fetchMembers();
-        let members = guild.members.array();
-            members = members.sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
+        let members = await member.guild.members.fetch();
+        members = members.array();
+        members = members.sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
         let memberNumber = members.findIndex(e => e.id == member.id) + 1;
         return memberNumber;
     }
 }
 
-exports.resolveUser = async function(userID) {
+exports.resolveUser = async function(userID, cache=false) {
     if (!userID) {
         let err = new Error("No user ID provided.");
         console.error(err);
     } else {
-        let user = Client.users.get(userID);
-        if (!user) {
-            try {
-                user = await Client.fetchUser(userID, true);
-            } catch(e) {
-                return null;
-            }
+        let user;
+        try {
+            user = await Client.users.fetch(userID, cache);
+        } catch(e) {
+            return null;
         }
         return user;
     }
 }
 
-exports.resolveMember = async function(guild, userID, member) {
+exports.resolveMember = async function(guild, userID, member, cache=false) {
     if (!guild || !userID) {
         let err = new Error("Invalid parameters given.");
         console.error(err);
     } else {
         if (!member || !member.joinedTimestamp) {
             try {
-                member = await guild.fetchMember(userID, true);
+                member = await guild.members.fetch({ user: userID, cache });
             } catch(e) {
                 return null;
             }
@@ -58,18 +55,16 @@ exports.resolveMember = async function(guild, userID, member) {
     }
 }
 
-exports.resolveMessage = async function(channel, messageID) {
-    if (!channel || !messageID ||channel.messages === undefined) {
+exports.resolveMessage = async function(channel, messageID, cache=false) {
+    if (!channel || !messageID || channel.messages === undefined) {
         let err = new Error("Invalid parameters given.");
         console.error(err);
     } else {
-        let message = channel.messages.get(messageID);
-        if (!message) {
-            try {
-                message = await channel.fetchMessage(messageID);
-            } catch(e) {
-                return null;
-            }
+        let message;
+        try {
+            message = await channel.messages.fetch(messageID, cache);
+        } catch(e) {
+            return null;
         }
         return message;
     }
@@ -87,10 +82,10 @@ exports.withTyping = async function(channel, task, args) {
     }
 }
 
-exports.searchMembers = async function(guild, query) {
+exports.searchMembers = async function(members, query) {
     
     query = query.toLowerCase();
-    members = guild.members.array();
+    members = members.array();
 
     let member;
     let memberResults = [];
@@ -160,12 +155,12 @@ exports.embedPages = async function(message, pages, lock, timeout=600000) {
                 lockListener = reply.createReactionCollector((reaction, user) => reaction.emoji.name === "🔒" && !user.bot, {time: timeout});
                 listeners.push(lockListener);
                 lockListener.on("end", () => {
-                    reply.clearReactions();
+                    reply.reactions.removeAll();
                     lockListener.stop()
                 })
 
                 lockListener.on("collect", reaction => {
-                    let users = reaction.users.array();
+                    let users = reaction.users.cache.array();
                     if (users[users.length - 1].id != message.author.id) {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];
@@ -180,7 +175,7 @@ exports.embedPages = async function(message, pages, lock, timeout=600000) {
                     for (i=0; i < listeners.length; i++) {
                         listeners[i].stop();
                     }
-                    reply.clearReactions();
+                    reply.reactions.removeAll();
                 })
             
             }
@@ -190,11 +185,11 @@ exports.embedPages = async function(message, pages, lock, timeout=600000) {
                 const pageBeginning = reply.createReactionCollector((reaction, user) => reaction.emoji.name === "⏮" && !user.bot, {time: timeout});
                 listeners.push(pageBeginning);
                 pageBeginning.on("end", () => {
-                    reply.clearReactions();
+                    reply.reactions.removeAll();
                     pageBeginning.stop()
                 })
                 pageBeginning.on("collect", reaction => {
-                    let users = reaction.users.array();
+                    let users = reaction.users.cache.array();
                     if (lock && users[users.length - 1].id != message.author.id) {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];
@@ -223,11 +218,11 @@ exports.embedPages = async function(message, pages, lock, timeout=600000) {
                 const pageBack = reply.createReactionCollector((reaction, user) => reaction.emoji.name === "⬅" && !user.bot, {time: timeout});
                 listeners.push(pageBack);
                 pageBack.on("end", () => {
-                    reply.clearReactions();
+                    reply.reactions.removeAll();
                     pageBack.stop()
                 })
                 pageBack.on("collect", reaction => {
-                    let users = reaction.users.array();
+                    let users = reaction.users.cache.array();
                     if (lock && users[users.length - 1].id != message.author.id) {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];
@@ -258,11 +253,11 @@ exports.embedPages = async function(message, pages, lock, timeout=600000) {
                 const pageForward = reply.createReactionCollector((reaction, user) => reaction.emoji.name === "➡" && !user.bot, {time: timeout});
                 listeners.push(pageForward);
                 pageForward.on("end", () => {
-                    reply.clearReactions();
+                    reply.reactions.removeAll();
                     pageForward.stop()
                 })
                 pageForward.on("collect", reaction => {
-                    let users = reaction.users.array();
+                    let users = reaction.users.cache.array();
                     if (lock && users[users.length - 1].id != message.author.id) {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];
@@ -293,11 +288,11 @@ exports.embedPages = async function(message, pages, lock, timeout=600000) {
                 const pageEnd = reply.createReactionCollector((reaction, user) => reaction.emoji.name === "⏭" && !user.bot, {time: timeout});
                 listeners.push(pageEnd);
                 pageEnd.on("end", () => {
-                    reply.clearReactions();
+                    reply.reactions.removeAll();
                     pageEnd.stop()
                 })        
                 pageEnd.on("collect", reaction => {
-                    let users = reaction.users.array();
+                    let users = reaction.users.cache.array();
                     if (lock && users[users.length - 1].id != message.author.id) {
                         for (i=0; i < users.length; i++) {
                             let user = users[i];

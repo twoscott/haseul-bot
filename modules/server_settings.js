@@ -5,7 +5,7 @@ const database = require("../db_queries/server_db.js");
 let servers = new Object();
 
 exports.ready = async function() {
-    for (let guild of Client.guilds.array()) {
+    for (let guild of Client.guilds.cache.array()) {
         await database.initServer(guild.id);
     }
 

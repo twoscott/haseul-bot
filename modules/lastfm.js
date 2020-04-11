@@ -72,7 +72,7 @@ exports.onCommand = async function(message, args) {
                     break;
                 
                 case "help":
-                    channel.send("Help with Last.fm can be found here: https://haseulbot.xyz/#last.fm");
+                    channel.send(`Help with Last.fm can be found here: https://haseulbot.xyz/#last.fm`);
                     break;
 
                 default:
@@ -105,7 +105,7 @@ exports.onCommand = async function(message, args) {
 async function setLfUser(message, username) {
     
     if (!username) {
-        message.channel.send("⚠ Please provide a Last.fm username: `.fm set <username>`.");
+        message.channel.send(`⚠ Please provide a Last.fm username: \`.fm set <username>\`.`);
     } else {
         try {
             let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`);
@@ -155,7 +155,7 @@ async function lfRecents(message, args, limit) {
         username = await database.getLfUser(message.author.id);
     }
     if (!username) {
-        message.channel.send("⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`.");
+        message.channel.send(`⚠ No Last.fm username linked to your account. Please link a username to your account using \`.fm set <username>\`.`);
         return;
     }
 
@@ -219,7 +219,7 @@ async function recent1Embed(message, track, lfUser, playCount, loved) {
     }
     let image = track.image[track.image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
-    let embed = {
+    let embed = new Discord.MessageEmbed({
         author: { name: `${lfUser+p} ${np ? 'Now Playing' : 'Last Track'}`, icon_url: 'https://i.imgur.com/lQ3EqM6.png', url: `https://www.last.fm/user/${lfUser}/` },
         thumbnail: { url: thumbnail },
         url: image,
@@ -228,7 +228,7 @@ async function recent1Embed(message, track, lfUser, playCount, loved) {
         ],
         color: 0xb90000,
         footer: { text: `${+loved ? '❤ Loved  |  ':''}Track Plays: ${playCount}` }
-    }
+    });
 
     if (track.album && track.album['#text']) {
         embed.fields.push({ name: 'Album', value: track.album["#text"].replace(/([\(\)\`\*\~\_])/g, "\\$&")});
@@ -254,7 +254,7 @@ async function recent2Embed (message, tracks, lfUser, playCount) {
     if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
     let image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
-    let embed = {
+    let embed = new Discord.MessageEmbed({
         author: { name: `${lfUser+p} Recent Tracks`, icon_url: `https://i.imgur.com/lQ3EqM6.png`, url: `https://www.last.fm/user/${lfUser}/` },
         thumbnail: { url: thumbnail },
         url: image,
@@ -264,7 +264,7 @@ async function recent2Embed (message, tracks, lfUser, playCount) {
         ],
         color: 0xb90000,
         footer: { text: `Track Plays: ${playCount}` }
-    }
+    });
 
     if (!np && tracks[0].date) {
         embed.timestamp = new Date(0).setSeconds(tracks[0].date.uts);
@@ -363,7 +363,7 @@ async function lfTopMedia(message, args, type) {
         username = await database.getLfUser(message.author.id);
     }
     if (!username) {
-        message.channel.send("⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.");
+        message.channel.send(`⚠ No Last.fm username linked to your account. Please link a username to your account using \`.fm set <username>\`, alternatively, use \`.fm <username>\` to get recent tracks for a specific Last.fm user.`);
         return;
     }
 
@@ -449,7 +449,7 @@ async function lfProfile(message, username) {
         username = await database.getLfUser(message.author.id);
     }
     if (!username) {
-        message.channel.send("⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm profile <username>` to see the Last.fm profile of a specific user.");
+        message.channel.send(`⚠ No Last.fm username linked to your account. Please link a username to your account using \`.fm set <username>\`, alternatively, use \`.fm profile <username>\` to see the Last.fm profile of a specific user.`);
         return;
     }
 
@@ -481,15 +481,19 @@ async function lfProfile(message, username) {
     response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${username}&api_key=${api_key}&format=json`)
     let track_count = response.data.toptracks["@attr"].total;
 
-    let embed = new Discord.RichEmbed()
-    .setAuthor(`${user.name}`,`https://i.imgur.com/lQ3EqM6.png`, `https://www.last.fm/user/${user.name}/`)
-    .setColor(0xb90000)
-    .setFooter(`Total Scrobbles: ${user.playcount}`)
-    .setThumbnail(thumbnail)
-    .setURL(image)
-    .setDescription(`Scrobbling since ${date_string}`)
-    .setTimestamp(date)
-    .addField("Library", `Artists: ${artist_count} | Albums: ${album_count} | Tracks: ${track_count}`);
+    let embed = new Discord.MessageEmbed({
+        author: { name: `${user.name}`, icon_url: `https://i.imgur.com/lQ3EqM6.png`, url: `https://www.last.fm/user/${user.name}/` },
+        url: image,
+        thumbnail: { url: thumbnail },
+        color: 0xb90000,
+        description: `Scrobbling since ${date_string}`,
+        timestamp: date,
+        fields: [
+            { name: "Artists", value: parseInt(artist_count).toLocaleString(), inline: true },
+            { name: "Albums", value: parseInt(album_count).toLocaleString(), inline: true },
+            { name: "Tracks", value: parseInt(track_count).toLocaleString(), inline: true }
+        ]
+    });
 
     message.channel.send({ embed });
 
@@ -501,7 +505,7 @@ async function lfAvatar(message, username) {
         username = await database.getLfUser(message.author.id);
     }
     if (!username) {
-        message.channel.send("⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.");
+        message.channel.send(`⚠ No Last.fm username linked to your account. Please link a username to your account using \`.fm set <username>\`, alternatively, use \`.fmyt <username>\` to get a youtube video of the most recent song listened to by a specific user.`);
         return;
     }
 
@@ -542,7 +546,7 @@ async function lfYoutube(message, username) {
         username = await database.getLfUser(message.author.id);
     }
     if (!username) {
-        message.channel.send("⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.");
+        message.channel.send(`⚠ No Last.fm username linked to your account. Please link a username to your account using \`.fm set <username>\`, alternatively, use \`.fmyt <username>\` to get a youtube video of the most recent song listened to by a specific user.`);
         return;
     }
 
@@ -576,7 +580,7 @@ async function lfChart(message, args, type = "album") {
 
     let username = await database.getLfUser(message.author.id);
     if (!username) {
-        message.channel.send("⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set {username}`");
+        message.channel.send(`⚠ No Last.fm username linked to your account. Please link a username to your account using \`.fm set {username}\``);
         return;
     }
 
@@ -679,7 +683,7 @@ async function lfChart(message, args, type = "album") {
     ].join(``);
  
     let image = await html.toImage(htmlString, screen_width, screen_height);
-    let imageAttachment = new Discord.Attachment(image, `${username}-${timeframe}-${new Date(Date.now()).toISOString()}.jpg`);
+    let imageAttachment = new Discord.MessageAttachment(image, `${username}-${timeframe}-${new Date(Date.now()).toISOString()}.jpg`);
     let p = username[username.length-1].toLowerCase == 's' ? "'" : "'s";
     message.channel.send(`**${username+p}** ${displayTime} ${functions.capitalise(type)} Collage`, imageAttachment);
 

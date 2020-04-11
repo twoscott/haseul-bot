@@ -1,3 +1,4 @@
+const Discord = require("discord.js");
 const { searchMembers, resolveMember, resolveUser, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
@@ -23,7 +24,7 @@ exports.onCommand = async function(message, args) {
 
 async function profileTemp(message, args) {
 
-    let { author, guild } = message;
+    let { author, guild, members } = message;
     let target = args[1];
     let member;
     let userID;
@@ -36,11 +37,11 @@ async function profileTemp(message, args) {
 
     if (!userID) {
         target = trimArgs(args, 1, message.content)
-        guild = await guild.fetchMembers();
+        members = await guild.members.fetch();
 
-        member = await searchMembers(guild, target)
+        member = await searchMembers(members, target)
         if (!member) {
-            message.channel.send("⚠ Invalid user or user ID.");
+            message.channel.send(`⚠ Invalid user or user ID.`);
             return;
         } else {
             userID = member.id;
@@ -56,14 +57,14 @@ async function profileTemp(message, args) {
 
     member = member || await resolveMember(guild, userID);
     if (!member) {
-        message.channel.send("⚠ User is not in this server.");
+        message.channel.send(`⚠ User is not in this server.`);
         return;
     }
     let user = member ? member.user : await resolveUser(userID);
     let colour = member ? member.displayColor || 0x6d5ffb : 0x6d5ffb;
 
-    let embed = {
-        author: { name: `Temp Profile for ${user.username}`, icon_url: user.displayAvatarURL },
+    let embed = new Discord.MessageEmbed({
+        author: { name: `Temp Profile for ${user.username}`, icon_url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }) },
         color: colour,
         fields: [
             { name: 'Rep', value: userReps ? userReps.rep: 0, inline: false },
@@ -72,9 +73,9 @@ async function profileTemp(message, args) {
             { name: 'Server Level', value: `Level ${userGuildXp ? userGuildRank.lvl: 1}`, inline: true },
             { name: 'Server XP', value: `${userGuildXp ? (userGuildXp - userGuildRank.baseXp) : 0}/${userGuildRank.nextXp - userGuildRank.baseXp}`, inline: true }
         ],
-        thumbnail: { url: user.displayAvatarURL },
+        thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
         footer: { text: 'Full profiles coming soon.' }
-    }
+    });
 
     message.channel.send({embed: embed});
 

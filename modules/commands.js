@@ -1,3 +1,4 @@
+const Discord = require("discord.js");
 const { checkPermissions, embedPages, withTyping } = require("../functions/discord.js");
 
 const database = require("../db_queries/commands_db.js");
@@ -45,8 +46,16 @@ exports.onCommand = async function(message, args) {
                         withTyping(channel, editCommand, [message, args]);
                     break;
                 case "list":
-                    if (cmdsOn)
-                        withTyping(channel, listCommands, [message]);
+                    switch(args[2]) {
+                        case "raw":
+                            if (cmdsOn)
+                                listCommandsRaw(message);
+                            break;
+                        default:
+                            if (cmdsOn)
+                                withTyping(channel, listCommands, [message]);
+                            break;
+                    }
                     break;
                 case "search":
                     if (cmdsOn)
@@ -59,7 +68,7 @@ exports.onCommand = async function(message, args) {
                 case "help":
                 default:
                     if (cmdsOn) 
-                        channel.send("Help with custom commands can be found here: https://haseulbot.xyz/#custom-commands");
+                        channel.send(`Help with custom commands can be found here: https://haseulbot.xyz/#custom-commands`);
                     break;
             }
             break;
@@ -70,35 +79,35 @@ exports.onCommand = async function(message, args) {
 async function addCommand(message, args) {
 
     if (args.length < 3) {
-        message.channel.send("⚠ Please provide a command name and text and/or file.")
+        message.channel.send(`⚠ Please provide a command name and text and/or file.`)
         return;
     }
 
     let files = message.attachments.array(); 
     if (args.length < 4 && files.length < 1) {
-        message.channel.send("⚠ Please provide text or an uploaded file for a command response.")
+        message.channel.send(`⚠ Please provide text or an uploaded file for a command response.`)
         return;
     }
 
     let commandName = args[2].toLowerCase();
     if (commandName.length > 30) {
-        message.channel.send("⚠ Command names may not exceed 20 characters in length.")
+        message.channel.send(`⚠ Command names may not exceed 20 characters in length.`)
         return;
     }
 
     if (!/^[a-z0-9]+$/.test(commandName)) {
-        message.channel.send("⚠ This command name contains invalid characters, please use characters A-Z and 0-9.")
+        message.channel.send(`⚠ This command name contains invalid characters, please use characters A-Z and 0-9.`)
         return;
     }
 
     if (reservedCommands.list.includes(commandName)) {
-        message.channel.send("⚠ This is a reserved command name, please use another name.")
+        message.channel.send(`⚠ This is a reserved command name, please use another name.`)
         return;
     }
 
     let text = trimArgs(args, 3, message.content);
     let fileUrl = files[0] ? files[0].url : '';
-    text = [text, fileUrl].join('\n');
+    if (fileUrl) text = [text, fileUrl].join('\n');
     
     let added = await database.addCommand(message.guild.id, commandName, text);
     message.channel.send(added ? `Command \`${commandName}\` was added.` : `⚠ A command with the name \`${commandName}\` already exists.`);
@@ -108,7 +117,7 @@ async function addCommand(message, args) {
 async function removeCommand(message, commandName) {
 
     if (!commandName) {
-        message.channel.send("⚠ Please provide a command name to remove.")
+        message.channel.send(`⚠ Please provide a command name to remove.`)
         return;
     }
 
@@ -120,12 +129,12 @@ async function removeCommand(message, commandName) {
 async function renameCommand(message, args) {
 
     if (args.length < 3) {
-        message.channel.send("⚠ Please provide a command name and a new name for the command.")
+        message.channel.send(`⚠ Please provide a command name and a new name for the command.`)
         return;
     }
 
     if (args.length < 4) {
-        message.channel.send("⚠ Please provide a new name for the command.")
+        message.channel.send(`⚠ Please provide a new name for the command.`)
         return;
     }
 
@@ -156,24 +165,24 @@ async function renameCommand(message, args) {
 async function editCommand(message, args) {
 
     if (args.length < 3) {
-        message.channel.send("⚠ Please provide a command name and text and/or file.")
+        message.channel.send(`⚠ Please provide a command name and text and/or file.`)
         return;
     }
 
     let files = message.attachments.array(); 
     if (args.length < 4 && files.length < 1) {
-        message.channel.send("⚠ Please provide text or an uploaded file for a command response.")
+        message.channel.send(`⚠ Please provide text or an uploaded file for a command response.`)
         return;
     }
 
     let commandName = args[2].toLowerCase();
     if (!/^[a-z0-9]+$/.test(commandName)) {
-        message.channel.send("⚠ This command name contains invalid characters, please use characters A-Z and 0-9.")
+        message.channel.send(`⚠ This command name contains invalid characters, please use characters A-Z and 0-9.`)
         return;
     }
 
     if (reservedCommands.list.includes(commandName)) {
-        message.channel.send("⚠ This is a reserved command name, please use another name.")
+        message.channel.send(`⚠ This is a reserved command name, please use another name.`)
         return;
     }
 
@@ -193,7 +202,7 @@ async function listCommands(message) {
     let commands = await database.getCommands(guild.id);
     let commandNames = commands.map(x => x.command);
     if (commandNames.length < 1) {
-        message.channel.send("⚠ There are no commands added to this server.")
+        message.channel.send(`⚠ There are no commands added to this server.`)
         return;
     }
     let prefix = serverSettings.get(message.guild.id, 'prefix');
@@ -220,7 +229,7 @@ async function listCommands(message) {
             content: undefined,
             options: {embed: {
                 author: {
-                    name: "Custom Commands List", icon_url: 'https://i.imgur.com/gzL6uIE.png'
+                    name: `${commandNames.length.toLocaleString()} Custom Command${commandNames.length != 1 ? 's':''}`, icon_url: 'https://i.imgur.com/gzL6uIE.png'
                 },
                 description: desc,
                 color: 0x1a1a1a,
@@ -235,15 +244,27 @@ async function listCommands(message) {
 
 }
 
+async function listCommandsRaw(message) {
+
+    let { guild } = message;
+    let commands = await database.getCommands(guild.id);
+    commands = commands.map(x => { return { command: x.command, text: x.text } });
+
+    let jsonFile = Buffer.from(JSON.stringify(commands, null, 4));
+    let attachment = new Discord.MessageAttachment(jsonFile, `${guild.name}_custom_commands.json`);
+
+    message.channel.send(attachment);
+}
+
 async function searchCommands(message, query) {
 
     if (!query) {
-        message.channel.send("⚠ Please provide a search query.")
+        message.channel.send(`⚠ Please provide a search query.`)
         return;
     }
 
     if (query.length > 30) {
-        message.channel.send("⚠ Command names may not exceed 30 characters in length.")
+        message.channel.send(`⚠ Command names may not exceed 30 characters in length.`)
         return;
     }
 
@@ -252,7 +273,7 @@ async function searchCommands(message, query) {
     let commandNames = commands.map(x => x.command);
 
     if (commandNames.length < 1) {
-        message.channel.send("⚠ There are no commands added to this server.")
+        message.channel.send(`⚠ There are no commands added to this server.`)
         return;
     }
 
@@ -291,7 +312,7 @@ async function searchCommands(message, query) {
             content: undefined,
             options: {embed: {
                 author: {
-                    name: `${commandNames.length} Results Found for "${query}"`, icon_url: 'https://i.imgur.com/gzL6uIE.png'
+                    name: `${commandNames.length} Result${commandNames.length != 1 ? 's':'' } Found for "${query}"`, icon_url: 'https://i.imgur.com/gzL6uIE.png'
                 },
                 description: desc,
                 color: 0x1a1a1a,

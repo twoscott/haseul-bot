@@ -1,3 +1,4 @@
+const Discord = require("discord.js");
 const { withTyping } = require("../functions/discord.js");
 
 const html = require("../functions/html.js");
@@ -30,7 +31,7 @@ async function colour(message, args) {
     let rgb = colour.match(/(^\d{1,3})\s*,?\s*(\d{1,3})\s*,?\s*(\d{1,3}$)/i);
 
     if (!rgb && !hex) {
-        message.channel.send("⚠ Please provide a valid colour hexcode or RGB values.");
+        message.channel.send(`⚠ Please provide a valid colour hexcode or RGB values.`);
         return;
     }
 
@@ -46,13 +47,13 @@ async function colour(message, args) {
 
     let hexValue = parseInt(hex, 16);
     if (hexValue < 0 || hexValue > 16777215) {
-        message.channel.send("⚠ Please provide a valid colour hexcode or RGB values.");
+        message.channel.send(`⚠ Please provide a valid colour hexcode or RGB values.`);
         return;
     }
 
     for (let component of rgb) {
         if (component < 0 || component > 255) {
-            message.channel.send("⚠ Please provide a valid colour hexcode or RGB values.");
+            message.channel.send(`⚠ Please provide a valid colour hexcode or RGB values.`);
             return;
         }
     }
@@ -62,12 +63,12 @@ async function colour(message, args) {
     let htmlString = `<html> <style>* {margin:0; padding:0;}</style> <div style="background-color:${hex}; width:200px; height:200px"></div></html>`;
     let image = await html.toImage(htmlString, 200, 200);
 
-    let embed = {
+    let embed = new Discord.MessageEmbed({
         title: `Colour \`#${hex.toLowerCase()}\``,
         color: hexValue,
         image: { url: `attachment://${hex}.jpg`},
         footer: { text: `RGB: ${rgb.join(', ')} | HSV: ${hsv[0]}, ${hsv[1]}%, ${hsv[2]}%` }
-    }
+    });
 
     message.channel.send({embed, files: [{ attachment: image, name: `${hex}.jpg` }]});
 
@@ -84,12 +85,12 @@ async function colourRandom(message) {
     let htmlString = `<html> <style>* {margin:0; padding:0;}</style> <div style="background-color:${hex}; width:200px; height:200px"></div> </html>`;
     let image = await html.toImage(htmlString, 200, 200);
 
-    let embed = {
+    let embed = new Discord.MessageEmbed({
         title: `Colour \`${hex.toLowerCase()}\``,
         color: parseInt(hex.split('#')[1], 16),
         image: { url: `attachment://${hex.replace('#','')}.jpg`},
         footer: { text: `RGB: ${rgb.join(', ')} | HSV: ${hsv[0]}, ${hsv[1]}%, ${hsv[2]}%` }
-    }
+    });
 
     message.channel.send({embed, files: [{ attachment: image, name: `${hex.replace('#','')}.jpg` }]});
 

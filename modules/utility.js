@@ -42,11 +42,11 @@ exports.onCommand = async function(message, args) {
     switch (args[0]) {
         case "github":
         case "git":
-            message.channel.send("https://github.com/haseul/haseul-bot");
+            message.channel.send(`https://github.com/twoscott/haseul-bot`);
             break;
         case "discord":
         case "invite":
-            message.channel.send("https://discord.gg/w4q5qux");
+            message.channel.send(`https://discord.gg/w4q5qux`);
             break;
         case "translate":
         case "trans":
@@ -54,11 +54,11 @@ exports.onCommand = async function(message, args) {
             withTyping(channel, translate, [message, args]);
             break;
         case "help":
-            message.channel.send("Commands can be found here: https://haseulbot.xyz/");
+            message.channel.send(`Commands can be found here: https://haseulbot.xyz/`);
             break;
         case "ping":
             let start = Date.now();
-            message.channel.send("Response: ").then(msg => {
+            message.channel.send(`Response: `).then(msg => {
                 let end = Date.now();
                 let ms = end - start;
                 msg.edit(`Response: \`${ms}ms\``);
@@ -159,11 +159,11 @@ async function translate(message, args) {
     }
 
     if (!target_lang_code) {
-        message.channel.send("⚠ Invalid language or language code given.");
+        message.channel.send(`⚠ Invalid language or language code given.`);
         return;
     }
     if (!text) {
-        message.channel.send("⚠ No text given to be translated.");
+        message.channel.send(`⚠ No text given to be translated.`);
         return;
     }
 

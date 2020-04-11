@@ -1,3 +1,4 @@
+const Discord = require("discord.js");
 const Client = require("../haseul.js").Client;
 const axios = require("axios");
 const database = require("../db_queries/vlive_db.js");
@@ -70,7 +71,7 @@ async function vliveLoop() {
 
                 let videoLive = videoType == 'LIVE';
 
-                let embed = {
+                let embed = new Discord.MessageEmbed({
                     author: {
                         name: `${representChannelName} - ${videoLive ? 'Now Live!' : 'New Upload'}`, 
                         icon_url: channelProfileImage, 
@@ -82,7 +83,7 @@ async function vliveLoop() {
                     footer: { text: 'VLIVE', icon_url: 'https://i.imgur.com/gHo7BTO.png' },
                     timestamp: releaseTimestamp,
                     color: channelColour
-                }
+                });
 
                 for (let data of targetData) {
                     let { guildID, discordChanID, mentionRoleID, VPICK } = data;
@@ -91,12 +92,12 @@ async function vliveLoop() {
                         continue;
                     }
 
-                    let guild = Client.guilds.get(guildID);
+                    let guild = Client.guilds.cache.get(guildID);
                     if (!guild) {
                         console.error(Error("Guild couldn't be retrieved to send VLIVE notif to."));
                         continue;
                     }
-                    let discordChannel = Client.channels.get(discordChanID) || guild.channels.get(discordChanID);
+                    let discordChannel = Client.channels.cache.get(discordChanID) || guild.channels.cache.get(discordChanID);
                     if (!discordChannel) {
                         console.error(Error("Channel couldn't be retrieved to send VLIVE notif to."));
                         continue;

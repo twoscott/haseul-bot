@@ -1,4 +1,4 @@
-const { embedPages, withTyping } = require("../functions/discord.js");
+const { embedPages, resolveUser, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
 const database = require("../db_queries/levels_db.js");
@@ -68,8 +68,7 @@ async function leaderboard(message, local) {
     ranks = ranks.sort((a,b) => b.xp - a.xp).slice(0,100); // show only top 100
     for (let i = 0; i < ranks.length; i++) {
         let rank = ranks[i]
-        let user = Client.users.get(rank.userID);
-        if (!user) user = await Client.fetchUser(rank.userID);
+        let user = await resolveUser(rank.userID);
         let name = user ? user.username.replace(/([\`\*\~\_])/g, "\\$&") : rank.userID;
         ranks[i] = {
             userID: rank.userID, name: name,

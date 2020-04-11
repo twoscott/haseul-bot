@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const Client = new Discord.Client({disableEveryone: true});
+const Client = new Discord.Client({ disableMentions: "everyone" });
 module.exports = { Client };
 
 const config = require("./config.json");
@@ -11,11 +11,11 @@ let initialised = false;
 
 // Debugging
 
-Client.on("disconnect", closeEvent => {
+Client.on("shardDisconnected", closeEvent => {
     console.error(`Fatal error occured... Reason: ${closeEvent.reason}`);
 })
 
-Client.on("reconnecting", () => {
+Client.on("shardReconnecting", () => {
     console.log("Reconnecting...");
 })
 
@@ -32,8 +32,8 @@ Client.on("warn", warning => {
 Client.on("ready", () => {
     console.log("Ready!");
 
-    let botChannel = Client.channels.get(config.bot_channel);    
-    botChannel.send("Ready!");
+    let botChannel = Client.channels.cache.get(config.bot_channel, true);    
+    botChannel.send(`Ready!`);
 
     if (!initialised) {
         checklist.handleTasks();
@@ -57,6 +57,6 @@ Client.on("guildCreate", guild => {
     border.handleNewGuild(guild);
 })
 
-// -- Login --
+// Login
 
 Client.login(config.token);

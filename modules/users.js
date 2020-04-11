@@ -61,7 +61,7 @@ exports.onCommand = async function(message, args) {
                         withTyping(channel, toggleJoin, [message]);
                     break;
                 default:
-                    message.channel.send("Help with logs can be found here: https://haseulbot.xyz/#member-logs");
+                    message.channel.send(`Help with logs can be found here: https://haseulbot.xyz/#member-logs`);
                     break;
             }
             break;
@@ -99,7 +99,7 @@ async function log(member, colour, logEvent) {
     let logsOn = serverSettings.get(member.guild.id, "joinLogsOn");
     if (!logsOn) return;
     let logChannelID = serverSettings.get(member.guild.id, "joinLogsChan");
-    if (!member.guild.channels.has(logChannelID)) return;
+    if (!member.guild.channels.cache.has(logChannelID)) return;
     if (logChannelID) logEvent(member, logChannelID, colour); //Log
 }
 
@@ -111,22 +111,23 @@ async function welcome(member, colour) {
     let welcomeOn = serverSettings.get(member.guild.id, "welcomeOn");
     if (!welcomeOn) return;
     let welcomeChannelID = serverSettings.get(member.guild.id, "welcomeChan");
-    if (!member.guild.channels.has(welcomeChannelID)) return;
+    if (!member.guild.channels.cache.has(welcomeChannelID)) return;
     if (!welcomeChannelID) return;
 
     let memberNumber = await getMemberNumber(member);
     let defaultMsg = `**{username}**#{discriminator} has ${['arrived', 'joined', 'appeared'][Math.floor(Math.random() * 3)]}!`;
     let welcomeMsg = serverSettings.get(member.guild.id, "welcomeMsg");
 
-    let embed = new Discord.RichEmbed()
-    .setTitle(`New Member!`)
-    .setThumbnail(user.displayAvatarURL)
-    .setDescription((welcomeMsg || defaultMsg).replace('{default}', defaultMsg).replace('{user}', user).replace('{username}', user.username).replace('{discriminator}', user.discriminator).replace('{usertag}', user.tag).replace('{server}', guild.name).replace('{memberno}', memberNumber))
-    .setColor(colour)
-    .setFooter(`Member #${memberNumber} 🎐`)
-    .setTimestamp(member.joinedTimestamp);
+    let embed = new Discord.MessageEmbed({
+        title: "New Member!",
+        thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
+        description: (welcomeMsg || defaultMsg).replace('{default}', defaultMsg).replace('{user}', user).replace('{username}', user.username).replace('{discriminator}', user.discriminator).replace('{usertag}', user.tag).replace('{server}', guild.name).replace('{memberno}', memberNumber),
+        color: colour,
+        footer: { text: `Member #${memberNumber} 🎐` },
+        timestamp: member.joinedTimestamp
+    })
 
-    let channel = Client.channels.get(welcomeChannelID) || guild.channels.get(welcomeChannelID);
+    let channel = Client.channels.cache.get(welcomeChannelID) || guild.channels.cache.get(welcomeChannelID);
     channel.send(embed);
 
 }
@@ -138,17 +139,20 @@ async function logJoin(member, destination, colour) {
         user,
         guild
     } = member;
-    let embed = new Discord.RichEmbed()
-    .setTitle("Member Joined!")
-    .setThumbnail(user.displayAvatarURL)
-    .setDescription(`${user} (**${user.tag}**) joined ${guild}.`)
-    .addField("Joined On", member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true)
-    .addField("Account Created On", user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true)
-    .addField("User ID", user.id)
-    .setFooter(`Member #${memNo}`)
-    .setColor(colour);
+    let embed = new Discord.MessageEmbed({
+        title: "Member Joined!",
+        thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
+        description: `${user} (**${user.tag}**) joined ${guild}.`,
+        fields: [
+            { name: "Joined On", value: member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
+            { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
+            { name: "User ID", value: user.id, inline: false }
+        ],
+        footer: { text: `Member #${memNo}` },
+        color: colour
+    })
     
-    let channel = Client.channels.get(destination) || guild.channels.get(destination);
+    let channel = Client.channels.cache.get(destination) || guild.channels.cache.get(destination);
     channel.send(embed);
 }
 
@@ -159,16 +163,18 @@ const logLeave = async function (member, destination, colour) {
         user,
         guild
     } = member;
-    let embed = new Discord.RichEmbed()
-    .setTitle("Member Left!")
-    .setThumbnail(user.displayAvatarURL)
-    .setDescription(`${user} (**${user.tag}**) left ${guild}.`)
-    .addField("Left On", member.leftAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true)
-    .addField("Account Created On", user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true)
-    .addField("User ID", user.id)
-    .setColor(colour);
+    let embed = new Discord.MessageEmbed({
+        title: "Member Left!",
+        thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
+        fields: [
+            { name: "Left On", value: member.leftAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
+            { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
+            { name: "User ID", value: user.id, inline: false }
+        ],
+        color: colour
+    })
     
-    let channel = Client.channels.get(destination) || guild.channels.get(destination);
+    let channel = Client.channels.cache.get(destination) || guild.channels.cache.get(destination);
     channel.send(embed);
 
 }
@@ -189,11 +195,11 @@ async function userInfo(message, args) {
 
     if (!userID) {
         target = trimArgs(args, 1, message.content)
-        guild = await guild.fetchMembers();
+        let members = await guild.members.fetch();
 
-        member = await searchMembers(guild, target)
+        member = await searchMembers(members, target)
         if (!member) {
-            message.channel.send("⚠ Invalid user or user ID.");
+            message.channel.send(`⚠ Invalid user or user ID.`);
             return;
         } else {
             userID = member.id;
@@ -214,7 +220,7 @@ async function userInfo(message, args) {
         let embed = await userEmbed(user);
         message.channel.send({ embed });
     } else {
-        message.channel.send("⚠ Invalid user.");
+        message.channel.send(`⚠ Invalid user.`);
     }
 
 }
@@ -222,6 +228,7 @@ async function userInfo(message, args) {
 async function memberEmbed(author, member) {
 
     let { user, guild } = member;
+    let memNo = await getMemberNumber(member);
     let lastMsg = member.lastMessage
 
     let status = {
@@ -230,26 +237,46 @@ async function memberEmbed(author, member) {
         "dnd"    : "<:dnd_cb:533459049547563008>Do Not Disturb", 
         "offline": "<:offline_cb:533459049648226317>Offline"
     }
-
-    let embed = new Discord.RichEmbed()
-    .setAuthor(user.tag, user.displayAvatarURL)
-    .setURL(user.displayAvatarURL.split('?')[0]+'?size=1024')
-    .setDescription(user)
-    .setThumbnail(user.displayAvatarURL)
-    .setColor(member.displayColor || 0xffffff)
-    .setFooter(`Member #${await getMemberNumber(member)}`)
-    .setTimestamp(member.joinedAt)
-    .addField("Status", status[user.presence.status], true)
-    .addField("Account Created", user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true)
-    .addField("Joined On",  member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ''), true)
-    .addField("User ID", user.id, true);
-
-    if (lastMsg && user.id != author.id) {
-        embed.addField("Last Seen", `[View Message](https://discordapp.com/channels/${guild.id}/${lastMsg.channel.id}/${lastMsg.id} "Go To User's Last Message")`, true);
+    
+    let response;
+    try {
+        response = await axios.head(user.displayAvatarURL());
+    } catch (e) {
+        response = null;
     }
 
-    if (member.roles && member.roles.size > 1) {
-        let allRoles = member.roles.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
+    let embed = new Discord.MessageEmbed({
+        author: { name: user.tag, icon_url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }) },
+        url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 2048 }),
+        description: `<@${user.id}>`,
+        thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
+        color: member.displayColor || 0xffffff,
+        fields: [
+            { name: "Status", value: status[user.presence.status], inline: false },
+            { name: "Account Created", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false }
+        ],
+        footer: { text: `Member #${memNo}` }
+    });
+
+    if (response) {
+        let timestamp = new Date(response.headers['last-modified']);
+        embed.addField("Avatar Uploaded", timestamp.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), false);
+    }
+
+    embed.addField("Joined On", member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), false);
+
+    if (member.premiumSince) {
+        embed.addField("Boosting Since", user.premiumSince.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), false);
+    }
+
+    embed.addField("User ID", user.id, false);
+
+    if (lastMsg && user.id != author.id) {
+        embed.addField("Last Seen", `[View Message](https://discordapp.com/channels/${guild.id}/${lastMsg.channel.id}/${lastMsg.id} "Go To User's Last Message")`, false);
+    }
+
+    if (member.roles.cache.size > 1) {
+        let allRoles = member.roles.cache.array().sort((a,b) => b.comparePositionTo(a)).slice(0,-1);
         let modRoles = [];
         let roles = [];
         let perms = [
@@ -257,7 +284,7 @@ async function memberEmbed(author, member) {
             "KICK_MEMBERS", "BAN_MEMBERS"
         ];
         for (let role of allRoles) {
-            if (perms.some(p => role.hasPermission(p, false, true))) {
+            if (perms.some(p => role.permissions.has(p, false, true))) {
                 modRoles.push(role);
             } else {
                 roles.push(role);
@@ -270,7 +297,7 @@ async function memberEmbed(author, member) {
                 modRoles = modRoles.substring(0, modRoles.lastIndexOf('>')+1);
                 modRoles += '.'.repeat(modRoles.length > 1021 ? 1024-roles.length : 3);
             }
-            embed.addField("Mod Roles", modRoles, true);
+            embed.addField("Mod Roles", modRoles, false);
         }
         if (roles.length > 0) {
             roles = roles.join(" ");
@@ -279,7 +306,7 @@ async function memberEmbed(author, member) {
                 roles = roles.substring(0, roles.lastIndexOf('>')+1);
                 roles += '.'.repeat(roles.length > 1021 ? 1024-roles.length : 3);
             }
-            embed.addField("Roles", roles, true);
+            embed.addField("Roles", roles, false);
         }
     }
 
@@ -296,17 +323,20 @@ async function userEmbed(user) {
         "dnd"    : "<:dnd:532078078382571540>Do Not Disturb" 
     }
 
-    let embed = new Discord.RichEmbed()
-    .setAuthor(user.tag, user.displayAvatarURL)
-    .setURL(user.displayAvatarURL.split('?')[0]+'?size=1024')
-    .setDescription(user)
-    .setThumbnail(user.displayAvatarURL)
-    .setColor(0xffffff)
-    .setFooter(`User not in server`)
-    .setTimestamp(user.createdAt)
-    .addField("Status", status[user.presence.status])
-    .addField("User ID", user.id)
-    .addField("Account Created", user.createdAt.toUTCString().replace(' GMT', ''));
+    let embed = new Discord.MessageEmbed({
+        author: { name: user.tag, icon_url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }) },
+        url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 2048 }),
+        description: `<@${user.id}>`,
+        thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
+        color: 0xffffff,
+        fields: [
+            { name: "Status", value: status[user.presence.status], inline: false },
+            { name: "Account Created", value: user.createdAt.toUTCString().replace(' GMT', ' UTC'), inline: false },
+            { name: "User ID", value: user.id, inline: false }
+        ],
+        footer: { text: "User not in server" },
+        timestamp: user.createdAt
+    });
 
     return embed;
     
@@ -328,11 +358,11 @@ async function userAvatar(message, args) {
 
     if (!userID) {
         target = trimArgs(args, 1, message.content)
-        guild = await guild.fetchMembers();
+        members = await guild.members.fetch();
 
-        member = await searchMembers(guild, target)
+        member = await searchMembers(members, target)
         if (!member) {
-            message.channel.send("⚠ Invalid user or user ID.");
+            message.channel.send(`⚠ Invalid user or user ID.`);
             return;
         } else {
             userID = member.id;
@@ -347,15 +377,15 @@ async function userAvatar(message, args) {
     }
     
     if (!user) {
-        message.channel.send("⚠ Invalid user.");
+        message.channel.send(`⚠ Invalid user.`);
         return;
     }
 
     let res;
     try {
-        res = await axios.get(user.displayAvatarURL.split('?')[0] + '?size=2048', {responseType: 'arraybuffer'});
+        res = await axios.get(user.displayAvatarURL({ format: 'png', dynamic: true, size: 2048 }), {responseType: 'arraybuffer'});
     } catch (e) {
-        message.channel.send("Error fetching avatar: " + user.displayAvatarURL);
+        message.channel.send("Error fetching avatar: " + user.displayAvatarURL({ format: 'png', dynamic: true, size: 2048 }));
         return;
     }
 
@@ -368,16 +398,16 @@ async function userAvatar(message, args) {
     let username = user.username;
     let p = username.toLowerCase().endsWith('s') ? "'" : "'s";
 
-    let embed = {
+    let embed = new Discord.MessageEmbed({
         title: `${username+p} Avatar`,
         color: member ? member.displayColor || 0xffffff : 0xffffff
-    }
+    });
 
     if (dims[0] < 150) {
-        embed.thumbnail = { url: user.displayAvatarURL };
+        embed.thumbnail = { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 2048 }) };
         embed.description = `Type: ${img_type.toUpperCase()}\nSize: ${img_size}MB\nDimensions: ${dims.join('x')}\nUploaded: ${timestamp.toLocaleString('en-GB', { timeZone: 'UTC' }).split(',')[0]}`
     } else {
-        embed.image = { url: user.displayAvatarURL.split('?')[0] + '?size=2048' };
+        embed.image = { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 2048 }) };
         embed.footer = { text: `Type: ${img_type.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${img_size}MB` }
         embed.timestamp = timestamp;
     }
@@ -398,29 +428,29 @@ async function setJoinChannel(message, channelArg) {
     }
 
     if (!channelID) {
-        message.channel.send("⚠ Invalid channel or channel ID.");
+        message.channel.send(`⚠ Invalid channel or channel ID.`);
         return;
     }
 
-    let channel = guild.channels.get(channelID);
+    let channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send("⚠ Channel doesn't exist in this server.");
+        message.channel.send(`⚠ Channel doesn't exist in this server.`);
         return;
     }
 
     let member = await resolveMember(guild, Client.user.id);
     if (!member) {
-        message.channel.send("⚠ Error occurred.");
+        message.channel.send(`⚠ Error occurred.`);
         return;
     }
     
     let botPerms = channel.permissionsFor(member);
     if (!botPerms.has("VIEW_CHANNEL", true)) {
-        message.channel.send("⚠ I cannot see this channel!");
+        message.channel.send(`⚠ I cannot see this channel!`);
         return;
     }
     if (!botPerms.has("SEND_MESSAGES", true)) {
-        message.channel.send("⚠ I cannot send messages to this channel!");
+        message.channel.send(`⚠ I cannot send messages to this channel!`);
         return;
     }
     
@@ -448,29 +478,29 @@ async function setWelcomeChannel(message, channelArg) {
     }
 
     if (!channelID) {
-        message.channel.send("⚠ Invalid channel or channel ID.");
+        message.channel.send(`⚠ Invalid channel or channel ID.`);
         return;
     }
     
-    let channel = guild.channels.get(channelID);
+    let channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send("⚠ Channel doesn't exist in this server.");
+        message.channel.send(`⚠ Channel doesn't exist in this server.`);
         return;
     }
 
     let member = await resolveMember(guild, Client.user.id);
     if (!member) {
-        message.channel.send("⚠ Error occurred.");
+        message.channel.send(`⚠ Error occurred.`);
         return;
     }
     
     let botPerms = channel.permissionsFor(member);
     if (!botPerms.has("VIEW_CHANNEL", true)) {
-        message.channel.send("⚠ I cannot see this channel!");
+        message.channel.send(`⚠ I cannot see this channel!`);
         return;
     }
     if (!botPerms.has("SEND_MESSAGES", true)) {
-        message.channel.send("⚠ I cannot send messages to this channel!");
+        message.channel.send(`⚠ I cannot send messages to this channel!`);
         return;
     }
     
@@ -482,13 +512,13 @@ async function setWelcomeChannel(message, channelArg) {
 async function setWelcomeMsg(message, args) {
 
     if (args.length < 4) {
-        message.channel.send("⚠ Please provide a message.");
+        message.channel.send(`⚠ Please provide a message.`);
         return;
     }
     
     let msg = trimArgs(args, 3, message.content);
     await serverSettings.set(message.guild.id, "welcomeMsg", msg)
-    message.channel.send("Welcome message set.");
+    message.channel.send(`Welcome message set.`);
 
 }
 

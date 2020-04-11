@@ -1,3 +1,4 @@
+const Discord = require("discord.js");
 const { embedPages, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
@@ -18,7 +19,7 @@ exports.onCommand = async function(message, args) {
                     withTyping(channel, searchEmojis, [message, args[2]]);
                     break;
                 case "help":
-                    channel.send("Help with emojis can be found here: https://haseulbot.xyz/#emoji");
+                    channel.send(`Help with emojis can be found here: https://haseulbot.xyz/#emoji`);
                     break;
                 default:
                     withTyping(channel, largeEmoji, [message, args])
@@ -42,10 +43,10 @@ exports.onMention = async function(message, args) {
 async function listEmojis(message) {
 
     let { guild } = message;
-    let emojis = guild.emojis.array()
+    let emojis = guild.emojis.cache.array()
 
     if (emojis.length < 1) {
-        message.channel.send("⚠ There are no emojis added to this server.")
+        message.channel.send(`⚠ There are no emojis added to this server.`)
         return;    
     }
 
@@ -75,7 +76,7 @@ async function listEmojis(message) {
             content: undefined,
             options: {embed: {
                 author: {
-                    name: `${emojis.length} Emojis - ${staticEmojis.length} Static; ${animatedEmojis.length} Animated`, icon_url: 'https://i.imgur.com/hIpmRU2.png'
+                    name: `${emojis.length} Emoji${emojis.length != 1 ? 's':''} - ${staticEmojis.length} Static; ${animatedEmojis.length} Animated`, icon_url: 'https://i.imgur.com/hIpmRU2.png'
                 },
                 description: desc,
                 color: 0xffcc4d,
@@ -93,12 +94,12 @@ async function listEmojis(message) {
 async function searchEmojis(message, query) {
 
     if (!query) {
-        message.channel.send("⚠ Please provide a search query.")
+        message.channel.send(`⚠ Please provide a search query.`)
         return;
     }
 
     let { guild } = message;
-    let emojis = guild.emojis.array().filter(x => x.name.toLowerCase().includes(query.toLowerCase()));
+    let emojis = guild.emojis.cache.array().filter(x => x.name.toLowerCase().includes(query.toLowerCase()));
 
     if (emojis.length < 1) {
         message.channel.send(`⚠ No results were found searching for "${query}".`)
@@ -132,7 +133,7 @@ async function searchEmojis(message, query) {
             content: undefined,
             options: {embed: {
                 author: {
-                    name: `${emojis.length} Results found for "${query.slice(0,30)}"`, icon_url: 'https://i.imgur.com/hIpmRU2.png'
+                    name: `${emojis.length} Result${emojis.length != 1 ? 's':''} Found for "${query.slice(0,30)}"`, icon_url: 'https://i.imgur.com/hIpmRU2.png'
                 },
                 description: desc,
                 color: 0xffcc4d,
@@ -150,7 +151,7 @@ async function searchEmojis(message, query) {
 async function largeEmoji(message, args) {
 
     if (args[0] == "emoji" && args.length < 2) {
-        message.channel.send("⚠ Please provide an emoji to enlarge.")
+        message.channel.send(`⚠ Please provide an emoji to enlarge.`)
         return;
     } else if (message.mentions.length < 1 || args.length < 2) {
         return;
@@ -160,7 +161,7 @@ async function largeEmoji(message, args) {
 
     if (!emojiMatch) {
         if (args[0] == "emoji") {
-            message.channel.send("⚠ Invalid emoji provided!");
+            message.channel.send(`⚠ Invalid emoji provided!`);
         }
         return;
     }
@@ -175,11 +176,11 @@ async function largeEmoji(message, args) {
     let imageType = response.headers['content-type'].split('/')[1];
     let imageSize = Math.max(Math.round(response.headers['content-length']/10)/100, 1/100);
 
-    let embed = {
+    let embed = new Discord.MessageEmbed({
         title: `Emoji \`:${emojiName}:\``,
         image: { url: imageUrl },
         footer: { text: `Type: ${imageType.toUpperCase()}  |  Size: ${imageSize}KB` }
-    }
+    })
 
     message.channel.send({ embed });
     message.channel.stopTyping();

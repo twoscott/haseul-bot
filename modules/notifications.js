@@ -1,3 +1,4 @@
+const Discord = require("discord.js");
 const { resolveMember, withTyping } = require("../functions/discord.js");
 
 const database = require("../db_queries/notifications_db.js");
@@ -86,7 +87,7 @@ exports.onCommand = async function(message, args) {
                     break;
                 case "help":
                 default:
-                    channel.send("Help with notifications can be found here: https://haseulbot.xyz/#notifications");
+                    channel.send(`Help with notifications can be found here: https://haseulbot.xyz/#notifications`);
                     break;                    
             }
             break;
@@ -97,6 +98,7 @@ exports.onCommand = async function(message, args) {
 async function notify(message) {
 
     let { guild, channel, author, content, member } = message;
+    if (!content) return;
     
     let locals = await database.getAllLocalNotifs(guild.id);
     let globals = await database.getAllGlobalNotifs();
@@ -108,14 +110,16 @@ async function notify(message) {
     let ignored_servers = await database.getIgnoredServers();
 
     let msg_url = `https://discordapp.com/channels/${guild.id}/${channel.id}/${message.id}`;
-    let desc = `[View Message](${msg_url})\n\n` + content;
-    let embed = {
-        author: { name: author.tag, icon_url: author.displayAvatarURL, url: msg_url },
-        description: desc.length < 1025 ? desc : desc.slice(0,1021).trim()+'...',
+    let embed = new Discord.MessageEmbed({
+        author: { name: author.tag, icon_url: author.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }), url: msg_url },
         color: member.displayColor || 0xffffff,
+        fields: [
+            { name: "Message Link", value: `[View Message](${msg_url} "Jump to Message")` },
+            { name: "Content", value: content.length < 1025 ? content : content.slice(0,1021).trim()+'...', inline: false }
+        ],
         footer: { text: `#${channel.name}` },
         timestamp: message.createdAt
-    }
+    });
 
     for (let notif of notifs) {
         if (notif.guildID && notif.guildID != guild.id) { 
@@ -192,11 +196,11 @@ async function notify(message) {
 async function addNotification(message, args, global) {
 
     if (args.length < (global ? 4 : 3)) {
-        message.channel.send("⚠ Please specify a key word or phrase to add.");
+        message.channel.send(`⚠ Please specify a key word or phrase to add.`);
         return;
     }
 
-    message.delete(500);
+    message.delete({ timeout: 500 });
     
     let type;
     let typeArg = global ? args[3] : args[2];
@@ -210,7 +214,7 @@ async function addNotification(message, args, global) {
     }
 
     if (keyword.length > 128) {
-        message.channel.send("⚠ Keywords must not exceed 128 character in length.");
+        message.channel.send(`⚠ Keywords must not exceed 128 character in length.`);
         return;
     }
 
@@ -221,7 +225,7 @@ async function addNotification(message, args, global) {
     let addedNotif = global ? await database.addGlobalNotif(author.id, keyword, keyrgx, type)
                             : await database.addLocalNotif(guild.id, author.id, keyword, keyrgx, type);
     if (!addedNotif) {
-        message.channel.send("⚠ Notification with this keyword already added.");
+        message.channel.send(`⚠ Notification with this keyword already added.`);
         return;
     }
 
@@ -233,12 +237,12 @@ async function addNotification(message, args, global) {
 async function removeNotification(message, args, global) {
 
     if (args.length < (global ? 4 : 3)) {
-        message.channel.send("⚠ Please specify a key word or phrase to remove.");
+        message.channel.send(`⚠ Please specify a key word or phrase to remove.`);
         return;
     }
 
     let keyphrase = trimArgs(args, global ? 3 : 2, message.content);
-    message.delete(500);
+    message.delete({ timeout: 500 });
 
     let { guild, author } = message;
     let removed = global  ? await database.removeGlobalNotif(author.id, keyphrase)
@@ -249,7 +253,7 @@ async function removeNotification(message, args, global) {
         return;
     }
 
-    author.send(`You will no longer be notified when \`${keyphrase}\` is mentioned${!global ? ` in \`${guild.name}\`.` : `.`}`)
+    author.send(`You will no longer be notified when \`${keyphrase}\` is mentioned${!global ? ` in \`${guild.name}\`.` : `.`}`);
     message.channel.send(`Notification removed.`);
 
 }
@@ -301,7 +305,7 @@ async function listNotifications(message, global) {
         await author.send(page);
     }
 
-    message.channel.send("A list of your notifications has been sent to your DMs.");
+    message.channel.send(`A list of your notifications has been sent to your DMs.`);
 }
 
 async function ignoreChannel(message, args) {
@@ -311,19 +315,19 @@ async function ignoreChannel(message, args) {
     if (args.length >= 1) {
         let channel_id = args[0].match(/<?#?!?(\d+)>?/);
         if (!channel_id) {
-            message.channel.send("⚠ Invalid channel or channel ID.");
+            message.channel.send(`⚠ Invalid channel or channel ID.`);
             return;
         }
         channel_id = channel_id[1];
-        channel = guild.channels.get(channel_id);
+        channel = guild.channels.cache.get(channel_id);
     }
 
     if (!channel) {
-        message.channel.send("⚠ Channel doesn't exist in this server.");
+        message.channel.send(`⚠ Channel doesn't exist in this server.`);
         return;
     }
     if (channel.type != "text") {
-        message.channel.send("⚠ Channel must be a text channel.");
+        message.channel.send(`⚠ Channel must be a text channel.`);
         return;
     }
 

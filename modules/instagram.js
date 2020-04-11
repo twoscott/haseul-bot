@@ -56,7 +56,7 @@ exports.onCommand = async function(message, args) {
                     break;
                 case "help":
                 default:
-                    message.channel.send("Help with Instagram can be found here: https://haseulbot.xyz/#instagram");
+                    message.channel.send(`Help with Instagram can be found here: https://haseulbot.xyz/#instagram`);
                     break;
             }
             break;
@@ -70,7 +70,7 @@ async function instaNotifAdd(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/www\.instagram\.com\/)?(.+?)(?:\/)?\s+<?#?(\d{8,})>?\s*((<@&)?(.+?)(>)?)?$/i);
     if (!formatMatch) {
-        message.channel.send("⚠ Incorrect formatting. For help with Instagram, see: https://haseulbot.xyz/#instagram");
+        message.channel.send(`⚠ Incorrect formatting. For help with Instagram, see: https://haseulbot.xyz/#instagram`);
         return;
     }
 
@@ -78,38 +78,38 @@ async function instaNotifAdd(message, args) {
     let channelID = formatMatch[2];
     let mentionRole = formatMatch[3];
 
-    let channel = guild.channels.get(channelID);
+    let channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send("⚠ The channel provided does not exist in this server.");
+        message.channel.send(`⚠ The channel provided does not exist in this server.`);
         return;
     }
     if (channel.type != "text") {
-        message.channel.send("⚠ Please provide a text channel to send notifications to.");
+        message.channel.send(`⚠ Please provide a text channel to send notifications to.`);
         return;
     }
     
     let member = await resolveMember(guild, Client.user.id);
     if (!member) {
-        message.channel.send("⚠ Error occurred.");
+        message.channel.send(`⚠ Error occurred.`);
         return;
     }
 
     let botCanRead = channel.permissionsFor(member).has("VIEW_CHANNEL", true);
     if (!botCanRead) {
-        message.channel.send("⚠ I cannot see this channel!");
+        message.channel.send(`⚠ I cannot see this channel!`);
         return;
     }
 
     let role;
     if (mentionRole) {
         if (formatMatch[4] && formatMatch[6]) {
-            role = guild.roles.get(formatMatch[5])
+            role = await guild.roles.fetch(formatMatch[5])
             if (!role) {
                 message.channel.send(`⚠ A role with the ID \`${formatMatch[5]}\` does not exist in this server.`);
                 return;
             }
         } else {
-            role = guild.roles.find(role => role.name == formatMatch[5]);
+            role = guild.roles.cache.find(role => role.name == formatMatch[5]);
             if (!role) {
                 message.channel.send(`⚠ The role \`${formatMatch[5]}\` does not exist in this server.`);
                 return;
@@ -125,44 +125,48 @@ async function instaNotifAdd(message, args) {
         response = await patreon.get('/campaigns/'+config.haseul_campaign_id+'/members?include=user,currently_entitled_tiers&fields'+encodeURI('[member]')+'=full_name,patron_status,pledge_relationship_start,currently_entitled_amount_cents&fields'+encodeURI('[tier]')+'title,&fields'+encodeURI('[user]')+'=social_connections');
     } catch(e) {
         console.error("Patreon error: " + e.response.status);
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send(`⚠ Error occurred.`);
         return;
     }
     
-    let patreonMembers = response.data.data;
-    let patreonUsers = response.data.included.filter(x => {
-        return x.type == 'user' && x.attributes.social_connections.discord
-    });
-
     let ownerPatronT2 = false;
-    for (let i = 0; i < patreonUsers.length && !ownerPatronT2; i++) {
-        let user = patreonUsers[i];
-        let userDiscord = user.attributes.social_connections.discord;
-        let userDiscordID = userDiscord ? userDiscord.user_id : null;
-        if (userDiscordID == guild.ownerID) {
-            let member = patreonMembers.find(m => m.relationships.user.data.id == user.id);
-            let tier2Member = member.relationships.currently_entitled_tiers.data.find(t => t.id = tier2ID);
-            if (tier2Member) {
-                ownerPatronT2 = true;
+    try {
+        let patreonMembers = response.data.data;
+        let patreonUsers = response.data.included.filter(x => {
+            return x.type == 'user' && x.attributes.social_connections.discord
+        });
+
+        for (let i = 0; i < patreonUsers.length && !ownerPatronT2; i++) {
+            let user = patreonUsers[i];
+            let userDiscord = user.attributes.social_connections.discord;
+            let userDiscordID = userDiscord ? userDiscord.user_id : null;
+            if (userDiscordID == guild.ownerID) {
+                let member = patreonMembers.find(m => m.relationships.user.data.id == user.id);
+                let tier2Member = member.relationships.currently_entitled_tiers.data.find(t => t.id = tier2ID);
+                if (tier2Member) {
+                    ownerPatronT2 = true;
+                }
             }
         }
+    } catch (e) {
+        console.error("Patreon error adding Instagram");
     }
 
     if (guild.id != '276766140938584085') {
         if (!ownerPatronT2) {
             if (guild.members.size < 100) {
-                message.channel.send("⚠ Due to Instagram's limitations, you must have more than 100 members in the server to use Instagram notifications!");
+                message.channel.send(`⚠ Due to Instagram's limitations, you must have more than 100 members in the server to use Instagram notifications!`);
                 return;
             } else if (guild.members.size < 500 && instaIDs.size >= 1) {
-                message.channel.send("⚠ Due to Instagram's limitations, you must have more than 500 members in the server to have 2 Instagram notifications on the server!");
+                message.channel.send(`⚠ Due to Instagram's limitations, you must have more than 500 members in the server to have 2 Instagram notifications on the server!`);
                 return;
             } else if (guild.members.size < 1000 && instaIDs.size >= 2) {
-                message.channel.send("⚠ Due to Instagram's limitations, you must have more than 1000 members in the server to have 3 Instagram notifications on the server!");
+                message.channel.send(`⚠ Due to Instagram's limitations, you must have more than 1000 members in the server to have 3 Instagram notifications on the server!`);
                 return;
             }
         } 
         if (instaIDs.size >= 3) {
-            message.channel.send("⚠ No more than 3 Instagram accounts may be set up for notifications on a server.");
+            message.channel.send(`⚠ No more than 3 Instagram accounts may be set up for notifications on a server.`);
             return;
         }
     }
@@ -194,7 +198,7 @@ async function instaNotifAdd(message, args) {
         response = await graphql.get('/query/', { params: {query_hash: timeline_hash, variables: {id, first: 20}} })
     } catch(e) {
         console.error(e);
-        message.channel.send("⚠ Unknown error occurred.");
+        message.channel.send(`⚠ Unknown error occurred.`);
         return;
     }
     let posts = response.data.data.user['edge_owner_to_timeline_media'].edges;
@@ -234,7 +238,7 @@ async function instaNotifAdd(message, args) {
     //     } 
     // }
     // if (!LOGGED_IN) {
-    //     message.channel.send("⚠ Failed to log in to Instagram.");
+    //     message.channel.send(`⚠ Failed to log in to Instagram.`);
     //     return;
     // }
 
@@ -255,7 +259,7 @@ async function instaNotifAdd(message, args) {
         added = await database.addInstaChannel(guild.id, channel.id, id, username, role ? role.id : null);
     } catch(e) {
         console.error(Error(e));
-        message.channel.send("⚠ Error occurred.");
+        message.channel.send(`⚠ Error occurred.`);
         return;
     }
     
@@ -271,16 +275,16 @@ async function instaNotifRemove(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/www\.instagram\.com\/)?(.+?)(?:\/)?\s+<?#?(\d{8,})>?/i);
     if (!formatMatch) {
-        message.channel.send("⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter");
+        message.channel.send(`⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter`);
         return;
     }
 
     let instaUser = formatMatch[1];
     let channelID = formatMatch[2];
 
-    let channel = guild.channels.get(channelID);
+    let channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send("⚠ The channel provided does not exist in this server.");
+        message.channel.send(`⚠ The channel provided does not exist in this server.`);
         return;
     }
 
@@ -311,7 +315,7 @@ async function instaNotifRemove(message, args) {
         deleted = await database.removeInstaChannel(channel.id, id);
     } catch(e) {
         console.error(Error(e));
-        message.channel.send("⚠ Error occurred.");
+        message.channel.send(`⚠ Error occurred.`);
         return;
     }
     
@@ -327,7 +331,7 @@ async function instaNotifList(message) {
 
     let notifs = await database.getGuildInstaChannels(guild.id);
     if (notifs.length < 1) {
-        message.channel.send("⚠ There are no Instagram notifications added to this server.");
+        message.channel.send(`⚠ There are no Instagram notifications added to this server.`);
         return;
     }
     notifString = notifs.sort((a,b) => a.username.localeCompare(b.username)).map(x => `<#${x.channelID}> - [@${x.username.replace(/([\(\)\`\*\~\_])/g, "\\$&")}](https://www.instagram.com/${x.username}/)${x.stories ? ` + :book:`:``}${x.mentionRoleID ? ` <@&${x.mentionRoleID}>`:``}`).join('\n');
@@ -375,16 +379,16 @@ async function storiesToggle(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/www\.instagram\.com\/)?(.+?)(?:\/)?\s+<?#?(\d{8,})>?/i);
     if (!formatMatch) {
-        message.channel.send("⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter");
+        message.channel.send(`⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter`);
         return;
     }
 
     let instaUser = formatMatch[1];
     let channelID = formatMatch[2];
 
-    let channel = guild.channels.get(channelID);
+    let channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send("⚠ The channel provided does not exist in this server.");
+        message.channel.send(`⚠ The channel provided does not exist in this server.`);
         return;
     }
 
@@ -415,7 +419,7 @@ async function storiesToggle(message, args) {
         instaChannel = await database.getInstaChannel(channel.id, id);
     } catch (e) {
         console.error(Error(e));
-        message.channel.send("⚠ Unknown error occurred.");
+        message.channel.send(`⚠ Unknown error occurred.`);
         return;
     }
 
@@ -429,7 +433,7 @@ async function storiesToggle(message, args) {
         toggle = await database.toggleStories(channel.id, id)
     } catch(e) {
         console.error(Error(e));
-        message.channel.send("⚠ Unknown error occurred.");
+        message.channel.send(`⚠ Unknown error occurred.`);
         return;
     }
     

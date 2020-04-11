@@ -73,12 +73,12 @@ async function guildInfo(message, target) {
     } else {
         let match = target.match(/^\d+$/);
         if (!match) {
-            message.channel.send("⚠ Invalid guild ID.");
+            message.channel.send(`⚠ Invalid guild ID.`);
             return;
         }
-        guild = Client.guilds.get(match[0])
+        guild = Client.guilds.cache.get(match[0])
         if (!guild) {
-            message.channel.send("⚠ Invalid guild or bot is not in this server.");
+            message.channel.send(`⚠ Invalid guild or bot is not in this server.`);
             return;
         }
     }
@@ -90,7 +90,7 @@ async function guildInfo(message, target) {
 
 async function serverEmbed(guild) {
 
-    guild = await guild.fetchMembers();
+    guild.members.cache = await guild.members.fetch({ cache: false });
 
     let regions = {
         "amsterdam":   ":flag_nl: Amsterdam",    
@@ -120,34 +120,48 @@ async function serverEmbed(guild) {
         dnd    : { emoji: "<:dnd_cb:533459049547563008>",     count: 0 },
         offline: { emoji: "<:offline_cb:533459049648226317>", count: 0 } 
     }
-    guild.presences.array().forEach(p => statusObj[p.status].count += 1);
+
+    let boostLvlEmojis = [
+        "<:boostlvl0:697919960302878790>",
+        "<:boostlvl1:697919571775979570>",
+        "<:boostlvl2:697919571893551104>",
+        "<:boostlvl3:697919571998539916>",
+    ]
+
+    guild.presences.cache.array().forEach(p => statusObj[p.status].count += 1);
     let statusData = Object.values(statusObj);
     statusObj.offline.count = guild.memberCount - statusData.slice(0, 3).reduce((a, c) => a + c.count, 0);
-    let statuses = statusData.map(d => d.emoji + d.count).join('  ');
+    let statuses = statusData.map(d => d.emoji + d.count.toLocaleString()).join('  ');
     let autoroleID = serverSettings.get(guild.id, "autoroleID");
     let autoroleColour = 0xdddddd;
     if (autoroleID) {
-        let autorole = guild.roles.get(autoroleID);
+        let autorole = guild.roles.cache.get(autoroleID);
         autoroleColour = autorole ? autorole.color : 0xdddddd;
     }
 
-    let embed = new Discord.RichEmbed()
-    .setAuthor(guild.name, guild.iconURL)
-    .setThumbnail(guild.iconURL)
-    .setColor(autoroleColour || guild.members.get(Client.user.id).displayColor || 0xffffff)
-    .setFooter(`ID #${guild.id}`)
-    .setTimestamp(guild.createdAt)
-    .addField("Owner", guild.owner.user.tag, true)
-    .addField("Created On", guild.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), true)
-    .addField("Text Channels", guild.channels.array().filter(c => c.type == 'text').length, true)
-    .addField("Voice Channels", guild.channels.array().filter(c => c.type == 'voice').length, true)
-    .addField("Members", guild.memberCount, true)
-    .addField("Roles", guild.roles.size, true)
-    .addField("Region", regions[guild.region] || guild.region, true)
-    .addField("Emojis", `${guild.emojis.size} (${guild.emojis.array().filter(e=>e.animated).length} animated)`, true);
+    let embed = new Discord.MessageEmbed({
+        author: { name: guild.name, icon_url: guild.iconURL({ format: 'png', dynamic: true, size: 32 }) },
+        thumbnail: { url: guild.iconURL({ format: 'png', dynamic: true, size: 512 }) },
+        color: autoroleColour || guild.members.cache.get(Client.user.id).displayColor || 0xffffff,
+        fields: [
+            { name: "Owner", value: `<@${guild.owner.user.id}>`, inline: true },
+            { name: "Members", value: guild.memberCount.toLocaleString(), inline: true },
+            { name: "Roles", value: guild.roles.cache.size, inline: true },
+            { name: "Text Channels", value: guild.channels.cache.array().filter(c => c.type == 'text').length, inline: true },
+            { name: "Voice Channels", value: guild.channels.cache.array().filter(c => c.type == 'voice').length, inline: true },
+            { name: "Created On", value: guild.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false },
+            { name: "Region", value: regions[guild.region] || guild.region, inline: true },
+            { name: "Emojis", value: `${guild.emojis.cache.size} (${guild.emojis.cache.array().filter(e=>e.animated).length} animated)`, inline: true },
+            { name: "Statuses", value: statuses, inline: false },
+            { name: "Level", value: `${boostLvlEmojis[guild.premiumTier]} ${guild.premiumTier}`, inline: true },
+            { name: "Boosters", value: `<:nitroboost:595699920422436894> ${guild.premiumSubscriptionCount}`, inline: true }
+        ],
+        footer: { text: `ID #${guild.id}` }
+    })
 
-    if (statuses) {
-        embed.addField("Statuses", statuses);
+    let bannerURL = guild.bannerURL({ format: 'png', dynamic: true, size: 2048 })
+    if (bannerURL) {
+        embed.setImage(bannerURL);
     }
 
     return embed;
@@ -164,11 +178,11 @@ async function addPollChannel(message, channelArg) {
     }
 
     if (!channelID) {
-        message.channel.send("⚠ Invalid channel or channel ID.");
+        message.channel.send(`⚠ Invalid channel or channel ID.`);
         return;
     }
-    if (!message.guild.channels.has(channelID)) {
-        message.channel.send("⚠ Channel doesn't exist in this server.");
+    if (!message.guild.channels.cache.has(channelID)) {
+        message.channel.send(`⚠ Channel doesn't exist in this server.`);
         return;
     }
 
@@ -187,11 +201,11 @@ async function removePollChannel(message, channelArg) {
     }
 
     if (!channelID) {
-        message.channel.send("⚠ Invalid channel or channel ID.");
+        message.channel.send(`⚠ Invalid channel or channel ID.`);
         return;
     }
-    if (!message.guild.channels.has(channelID)) {
-        message.channel.send("⚠ Channel doesn't exist in this server.");
+    if (!message.guild.channels.cache.has(channelID)) {
+        message.channel.send(`⚠ Channel doesn't exist in this server.`);
         return;
     }
 
@@ -212,15 +226,15 @@ async function setPrefix(message, prefix) {
     let { guild } = message;
 
     if (!prefix) {
-        message.channel.send("⚠ Please provide a prefix for commands to use.");
+        message.channel.send(`⚠ Please provide a prefix for commands to use.`);
         return;
     }
     if (prefix.length > 1) {
-        message.channel.send("⚠ A prefix must be a single character.");
+        message.channel.send(`⚠ A prefix must be a single character.`);
         return;
     }
     if (prefix.match(/^\w+$/)) {
-        message.channel.send("⚠ A prefix cannot be a letter.");
+        message.channel.send(`⚠ A prefix cannot be a letter.`);
         return;
     }
 

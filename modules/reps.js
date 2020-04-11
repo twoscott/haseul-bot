@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const { embedPages, resolveMember, withTyping } = require("../functions/discord.js");
+const { embedPages, resolveMember, resolveUser, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
 
 const colours = require("../functions/colours.js");
@@ -132,11 +132,15 @@ async function rep(message, args) {
     let recipientXp = await levelsdb.getGlobalXp(recipient.id);
 
     let d = newStreak > 1 ? 's':'';
-    let embed = new Discord.RichEmbed()
-        .setAuthor(`Report`, recipient.user.displayAvatarURL)
-        .setColor(parseInt(colours.randomHexColour(true), 16))
-        .addField(`Rep`, `${recipientProfile.rep} (+1)`, true)
-        .addField(`Exp`, `${recipientXp.toLocaleString()} (+${addXp})`, true);
+    let embed = new Discord.MessageEmbed({
+        author: { name: "Report", icon_url: recipient.user.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }) },
+        color: parseInt(colours.randomHexColour(true), 16),
+        fields: [
+            { name: "Rep", value: `${recipientProfile.rep} (+1)` },
+            { name: "Exp", value: `${recipientXp.toLocaleString()} (+${addXp})` }
+        ]
+    });
+    
     if (newStreak) embed.addField(`Streak`, `${newStreak} day${d} :fire:`, false);
 
     let emote = addXp > 1000 ? ':confetti_ball:' : addXp > 600 ? ':star2:' : addXp > 300 ? ':star:':''
@@ -172,30 +176,31 @@ async function repStatus(message) {
     if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
     if (timeFromNow.seconds) fromNowText += `${timeFromNow.seconds}s `;
     
-    message.channel.send(`You have **${repProfile.repsRemaining}** rep${repProfile.repsRemaining != 1 ? 's':''} remaining to give! ${repProfile.repsRemaining <= 0 ? `Your reps will be replenished in ${fromNowText.trim()}.`:``}`);
+    message.channel.send(`You have **${repProfile.repsRemaining}** rep${repProfile.repsRemaining != 1 ? 's':''} remaining to give! ${repProfile.repsRemaining <= 0 ? `Your reps will be replenished in ${fromNowText.trim()}.` : ``}`);
     return;
 
 }
 
 async function repboard(message, local) {
 
-    let guild = await message.guild.fetchMembers();
+    let members = await message.guild.members.fetch();
     let reps = await database.getReps();
+    let entries = reps.length;
+
     if (local) {
-        reps = reps.filter(rep => guild.members.get(rep.userID) && rep.rep > 0);
+        reps = reps.filter(rep => members.has(rep.userID) && rep.rep > 0);
     } else {
         reps = reps.filter(rep => rep.rep > 0);
     }
 
-    if (streaks.length < 1) {
+    if (reps.length < 1) {
         message.channel.send(`⚠ Nobody${local ? ' on this server ':' '}currently has any reps!`);
         return;
     }
 
     for (let i = 0; i < reps.length; i++) {
         let rep = reps[i]
-        let user = Client.users.get(rep.userID);
-        if (!user) user = await Client.fetchUser(rep.userID);
+        let user = await resolveUser(rep.userID);
         let name = user ? user.username.replace(/([\`\*\~\_])/g, "\\$&") : rep.userID;
         reps[i] = {
             userID: rep.userID, name: name, rep: rep.rep
@@ -225,12 +230,12 @@ async function repboard(message, local) {
             content: undefined,
             options: {embed: {
                 author: {
-                    name: `${local ? guild.name : `Global`} Repboard`, icon_url: 'https://i.imgur.com/OQLFaj9.png'
+                    name: `${local ? message.guild.name : `Global`} Repboard`, icon_url: 'https://i.imgur.com/OQLFaj9.png'
                 },
                 description: desc,
                 color: 0x44e389,
                 footer: {
-                    text: `Entries: ${reps.length}  |  Total Reps: ${reps.reduce((acc, curr) => acc + curr.rep, 0)}  |  Page ${i+1} of ${descriptions.length}`
+                    text: `Entries: ${entries}  |  Total Reps: ${reps.reduce((acc, curr) => acc + curr.rep, 0)}  |  Page ${i+1} of ${descriptions.length}`
                 }
             }}
         }
@@ -248,15 +253,14 @@ async function streaks(message) {
     let streaks = await database.getUserStreaks(author.id);
 
     if (streaks.length < 1) {
-        message.channel.send("⚠ You do not currently have any rep streaks!");
+        message.channel.send(`⚠ You do not currently have any rep streaks!`);
         return;
     }
 
     for (let i = 0; i < streaks.length; i++) {
         let streak = streaks[i]
         let userID = author.id == streak.user1 ? streak.user2 : streak.user1; 
-        let user = Client.users.get(userID);
-        if (!user) user = await Client.fetchUser(userID);
+        let user = await resolveUser(userID);
         let name = user ? user.username.replace(/([\`\*\~\_])/g, "\\$&") : userID;
 
         let time = getDelta((Math.min(streak.user1LastRep || streak.firstRep, streak.user2LastRep || streak.firstRep) + 36*60*60*1000) - createdTimestamp, 'hours');
@@ -316,12 +320,12 @@ async function streaks(message) {
 async function streakboard(message, local) {
 
     let { createdTimestamp } = message;
-    let guild = await message.guild.fetchMembers();
+    let members = await message.guild.members.fetch();
     
     await database.updateStreaks(createdTimestamp);
     let streaks = await database.getAllStreaks();
     if (local) {
-        streaks = streaks.filter(streak => guild.members.get(streak.user1) && guild.members.get(streak.user2) && createdTimestamp - streak.firstRep > 86400000 && streak.user1LastRep && streak.user2LastRep);
+        streaks = streaks.filter(streak => members.has(streak.user1) && members.has(streak.user2) && createdTimestamp - streak.firstRep > 86400000 && streak.user1LastRep && streak.user2LastRep);
     } else {
         streaks = streaks.filter(streak => createdTimestamp - streak.firstRep > 86400000 && streak.user1LastRep && streak.user2LastRep);   
     }
@@ -333,10 +337,8 @@ async function streakboard(message, local) {
 
     for (let i = 0; i < streaks.length; i++) {
         let streak = streaks[i]
-        let user1 = Client.users.get(streak.user1);
-        let user2 = Client.users.get(streak.user2);
-        if (!user1) user1 = await Client.fetchUser(streak.user1);
-        if (!user2) user1 = await Client.fetchUser(streak.user2);
+        let user1 = await resolveUser(streak.user1);
+        let user2 = await resolveUser(streak.user2);
         let name1 = user1 ? user1.username.replace(/([\`\*\~\_])/g, "\\$&") : streak.user1;
         let name2 = user2 ? user2.username.replace(/([\`\*\~\_])/g, "\\$&") : streak.user2;
 
