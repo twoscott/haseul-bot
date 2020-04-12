@@ -646,15 +646,14 @@ async function roleslist(message) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 title: `Roles List for ${guild.name}`,
                 description: desc,
                 color: autoroleColour || 0xf986ba,
                 footer: {
                     text: `Roles: ${guildRoles.length} | Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 

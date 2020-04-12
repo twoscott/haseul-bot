@@ -73,8 +73,7 @@ async function listEmojis(message) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: `${emojis.length} Emoji${emojis.length != 1 ? 's':''} - ${staticEmojis.length} Static; ${animatedEmojis.length} Animated`, icon_url: 'https://i.imgur.com/hIpmRU2.png'
                 },
@@ -83,7 +82,7 @@ async function listEmojis(message) {
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 
@@ -130,8 +129,7 @@ async function searchEmojis(message, query) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: `${emojis.length} Result${emojis.length != 1 ? 's':''} Found for "${query.slice(0,30)}"`, icon_url: 'https://i.imgur.com/hIpmRU2.png'
                 },
@@ -140,7 +138,7 @@ async function searchEmojis(message, query) {
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 

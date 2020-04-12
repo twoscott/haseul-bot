@@ -96,8 +96,7 @@ async function leaderboard(message, local) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: `${local ? guild.name : `Global`} Leaderboard`, icon_url: 'https://i.imgur.com/qfUfBps.png'
                 },
@@ -106,7 +105,7 @@ async function leaderboard(message, local) {
                 footer: {
                     text: `Entries: ${entries}  |  Avg. Lvl: ${Math.round(ranks.reduce((acc, curr) => acc + curr.lvl, 0) / ranks.length)}  |  Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 

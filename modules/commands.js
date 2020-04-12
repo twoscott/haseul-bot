@@ -226,8 +226,7 @@ async function listCommands(message) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: `${commandNames.length.toLocaleString()} Custom Command${commandNames.length != 1 ? 's':''}`, icon_url: 'https://i.imgur.com/gzL6uIE.png'
                 },
@@ -236,7 +235,7 @@ async function listCommands(message) {
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 
@@ -309,8 +308,7 @@ async function searchCommands(message, query) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: `${commandNames.length} Result${commandNames.length != 1 ? 's':'' } Found for "${query}"`, icon_url: 'https://i.imgur.com/gzL6uIE.png'
                 },
@@ -319,7 +317,7 @@ async function searchCommands(message, query) {
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 

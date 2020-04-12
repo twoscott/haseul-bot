@@ -138,188 +138,80 @@ exports.searchMembers = async function(members, query) {
 
 }
 
-exports.embedPages = async function(message, pages, lock, timeout=600000) {
-    let p = 0;
-
-    if (pages.length < 2) {
-        message.channel.send(pages[p].content, pages[p].options);
-    } else {
-        message.channel.send(pages[p].content, pages[p].options).then(async reply => {
-
-            let listeners = [];
-
-            let locked = false;
-            let lockListener;
-            if (lock) {
-                await reply.react("🔒");
-                lockListener = reply.createReactionCollector((reaction, user) => reaction.emoji.name === "🔒" && !user.bot, {time: timeout});
-                listeners.push(lockListener);
-                lockListener.on("end", () => {
-                    reply.reactions.removeAll();
-                    lockListener.stop()
-                })
-
-                lockListener.on("collect", reaction => {
-                    let users = reaction.users.cache.array();
-                    if (users[users.length - 1].id != message.author.id) {
-                        for (i=0; i < users.length; i++) {
-                            let user = users[i];
-                            if (user != Client.user) {
-                                reaction.remove(user);
-                            }
-                        }
-                        return;
-                    }
-                    
-                    locked = true;
-                    for (i=0; i < listeners.length; i++) {
-                        listeners[i].stop();
-                    }
-                    reply.reactions.removeAll();
-                })
-            
-            }
-
-            if (!locked) {
-                await reply.react("⏮");
-                const pageBeginning = reply.createReactionCollector((reaction, user) => reaction.emoji.name === "⏮" && !user.bot, {time: timeout});
-                listeners.push(pageBeginning);
-                pageBeginning.on("end", () => {
-                    reply.reactions.removeAll();
-                    pageBeginning.stop()
-                })
-                pageBeginning.on("collect", reaction => {
-                    let users = reaction.users.cache.array();
-                    if (lock && users[users.length - 1].id != message.author.id) {
-                        for (i=0; i < users.length; i++) {
-                            let user = users[i];
-                            if (user != Client.user) {
-                                reaction.remove(user);
-                            }
-                        }
-                        return;
-                    }
-                    if (p != 0) {
-                        p = 0;
-                        reply.edit(pages[p].content, pages[p].options);
-                    }
-
-                    for (i=0; i < users.length; i++) {
-                        let user = users[i];
-                        if (user != Client.user) {
-                            reaction.remove(user);
-                        }
-                    }
-                })
-            }
-            
-            if (!locked) {
-                await reply.react("⬅");
-                const pageBack = reply.createReactionCollector((reaction, user) => reaction.emoji.name === "⬅" && !user.bot, {time: timeout});
-                listeners.push(pageBack);
-                pageBack.on("end", () => {
-                    reply.reactions.removeAll();
-                    pageBack.stop()
-                })
-                pageBack.on("collect", reaction => {
-                    let users = reaction.users.cache.array();
-                    if (lock && users[users.length - 1].id != message.author.id) {
-                        for (i=0; i < users.length; i++) {
-                            let user = users[i];
-                            if (user != Client.user) {
-                                reaction.remove(user);
-                            }
-                        }
-                        return;
-                    }
-                    if (p < 1) {
-                        p = pages.length - 1;
-                    } else {
-                        p--;
-                    }
-                    reply.edit(pages[p].content, pages[p].options);
-
-                    for (i=0; i < users.length; i++) {
-                        let user = users[i];
-                        if (user != Client.user) {
-                            reaction.remove(user);
-                        }
-                    }
-                })   
-            }
-            
-            if (!locked) {
-                await reply.react("➡");
-                const pageForward = reply.createReactionCollector((reaction, user) => reaction.emoji.name === "➡" && !user.bot, {time: timeout});
-                listeners.push(pageForward);
-                pageForward.on("end", () => {
-                    reply.reactions.removeAll();
-                    pageForward.stop()
-                })
-                pageForward.on("collect", reaction => {
-                    let users = reaction.users.cache.array();
-                    if (lock && users[users.length - 1].id != message.author.id) {
-                        for (i=0; i < users.length; i++) {
-                            let user = users[i];
-                            if (user != Client.user) {
-                                reaction.remove(user);
-                            }
-                        }
-                        return;
-                    }
-                    if (p >= pages.length - 1) {
-                        p = 0;
-                    } else {
-                        p++;
-                    }
-                    reply.edit(pages[p].content, pages[p].options);
-
-                    for (i=0; i < users.length; i++) {
-                        let user = users[i];
-                        if (user != Client.user) {
-                            reaction.remove(user);
-                        }
-                    }
-                })
-            }  
-
-            if (!locked) {
-                await reply.react("⏭");
-                const pageEnd = reply.createReactionCollector((reaction, user) => reaction.emoji.name === "⏭" && !user.bot, {time: timeout});
-                listeners.push(pageEnd);
-                pageEnd.on("end", () => {
-                    reply.reactions.removeAll();
-                    pageEnd.stop()
-                })        
-                pageEnd.on("collect", reaction => {
-                    let users = reaction.users.cache.array();
-                    if (lock && users[users.length - 1].id != message.author.id) {
-                        for (i=0; i < users.length; i++) {
-                            let user = users[i];
-                            if (user != Client.user) {
-                                reaction.remove(user);
-                            }
-                        }
-                        return;
-                    }
-                    if (p != pages.length - 1) {
-                        p = pages.length - 1;
-                        reply.edit(pages[p].content, pages[p].options);
-                    }
-
-                    for (i=0; i < users.length; i++) {
-                        let user = users[i];
-                        if (user != Client.user) {
-                            reaction.remove(user);
-                        }
-                    }
-                })
-            }
-
-            if (locked) listeners.forEach(l => l.stop());
-            
-
-        })
-    }
+exports.embedPages = async function({ channel, author }, pages, lock, time=600000) {
+    let page = 0;
     
+    if (pages.length < 2) {
+        channel.send(pages[page]);
+    } else {
+        let reply = await channel.send(pages[page]);
+        await reply.react('⏮');
+        await reply.react('⬅');
+        await reply.react('➡');
+        await reply.react('⏭');
+        let firstPageCollector = reply.createReactionCollector((reaction, user) => reaction.emoji.name == '⏮', { time });
+        let prevPageCollector = reply.createReactionCollector((reaction, user) => reaction.emoji.name == '⬅', { time });
+        let nextPageCollector = reply.createReactionCollector((reaction, user) => reaction.emoji.name == '➡', { time });
+        let lastPageCollector = reply.createReactionCollector((reaction, user) => reaction.emoji.name == '⏭', { time });
+
+        firstPageCollector.on("collect", (reaction, user) => {
+            if (user.id != Client.user.id) {
+                if (!lock || user.id == author.id) {
+                    if (page != 0) {
+                        page = 0;
+                        reply.edit(pages[page]);
+                    }
+                }
+                reaction.users.remove(user.id);
+            }
+        }).on("end", collection => {
+            reply.reactions.removeAll();
+        });
+
+        prevPageCollector.on("collect", (reaction, user) => {
+            if (user.id != Client.user.id) {
+                if (!lock || user.id == author.id) {
+                    if (page < 1) {
+                        page = pages.length - 1;
+                    } else {
+                        page--;
+                    }
+                    reply.edit(pages[page]);
+                }
+                reaction.users.remove(user.id);
+            }
+        }).on("end", collection => {
+            reply.reactions.removeAll();
+        });
+
+        nextPageCollector.on("collect", (reaction, user) => {
+            if (user.id != Client.user.id) {
+                if (!lock || user.id == author.id) {
+                    if (page >= pages.length - 1) {
+                        page = 0;
+                    } else {
+                        page++;
+                    }
+                    reply.edit(pages[page]);
+                }
+                reaction.users.remove(user.id);
+            }
+        }).on("end", collection => {
+            reply.reactions.removeAll();
+        });
+
+        lastPageCollector.on("collect", (reaction, user) => {
+            if (user.id != Client.user.id) {
+                if (!lock || user.id == author.id) {
+                    if (page != pages.length - 1) {
+                        page = pages.length - 1;
+                        reply.edit(pages[page]);
+                    }
+                }
+                reaction.users.remove(user.id);
+            }
+        }).on("end", collection => {
+            reply.reactions.removeAll();
+        });
+    }
 }

@@ -227,8 +227,7 @@ async function repboard(message, local) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: `${local ? message.guild.name : `Global`} Repboard`, icon_url: 'https://i.imgur.com/OQLFaj9.png'
                 },
@@ -237,7 +236,7 @@ async function repboard(message, local) {
                 footer: {
                     text: `Entries: ${entries}  |  Total Reps: ${reps.reduce((acc, curr) => acc + curr.rep, 0)}  |  Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 
@@ -299,8 +298,7 @@ async function streaks(message) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: `${author.username}${author.username[author.username.length-1] == 's' ? "'":"'s"} Rep Streaks`, icon_url: 'https://i.imgur.com/WwdqYpS.png'
                 },
@@ -309,7 +307,7 @@ async function streaks(message) {
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 
@@ -319,8 +317,8 @@ async function streaks(message) {
 
 async function streakboard(message, local) {
 
-    let { createdTimestamp } = message;
-    let members = await message.guild.members.fetch();
+    let { createdTimestamp, guild } = message;
+    let members = await guild.members.fetch();
     
     await database.updateStreaks(createdTimestamp);
     let streaks = await database.getAllStreaks();
@@ -370,7 +368,6 @@ async function streakboard(message, local) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
             options: {embed: {
                 author: {
                     name: `${local ? guild.name : `Global`} Rep Streakboard`, icon_url: 'https://i.imgur.com/WwdqYpS.png'

@@ -302,8 +302,7 @@ async function recentListPages (message, tracks, lfUser) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: `${lfUser+p} Recent Tracks`, icon_url: 'https://i.imgur.com/lQ3EqM6.png', url: `https://www.last.fm/user/${lfUser}/`
                 },
@@ -314,7 +313,7 @@ async function recentListPages (message, tracks, lfUser) {
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     });
 
@@ -423,8 +422,7 @@ async function lfTopMedia(message, args, type) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: `${lf_user+p} Top ${type[0].toUpperCase()+type.slice(1)}s`, icon_url: embeds[type].image, url: `https://www.last.fm/user/${lf_user}/library/${type}s?date_preset=${datePreset}`
                 },
@@ -435,7 +433,7 @@ async function lfTopMedia(message, args, type) {
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 

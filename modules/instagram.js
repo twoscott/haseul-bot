@@ -354,8 +354,7 @@ async function instaNotifList(message) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: "Instagram Notifications", icon_url: 'https://i.imgur.com/NNzsisb.png'
                 },
@@ -364,7 +363,7 @@ async function instaNotifList(message) {
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 

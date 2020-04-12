@@ -304,8 +304,7 @@ async function vliveNotifList(message) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: "VLIVE Notifications", icon_url: 'https://i.imgur.com/gHo7BTO.png'
                 },
@@ -314,7 +313,7 @@ async function vliveNotifList(message) {
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 

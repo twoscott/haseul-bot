@@ -257,8 +257,7 @@ async function twitterNotifList(message) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            content: undefined,
-            options: {embed: {
+            embed: {
                 author: {
                     name: "Twitter Notifications", icon_url: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png'
                 },
@@ -267,7 +266,7 @@ async function twitterNotifList(message) {
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 
