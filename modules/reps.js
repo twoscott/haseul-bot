@@ -368,7 +368,7 @@ async function streakboard(message, local) {
 
     let pages = descriptions.map((desc, i) => {
         return {
-            options: {embed: {
+            embed: {
                 author: {
                     name: `${local ? guild.name : `Global`} Rep Streakboard`, icon_url: 'https://i.imgur.com/WwdqYpS.png'
                 },
@@ -377,7 +377,7 @@ async function streakboard(message, local) {
                 footer: {
                     text: `Entries: ${streaks.length}  |  Avg. Streak: ${Math.round(streaks.reduce((acc, curr) => acc + curr.streak, 0) / streaks.length)}  |  Page ${i+1} of ${descriptions.length}`
                 }
-            }}
+            }
         }
     })
 
