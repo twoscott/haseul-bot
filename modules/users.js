@@ -142,7 +142,7 @@ async function logJoin(member, destination, colour) {
     let embed = new Discord.MessageEmbed({
         title: "Member Joined!",
         thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
-        description: `${user} (**${user.tag}**) joined ${guild}.`,
+        description: `**${user.tag}** (${user}) joined ${guild}.`,
         fields: [
             { name: "Joined On", value: member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
             { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
@@ -166,6 +166,7 @@ const logLeave = async function (member, destination, colour) {
     let embed = new Discord.MessageEmbed({
         title: "Member Left!",
         thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
+        description: `**${user.tag}** (${user}) left ${guild}.`,
         fields: [
             { name: "Left On", value: member.leftAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
             { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
