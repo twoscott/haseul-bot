@@ -1,6 +1,6 @@
-const logs = require("../modules/users.js");
+const logs = require("../modules/logs.js");
 const roles = require("../modules/roles.js");
-const serverSettings = require("../modules/server_settings.js");
+const serverSettings = require("../utils/server_settings.js");
 
 exports.handleJoins = async function(member) {
     logs.join(member);

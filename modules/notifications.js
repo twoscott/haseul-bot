@@ -109,12 +109,11 @@ async function notify(message) {
     let ignored_channels = await database.getIgnoredChannels();
     let ignored_servers = await database.getIgnoredServers();
 
-    let msg_url = `https://discordapp.com/channels/${guild.id}/${channel.id}/${message.id}`;
     let embed = new Discord.MessageEmbed({
-        author: { name: author.tag, icon_url: author.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }), url: msg_url },
+        author: { name: author.tag, icon_url: author.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }) },
         color: member.displayColor || 0xffffff,
         fields: [
-            { name: "Message Link", value: `[View Message](${msg_url} "Jump to Message")` },
+            { name: "Message Link", value: `[View Message](${message.url} "Jump to Message")` },
             { name: "Content", value: content.length < 1025 ? content : content.slice(0,1021).trim()+'...', inline: false }
         ],
         footer: { text: `#${channel.name}` },

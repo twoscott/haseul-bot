@@ -359,7 +359,7 @@ async function instaNotifList(message) {
                     name: "Instagram Notifications", icon_url: 'https://i.imgur.com/NNzsisb.png'
                 },
                 description: desc,
-                color: 0xffffff,
+                color: 0xfefefe,
                 footer: {
                     text: `Page ${i+1} of ${descriptions.length}`
                 }

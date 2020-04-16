@@ -136,8 +136,8 @@ async function rep(message, args) {
         author: { name: "Report", icon_url: recipient.user.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }) },
         color: parseInt(colours.randomHexColour(true), 16),
         fields: [
-            { name: "Rep", value: `${recipientProfile.rep} (+1)` },
-            { name: "Exp", value: `${recipientXp.toLocaleString()} (+${addXp})` }
+            { name: "Rep", value: `${recipientProfile.rep} (+1)`, inline: true },
+            { name: "Exp", value: `${recipientXp.toLocaleString()} (+${addXp})`, inline: true }
         ]
     });
     

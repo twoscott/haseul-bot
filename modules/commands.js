@@ -3,7 +3,7 @@ const { checkPermissions, embedPages, withTyping } = require("../functions/disco
 
 const database = require("../db_queries/commands_db.js");
 const reservedCommands = require("../resources/JSON/commands.json");
-const serverSettings = require("./server_settings.js");
+const serverSettings = require("../utils/server_settings.js");
 const { trimArgs } = require("../functions/functions.js");
 
 async function cmdCheck(message, commandName) {

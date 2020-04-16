@@ -16,7 +16,7 @@ exports.getMemberNumber = async function(member) {
         let err = new Error("Invalid member given.");
         console.error(err);
     } else {
-        let members = await member.guild.members.fetch();
+        let members = await member.guild.members.fetch().catch(console.error);
         members = members.array();
         members = members.sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
         let memberNumber = members.findIndex(e => e.id == member.id) + 1;
@@ -29,29 +29,26 @@ exports.resolveUser = async function(userID, cache=false) {
         let err = new Error("No user ID provided.");
         console.error(err);
     } else {
-        let user;
         try {
-            user = await Client.users.fetch(userID, cache);
+            let user = await Client.users.fetch(userID, cache);
+            return user;
         } catch(e) {
             return null;
         }
-        return user;
     }
 }
 
-exports.resolveMember = async function(guild, userID, member, cache=false) {
+exports.resolveMember = async function(guild, userID, cache=false) {
     if (!guild || !userID) {
         let err = new Error("Invalid parameters given.");
         console.error(err);
     } else {
-        if (!member || !member.joinedTimestamp) {
-            try {
-                member = await guild.members.fetch({ user: userID, cache });
-            } catch(e) {
-                return null;
-            }
+        try {
+            let member = await guild.members.fetch({ user: userID, cache });
+            return member;
+        } catch(e) {
+            return null;
         }
-        return member;
     }
 }
 
@@ -60,13 +57,26 @@ exports.resolveMessage = async function(channel, messageID, cache=false) {
         let err = new Error("Invalid parameters given.");
         console.error(err);
     } else {
-        let message;
         try {
-            message = await channel.messages.fetch(messageID, cache);
+            let message = await channel.messages.fetch(messageID, cache);
+            return message;
         } catch(e) {
             return null;
         }
-        return message;
+    }
+}
+
+exports.resolveRole = async function(guild, roleID, cache=false) {
+    if (!guild || !roleID) {
+        let err = new Error("Invalid parameters given.");
+        console.error(err);
+    } else {
+        try {
+            let role = await guild.roles.fetch(roleID);
+            return role;
+        } catch(e) {
+            return null;
+        }
     }
 }
 
@@ -124,7 +134,7 @@ exports.searchMembers = async function(members, query) {
     }
 
     if (memberResults.length > 1) {
-        let ranks = await getAllGuildXp(guild.id);
+        let ranks = await getAllGuildXp(memberResults[0].guild.id);
         memberResults = memberResults.sort((a,b) => {
             let aMem = ranks.find(x => x.userID == a.id);
             let bMem = ranks.find(x => x.userID == b.id);

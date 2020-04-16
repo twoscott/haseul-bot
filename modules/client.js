@@ -4,7 +4,7 @@ const { Client } = require("../haseul.js");
 
 const fs = require("fs");
 const process = require("process");
-const serverSettings = require("../modules/server_settings.js");
+const serverSettings = require("../utils/server_settings.js");
 const { getDelta } = require("../functions/functions.js");
 
 exports.onCommand = async function(message, args) {
@@ -90,7 +90,7 @@ async function botInfo(message) {
 
 async function serverList(message) {
 
-    let guildString = Client.guilds.cache.array().sort((a, b) => a.name.localeCompare(b.name)).map(guild => `${guild.name} (${guild.id}) (${guild.memberCount} members)`).join('\n');
+    let guildString = Client.guilds.cache.array().sort((a, b) => b.memberCount - a.memberCount).map(guild => `${guild.name} (${guild.id}) (${guild.memberCount} members)`).join('\n');
 
     let descriptions = [];
     while (guildString.length > 2048 || guildString.split('\n').length > 25) {

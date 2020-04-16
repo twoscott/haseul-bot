@@ -107,7 +107,7 @@ async function instaLoop() {
                             },
                             title: `New ${type == "GraphImage" ? "Photo" : type == "GraphVideo" ? "Video" : "Post"}`,
                             fields: [],
-                            color: 0xffffff,
+                            color: 0xfefefe,
                             url: `https://www.instagram.com/p/${shortcode}/`,
                             footer: { icon_url: 'https://i.imgur.com/NNzsisb.png', text: 'Instagram' },
                             timestamp

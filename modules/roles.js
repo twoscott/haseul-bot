@@ -3,7 +3,7 @@ const { checkPermissions, embedPages, withTyping } = require("../functions/disco
 const { Client } = require("../haseul.js");
 
 const { trimArgs } = require("../functions/functions.js");
-const serverSettings = require("../modules/server_settings.js");
+const serverSettings = require("../utils/server_settings.js");
 
 const database = require("../db_queries/roles_db.js");
 
@@ -220,7 +220,7 @@ async function assign_roles(message) {
             errors.push(`"${role_command}"`);
         }
     }
-    if (!colour) colour = 0xFFFFFF;
+    if (!colour) colour = 0xffffff;
 
     // Add/Remove roles
 

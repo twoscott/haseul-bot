@@ -1,4 +1,4 @@
-const serverSettings = require("../modules/server_settings.js");
+const serverSettings = require("../utils/server_settings.js");
 
 const instagram = require("../tasks/instagram.js");
 const twitter = require("../tasks/twitter.js");

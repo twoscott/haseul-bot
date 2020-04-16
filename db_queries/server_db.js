@@ -24,13 +24,14 @@ dbopen.then(db => {
             welcomeChan TEXT,
             welcomeMsg TEXT,
             rolesOn INT NOT NULL DEFAULT 0,
-            rolesChannel TEXT
+            rolesChannel TEXT,
+            muteroleID TEXT
         )
     `);
 })
 
 // dbopen.then(async db => {
-//     await db.run(SQL`ALTER TABLE serverSettings ADD COLUMN prefix TEXT NOT NULL DEFAULT '.'`);
+//     await db.run(SQL`ALTER TABLE serverSettings ADD COLUMN muteroleID TEXT`);
 //     console.log("Finished altering servers.db");
 // })
 
