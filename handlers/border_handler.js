@@ -12,5 +12,5 @@ exports.handleLeaves = async function(member) {
 }
 
 exports.handleNewGuild = async function(guild) {
-    serverSettings.newGuild(guild);
+    serverSettings.newGuild(guild.id);
 }

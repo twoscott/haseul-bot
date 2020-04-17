@@ -1,5 +1,7 @@
+const Discord = require("discord.js");
 const { 
     checkPermissions,
+    embedPages,
     resolveMember, 
     resolveMessage, 
     withTyping } = require("../functions/discord.js");
@@ -60,6 +62,10 @@ exports.onCommand = async function(message, args) {
                         withTyping(channel, setPrefix, [message, args[2]]);
                     break;
             }
+            break;
+        case "settings":
+            if (checkPermissions(member, ["MANAGE_GUILD"]))
+                withTyping(channel, displaySetttings, [message, args[2]]);
             break;
     }
 
@@ -319,5 +325,64 @@ async function setPrefix(message, prefix) {
 
     serverSettings.set(guild.id, "prefix", prefix);
     message.channel.send(`Prefix set to \`${prefix}\``);
+
+}
+
+async function displaySetttings(message) {
+
+    let { guild } = message;
+    let settings = serverSettings.getServer(guild.id);
+    if (!settings) {
+        await serverSettings.newGuild(guild.id);
+        settings = serverSettings.getServer(guild.id);
+    }
+
+    settings = Object.entries(settings);
+    let fieldArrays = [];
+    let settingsProcessed = 0;
+
+    while (settingsProcessed < settings.length) {
+        let fields = [];
+        for (let i = 0; i < 8 && settingsProcessed < settings.length; i++) {
+            let [ setting, value ] = settings[settingsProcessed];
+            if (setting !== "guildID") {
+                let { name, type } = serverSettings.template[setting];
+                let newValue;
+                switch (type) {
+                    case "toggle":
+                        newValue = value ? '✅' : '❌';
+                        break;
+                    case "channel":
+                        let channel = guild.channels.cache.has(value);
+                        newValue = channel ? `<#${value}>` : value || "None";
+                        break;
+                    case "role":
+                        let role = guild.roles.cache.has(value);
+                        newValue = role ? `<@&${value}>` : value || "None";
+                        break;
+                    default:
+                        newValue = value || "None";
+                        break;
+                }
+                fields.push({ name, value: newValue, inline: false });
+            }
+            settingsProcessed++;
+        }
+        fieldArrays.push(fields);
+    }
+
+    let pages = fieldArrays.map((fieldArray, i) => {
+        return {
+            embed: {
+                title: `${guild.name} Settings`,
+                fields: fieldArray,
+                footer: {
+                    text: `Page ${i+1} of ${fieldArrays.length}`
+                }
+            }
+        }
+    });
+
+    embedPages(message, pages);
 
 }
