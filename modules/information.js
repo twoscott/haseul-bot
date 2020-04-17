@@ -109,7 +109,7 @@ async function memberEmbed(author, member) {
         thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
         color: member.displayColor || 0xffffff,
         fields: [
-            { name: "Status", value: status[user.presence.status], inline: false },
+            { name: "Status", value: `${status[user.presence.status]}${member.premiumSince ? " <:nitroboost:595699920422436894>" : ""}`, inline: false },
             { name: "Account Created", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false }
         ],
         footer: { text: `Member #${memNo}` }
@@ -123,7 +123,7 @@ async function memberEmbed(author, member) {
     embed.addField("Joined On", member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), false);
 
     if (member.premiumSince) {
-        embed.addField("Boosting Since", user.premiumSince.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), false);
+        embed.addField("Boosting Since", member.premiumSince.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), false);
     }
 
     embed.addField("User ID", user.id, false);
