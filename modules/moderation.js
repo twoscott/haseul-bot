@@ -1,9 +1,12 @@
-const { checkPermissions,resolveMember, resolveRole, resolveUser, withTyping } = require("../functions/discord.js");
-const { setMuteRolePerms } = require("../functions/moderation.js");
 const { Client } = require("../haseul.js");
 
+const { checkPermissions, resolveMember, resolveRole, resolveUser, withTyping } = require("../functions/discord.js");
+const { setMuteRolePerms } = require("../functions/moderation.js");
+
 const serverSettings = require("../utils/server_settings.js");
-const { parseChannelID, trimArgs } = require("../functions/functions.js");
+const { trimArgs } = require("../functions/functions.js");
+
+const userIDsRegex = /^(?:<@\D?)?(\d+)(?:>)?\s*,?\s*/;
 
 exports.onCommand = async function(message, args) {
 
@@ -81,12 +84,11 @@ async function banUsers(message, args, days=0) {
     }
 
     let banString = trimArgs(args, 1, message.content);
-    let userIDRegex = /^(?:<@\D?)?(\d+)(?:>)?\s*,?\s*/;
     
     let userIDs = [];
     let userIDEnd = 0;
     let userIDMatch;
-    while (userIDMatch = banString.slice(userIDEnd).match(userIDRegex)) {
+    while (userIDMatch = banString.slice(userIDEnd).match(userIDsRegex)) {
         userIDs.push(userIDMatch[1]);
         userIDEnd += userIDMatch[0].length;
     }
@@ -157,12 +159,11 @@ async function unbanUsers(message, args) {
     }
 
     let banString = trimArgs(args, 1, message.content);
-    let userIDRegex = /^(?:<@\D?)?(\d+)(?:>)?\s*,?\s*/;
     
     let userIDs = [];
     let userIDEnd = 0;
     let userIDMatch;
-    while (userIDMatch = banString.slice(userIDEnd).match(userIDRegex)) {
+    while (userIDMatch = banString.slice(userIDEnd).match(userIDsRegex)) {
         userIDs.push(userIDMatch[1]);
         userIDEnd += userIDMatch[0].length;
     }
@@ -223,12 +224,11 @@ async function kickUsers(message, args) {
     }
 
     let kickString = trimArgs(args, 1, message.content);
-    let userIDRegex = /^(?:<@\D?)?(\d+)(?:>)?\s*,?\s*/;
     
     let userIDs = [];
     let userIDEnd = 0;
     let userIDMatch;
-    while (userIDMatch = kickString.slice(userIDEnd).match(userIDRegex)) {
+    while (userIDMatch = kickString.slice(userIDEnd).match(userIDsRegex)) {
         userIDs.push(userIDMatch[1]);
         userIDEnd += userIDMatch[0].length;
     }
@@ -322,12 +322,11 @@ async function muteUsers(message, args) {
     }
 
     let muteString = trimArgs(args, 1, message.content);
-    let userIDRegex = /^(?:<@\D?)?(\d+)(?:>)?\s*,?\s*/;
     
     let userIDs = [];
     let userIDEnd = 0;
     let userIDMatch;
-    while (userIDMatch = muteString.slice(userIDEnd).match(userIDRegex)) {
+    while (userIDMatch = muteString.slice(userIDEnd).match(userIDsRegex)) {
         userIDs.push(userIDMatch[1]);
         userIDEnd += userIDMatch[0].length;
     }
@@ -420,12 +419,11 @@ async function unmuteUsers(message, args) {
     }
 
     let muteString = trimArgs(args, 1, message.content);
-    let userIDRegex = /^(?:<@\D?)?(\d+)(?:>)?\s*,?\s*/;
     
     let userIDs = [];
     let userIDEnd = 0;
     let userIDMatch;
-    while (userIDMatch = muteString.slice(userIDEnd).match(userIDRegex)) {
+    while (userIDMatch = muteString.slice(userIDEnd).match(userIDsRegex)) {
         userIDs.push(userIDMatch[1]);
         userIDEnd += userIDMatch[0].length;
     }
@@ -438,7 +436,7 @@ async function unmuteUsers(message, args) {
 
     let reason = muteString.slice(userIDEnd) || `User was unmuted by ${message.author.tag}`;
     
-    let muteCount = 0;
+    let unmuteCount = 0;
     let unmutedUsers = []; // users that have been muted
     let notMuted = []; // users who are already muted
     let cannotUnmute = []; // users you cannot mute
@@ -457,11 +455,11 @@ async function unmuteUsers(message, args) {
             cannotUnmute.push(user.id == message.author.id ? "yourself" : user.id == Client.user.id ? "me" : user.tag);
         } else if (!member.roles.cache.has(muterole.id)) {
             notMuted.push(user.tag);
-        } else if (muteCount < 5) {
+        } else if (unmuteCount < 5) {
             try {
                 await member.roles.remove(muterole, reason);
                 unmutedUsers.push(user.tag);
-                muteCount++;
+                unmuteCount++;
             } catch(e) {
                 muteErrors.push(user.tag);
             }

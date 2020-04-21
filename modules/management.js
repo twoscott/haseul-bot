@@ -11,6 +11,8 @@ const database = require("../db_queries/server_db.js");
 const serverSettings = require("../utils/server_settings.js");
 const { parseChannelID, trimArgs } = require("../functions/functions.js");
 
+const messageUrlRegex = /https:\/\/discordapp\.com\/channels\/(\d+)\/(\d+)\/(\d+)/i;
+
 exports.onMessage = async function(message) {
 
     poll(message);
@@ -22,17 +24,34 @@ exports.onCommand = async function(message, args) {
     let { channel, member } = message;
 
     switch (args[0]) {
+        case "message":
+        case "msg":
+            switch(args[1]) {
+                case "send":
+                    if (checkPermissions(member, ["MANAGE_MESSAGES"]))
+                        withTyping(channel, sendMessage, [message, args]);
+                    break;
+                case "edit":
+                    if (checkPermissions(member, ["MANAGE_MESSAGES"]))
+                        withTyping(channel, editMessage, [message, args]);
+                    break;
+                case "get":
+                    if (checkPermissions(member, ["MANAGE_MESSAGES"]))
+                        withTyping(channel, getMessage, [message, args[2]]);
+                    break;
+            }
+            break;
         case "say":
             if (checkPermissions(member, ["MANAGE_MESSAGES"]))
-                withTyping(channel, say, [message, args]);
+                channel.send("⚠ Command deprecated. Please use `.message send`/`.msg send` instead.");
             break;
         case "edit":
             if (checkPermissions(member, ["MANAGE_MESSAGES"]))
-                withTyping(channel, edit, [message, args]);
+                channel.send("⚠ Command deprecated. Please use `.message edit`/`.msg edit` instead.");
             break;
         case "get":
             if (checkPermissions(member, ["MANAGE_MESSAGES"]))
-                withTyping(channel, get, [message, args.slice(1)]);
+                channel.send("⚠ Command deprecated. Please use `.message get`/`.msg get` instead.");
             break;
         case "poll":
             switch (args[1]) {
@@ -64,7 +83,7 @@ exports.onCommand = async function(message, args) {
             }
             break;
         case "settings":
-            if (checkPermissions(member, ["MANAGE_GUILD"]))
+            if (checkPermissions(member, ["MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]))
                 withTyping(channel, displaySetttings, [message, args[2]]);
             break;
     }
@@ -81,37 +100,39 @@ async function poll(message) {
     }
 }
 
-async function say(message, args) {
+async function sendMessage(message, args) {
 
     let { guild } = message;
 
-    if (args.length < 2) {
-        message.channel.send(`⚠ No channel provided to send a message to.\nUsage: \`.say {channel} {message}\``);
+    if (args.length < 3) {
+        message.channel.send(`⚠ No channel provided to send a message to.`);
         return;
     }
 
-    let channelID = parseChannelID(args[1]);
+    let channelID = parseChannelID(args[2]);
     if (!channelID) {
-        message.channel.send(`⚠ Please provide a channel to send the message to.\nUsage: \`.say {channel} {message}\``);
+        message.channel.send(`⚠ Please provide a channel to send the message to.`);
         return;
     }
+
     let channel = guild.channels.cache.get(channelID);
     if (!channel) {
         message.channel.send(`⚠ Invalid channel provided or channel is not in this server.`);
         return;
     }
 
-    let member = await resolveMember(guild, Client.user.id);
-    if (!member) {
+    let botMember = await resolveMember(guild, Client.user.id);
+    if (!botMember) {
         message.channel.send(`⚠ Error occurred.`);
         return;
     }
     
-    let botPerms = channel.permissionsFor(member);
+    let botPerms = channel.permissionsFor(botMember);
     if (!botPerms.has("VIEW_CHANNEL", true)) {
         message.channel.send(`⚠ I cannot see this channel!`);
         return;
     }
+
     if (!botPerms.has("SEND_MESSAGES", true)) {
         message.channel.send(`⚠ I cannot send messages to this channel!`);
         return;
@@ -121,135 +142,135 @@ async function say(message, args) {
     let files = [];
     for (i=0; i < attachments.length; i++) {
         let attachment = attachments[i];
-        let file = {attachment: attachment.url, name: attachment.name};
+        let file = { attachment: attachment.url, name: attachment.name};
         files.push(file);
     }
 
     if (args.length < 3 && files.length < 1) {
-        message.channel.send(`⚠ No message provided to be sent.\nUsage: \`.say {channel} {message}\``);
+        message.channel.send(`⚠ No message provided to be sent.`);
         return;
     }
 
     channel.startTyping();
-    let content = trimArgs(args, 2, message.content);
-    await channel.send(content, { files });
+    let content = trimArgs(args, 3, message.content);
+    await channel.send({ content, files });
     channel.stopTyping();
     message.channel.send(`Message sent to <#${channelID}>.`);
 
 }
 
-async function edit(message, args) {
+async function editMessage(message, args) {
 
     let { guild } = message;
 
-    if (args.length < 2) {
-        message.channel.send(`⚠ No channel provided to edit a message from.`);
+    if (args.length < 3) {
+        message.channel.send(`⚠ No message url provided.`);
         return;
     }
 
-    let channelID = parseChannelID(args[1]);      
-    if (!channelID) {
-        message.channel.send(`⚠ No channel provided to edit a message from.`);
+    let messageUrlMatch = args[2].match(messageUrlRegex);
+    if (!messageUrlMatch) {
+        message.channel.send(`⚠ Invalid message url provided.`);
+        return;
+    }
+
+    let [ guildID, channelID, messageID ] = messageUrlMatch.slice(1);
+    if (guildID != guild.id) {
+        message.channel.send(`⚠ Provided message url must link to a message in this server.`);
         return;
     }
     
     let channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send(`⚠ Invalid channel provided or channel is not in this server.`);
+        message.channel.send(`⚠ Provided message url links to an invalid channel.`);
         return;
     }
 
-    let member = await resolveMember(guild, Client.user.id);
-    if (!member) {
+    let botMember = await resolveMember(guild, Client.user.id);
+    if (!botMember) {
         message.channel.send(`⚠ Error occurred.`);
         return;
     }
     
-    let botPerms = channel.permissionsFor(member);
-    if (!botPerms.has("VIEW_CHANNEL", true)) {
+    let botPerms = channel.permissionsFor(botMember);
+    if (!botPerms.has("VIEW_CHANNEL", true, )) {
         message.channel.send(`⚠ I cannot see this channel!`);
         return;
     }
 
-    if (args.length < 3) {
-        message.channel.send(`⚠ No message ID provided to edit.`);
-    }
-
-    let messageID = args[2].match(/^\d+$/);
-    if (!messageID) {
-        message.channel.send(`⚠ No message ID provided.`);
-        return;
-    }
-    messageID = messageID[0];
-
     let msg = await resolveMessage(channel, messageID);
     if (!msg) {
-        message.channel.send(`⚠ Invalid message ID provided.`);
+        message.channel.send(`⚠ Provided message url links to an invalid message.`);
+        return;
+    }
+
+    if (msg.author.id != Client.user.id) {
+        message.channel.send(`⚠ Provided message url links to a message sent by another user.`);
         return;
     }
 
     if (args.length < 4) {
-        message.channel.send(`⚠ No content provided to edit the message with.\nUsage: \`.edit {channel id} {message id} <new message content>\``);
+        message.channel.send(`⚠ No content provided to edit the message with.`);
         return;
     }
 
     let content = trimArgs(args, 3, message.content);
     await msg.edit(content);
-    message.channel.send(`Message edited.`);
+    message.channel.send(`Message edited in <#${channel.id}>.`);
 
 }
 
-async function get(message, args) {
+async function getMessage(message, messageUrl) {
 
     let { guild } = message;
 
-    if (args.length < 1) {
-        message.channel.send(`⚠ Please provide a message ID to be fetched.`);
+    if (!messageUrl) {
+        message.channel.send(`⚠ No message url provided.`);
         return;
     }
 
-    let channelID = parseChannelID(args[0]);        
-    if (!channelID) {
-        message.channel.send(`⚠ Please provide a message's channel to fetch.\nUsage: \`.get {channel id} {message id}\``);
+    let messageUrlMatch = messageUrl.match(messageUrlRegex);
+    if (!messageUrlMatch) {
+        message.channel.send(`⚠ Invalid message url provided.`);
+        return;
+    }
+
+    let [ guildID, channelID, messageID ] = messageUrlMatch.slice(1);
+    if (guildID != guild.id) {
+        message.channel.send(`⚠ Provided message url must link to a message in this server.`);
         return;
     }
     
     let channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send(`⚠ Invalid channel provided or channel is not in this server.`);
+        message.channel.send(`⚠ Provided message url links to an invalid channel.`);
         return;
     }
 
-    let member = await resolveMember(guild, Client.user.id);
-    if (!member) {
+    let botMember = await resolveMember(guild, Client.user.id);
+    if (!botMember) {
         message.channel.send(`⚠ Error occurred.`);
         return;
     }
     
-    let botPerms = channel.permissionsFor(member);
-    if (!botPerms.has("VIEW_CHANNEL", true)) {
+    let botPerms = channel.permissionsFor(botMember);
+    if (!botPerms.has("VIEW_CHANNEL", true, )) {
         message.channel.send(`⚠ I cannot see this channel!`);
         return;
     }
 
-    let messageID = args[1].match(/^\d+$/);
-    if (!messageID) {
-        message.channel.send(`⚠ No message ID provided.`);
-        return;
-    }
-    messageID = messageID[0];
-
     let msg = await resolveMessage(channel, messageID);
     if (!msg) {
-        message.channel.send(`⚠ Invalid message ID provided.`);
+        message.channel.send(`⚠ Provided message url links to an invalid message.`);
         return;
     }
+
     if (msg.content.length < 1) {
         message.channel.send(`⚠ Message has no content.`);
         return;
     }
 
-    message.channel.send(`${msg.content.includes('```') ? "`\`\`\`‌‌` -> \`'''\`\n" : ""}\`\`\`${msg.content.replace(/```/g, "'''").slice(0,2048)}\`\`\``);
+    message.channel.send(`${msg.content.includes('```') ? `\` \`\`\`‌‌\` -> \`'''\`\n`:``}\`\`\`${msg.content.replace(/```/g, "'''").slice(0,2048)}\`\`\``);
 
 }
 
