@@ -7,6 +7,7 @@ const {
 const { Client } = require("../haseul.js");
 
 const serverSettings = require("../utils/server_settings.js");
+const { resolveUsedInvite } = require("../utils/invite_cache.js");
 const { parseChannelID, trimArgs } = require("../functions/functions.js");
 
 const joinColour = 0x01b28f;
@@ -119,25 +120,31 @@ async function logJoin(member, welcomeMsgPromise) {
     let logChannelID = serverSettings.get(member.guild.id, "joinLogsChan");
     let channel = Client.channels.cache.get(logChannelID);
     if (!channel) return;
-    
+
+    let usedInvite = await resolveUsedInvite(guild);    
     let memberNumber = await getMemberNumber(member);
     let embed = new Discord.MessageEmbed({
         title: "Member Joined!",
-        thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
+        thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 256 }) },
         description: `**${user.tag}** (${user}) joined ${guild}.`,
         fields: [
-            { name: "Joined On", value: member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false },
-            { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false },
-            { name: "User ID", value: user.id, inline: false }
+            { name: "Joined On", value: member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
+            { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
         ],
         color: joinColour,
         footer: { text: `Member #${memberNumber}` },
     });
 
+    if (usedInvite) {
+        embed.addField("Invite Used", `${usedInvite.url}${usedInvite.uses ? ` (${usedInvite.uses.toLocaleString()} uses)` : ``}${usedInvite.inviter ? `\nCreated by ${usedInvite.inviter.tag} (<@${usedInvite.inviter.id}>)` : ``}`, false);
+    }
+
     let welcomeMsgUrl = await welcomeMsgPromise;
     if (welcomeMsgUrl) {
-        embed.addField("Welcome Message", `[View Message](${welcomeMsgUrl})`, false);
+        embed.addField("Welcome Message", `[View Message](${welcomeMsgUrl})`, usedInvite ? true : false);
     }
+
+    embed.addField("User ID", user.id, welcomeMsgUrl ? true : false);
     
     channel.send(embed);
 }
@@ -158,8 +165,8 @@ const logLeave = async function (member) {
         thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
         description: `**${user.tag}** (${user}) left ${guild}.`,
         fields: [
-            { name: "Left On", value: leaveDate.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false },
-            { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false },
+            { name: "Left On", value: leaveDate.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
+            { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
             { name: "User ID", value: user.id, inline: false }
         ],
         color: leaveColour
