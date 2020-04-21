@@ -1,4 +1,5 @@
 const serverSettings = require("../utils/server_settings.js");
+const inviteCache = require("../utils/invite_cache.js");
 
 const instagram = require("../tasks/instagram.js");
 const twitter = require("../tasks/twitter.js");
@@ -8,6 +9,7 @@ exports.handleTasks = async function() {
     
     console.log("Initialising modules...");
     serverSettings.ready();
+    inviteCache.ready();
 
     console.log("Starting tasks...");
     instagram.tasks();
