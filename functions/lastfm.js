@@ -32,9 +32,7 @@ exports.scrapeArtistsWithImages = async function(username, datePreset, itemCount
         try {
             response = await axios.get(`https://www.last.fm/user/${username}/library/artists?date_preset=${datePreset}&page=${i+1}`);
         } catch (e) {
-            let { message } = e.response.data;
-            message.channel.send(`⚠ ${message || "Unknown Error Occurred."}`);
-            return;
+            return null;
         }
 
         let doc = new JSDOM(response.data).window.document;
