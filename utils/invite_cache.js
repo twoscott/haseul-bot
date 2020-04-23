@@ -49,7 +49,7 @@ exports.resolveUsedInvite = async function(guild) {
                     usedInvite = newInvite;
                     inviteChanges++;
                 }
-            } else {
+            } else if (newInvite.uses > 0) {
                 usedInvite = newInvite;
                 inviteChanges++;
             }
@@ -58,16 +58,30 @@ exports.resolveUsedInvite = async function(guild) {
 
     newVanity = await guild.fetchVanityInvite().catch(() => {}); // <fetchVanityInvite> edited discord.js code
     if (newVanity && inviteChanges < 2) {
+        console.log("Passed vanity check");
         newVanity.url = `https://discord.gg/${newVanity.code}`;
         if (currentVanity) {
             if (currentVanity.uses !== null && newVanity.uses > currentVanity.uses) {
                 usedInvite = newVanity;
                 inviteChanges++;
             }
-        } else {
+        } else if (newVanity.uses > 0) {
             usedInvite = newVanity;
             inviteChanges++;
         }
+    }
+
+    if (guild.id == "482594344390623240" && inviteChanges != 1) {
+        console.log("######################################");
+        console.log("TEST- LOONA couldn't resolve invite:");
+        console.log(`Invite changes: ${inviteChanges}`);
+        console.log("Used Invite:");
+        console.dir(usedInvite);
+        console.log(`Cached vanity:`);
+        console.dir(currentVanity);
+        console.log(`New vanity:`);
+        console.dir(newVanity);
+        console.log("######################################");
     }
 
     inviteCache.set(guild.id, newInvites);
