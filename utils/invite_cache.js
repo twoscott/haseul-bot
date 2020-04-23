@@ -71,19 +71,6 @@ exports.resolveUsedInvite = async function(guild) {
         }
     }
 
-    if (guild.id == "482594344390623240" && inviteChanges != 1) {
-        console.log("######################################");
-        console.log("TEST- LOONA couldn't resolve invite:");
-        console.log(`Invite changes: ${inviteChanges}`);
-        console.log("Used Invite:");
-        console.dir(usedInvite);
-        console.log(`Cached vanity:`);
-        console.dir(currentVanity);
-        console.log(`New vanity:`);
-        console.dir(newVanity);
-        console.log("######################################");
-    }
-
     inviteCache.set(guild.id, newInvites);
     vanityCache.set(guild.id, newVanity);
     return inviteChanges == 1 ? usedInvite : null;
