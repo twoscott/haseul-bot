@@ -105,20 +105,14 @@ async function instaLoop() {
                                 name: user ? `${user.full_name} (@${owner.username})` : owner.username,
                                 url: `https://www.instagram.com/${owner.username}/`
                             },
-                            title: `New ${type == "GraphImage" ? "Photo" : type == "GraphVideo" ? "Video" : "Post"}`,
                             fields: [],
                             color: 0xfefefe,
                             url: `https://www.instagram.com/p/${shortcode}/`,
                             footer: { icon_url: 'https://i.imgur.com/NNzsisb.png', text: 'Instagram' },
                             timestamp
                         });
-                        
-                        if (caption) {
-                            let captionHyperlinked = caption.replace(/@([^ \n!-/:-@[-^`\{-~]+)/gi, `[@$1](https://www.instagram.com/$1/ "View @$1 on Instagram")`)
-                                                            .replace(/#([^ \n!-/:-@[-^`\{-~]+)/gi, `[#$1](https://www.instagram.com/explore/tags/$1/ "Explore #$1 on Instagram")`).replace(/(\n\.)+/, '\n');
-                            caption = captionHyperlinked.length <= 2048 ? captionHyperlinked : caption;
-                            embed.description = caption.replace(/(?<!\(https?:\/\/.+\s"View\s#[^ \n!-/:-@[-^`\{-~]+)([`\*~_])(?!\son\sInstagram")/g, "\\$&");
-                        }
+
+                        if (caption) embed.description = caption;
                         if (user) embed.author.icon_url = user.profile_pic;
                         if (type == "GraphSidecar") {
                             let sidecar = post.edge_sidecar_to_children.edges;
@@ -142,32 +136,30 @@ async function instaLoop() {
                                 for (let i = 0; i < images.length; i++) {
                                     let { id, display_url } = images[i];
                                     await database.addCustomImage(id, display_url);
-                                    let link = `http://${HOST}/insta/img/${id}`;
-                                    let text = ` [\`${i+1}\`:frame_photo:](${link} "Click to View Image")`;
-                                    if (field.length + text.length > 1024) {
+                                    let link = `https://${HOST}/insta/img/${id}\n`;
+                                    if (field.length + link.length > 1024) {
                                         field += '.'.repeat(Math.min(3, 1024 - field.length));
                                         break;
                                     } else {
-                                        field += text;
+                                        field += link;
                                     }
                                 }
-                                embed.fields.push({ name: 'Image Links', value: field.trim(), inline: true });
+                                embed.fields.push({ name: 'Image Links', value: field.trim(), inline: false });
                             }
                             if (videos.length > 0) {
                                 let field = "";
                                 for (let i = 0; i < videos.length; i++) {
                                     let { id, video_url} = videos[i];
                                     await database.addCustomVideo(id, video_url);
-                                    let link = `http://${HOST}/insta/vid/${id}`;
-                                    let text = ` [\`${i+1}\`:film_frames:](${link} "Click to Watch Video")`;
-                                    if (field.length + text.length > 1024) {
+                                    let link = `https://${HOST}/insta/vid/${id}\n`;
+                                    if (field.length + link.length > 1024) {
                                         field += '.'.repeat(Math.min(3, 1024 - field.length));
                                         break;
                                     } else {
-                                        field += text;
+                                        field += link;
                                     }
                                 }
-                                embed.fields.push({ name: 'Video Links', value: field.trim(), inline: true });
+                                embed.fields.push({ name: 'Video Links', value: field.trim(), inline: false });
                             }
                         }
         
