@@ -1,5 +1,4 @@
 const { embedPages, withTyping } = require("../functions/discord.js");
-
 const { trimArgs } = require("../functions/functions.js");
 
 const axios = require("axios");
@@ -12,7 +11,8 @@ const letterboxd = axios.create({
 
 const youtube = axios.create({
     baseURL: "https://youtube.com",
-    timeout: 5000
+    timeout: 5000,
+    headers: { "X-YouTube-Client-Name": "1", "X-YouTube-Client-Version": "2.20200424.06.00"}
 });
 
 exports.onCommand = async function(message, args) {
@@ -35,13 +35,16 @@ exports.onCommand = async function(message, args) {
 async function ytVidQuery(query) {
 
     if (query) {
-        let response = await youtube.get(`/results?search_query=${encodeURIComponent(query)}`);
-        let search = response.data.match(/<div class="yt-lockup-content"><h3 class="yt-lockup-title "><a href="\/watch\?v=([^&"]+)/i);
-        if (!search) {
+        let response = await youtube.get('/results', { params: { search_query: query, pbj: 1, sp: 'EgIQAQ==' } });
+        let result;
+        try {
+            result = response.data[1].response.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[0];
+        } catch (e) {
+            console.error(e);
             return null;
         }
-        let video_id = search[1];
-        return video_id;
+
+        return result.videoRenderer ? result.videoRenderer.videoId || null : null;
     }
 
 }
@@ -54,21 +57,22 @@ async function ytPages(message, args) {
     }
 
     let query = trimArgs(args, 1, message.content);
-    let { data } = await youtube.get(`/results?search_query=${encodeURIComponent(query)}`);
-    let regExp = /<div class="yt-lockup-content"><h3 class="yt-lockup-title "><a href="\/watch\?v=([^&"]+)/ig;
-    let pages = [];
-
-    let search = regExp.exec(data);
-    for (let i = 0; search && i < 20; i++) {
-        pages.push({ content: `${i+1}. https://youtu.be/${search[1]}` });
-        search = regExp.exec(data);
+    let response = await youtube.get('/results', { params: { search_query: query, pbj: 1, sp: 'EgIQAQ==' } });
+    let results;
+    try {
+        results = response.data[1].response.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents;
+    } catch (e) {
+        console.error(e);
+        return null;
     }
-    if (pages.length < 1) {
+
+    results = results.filter(result => result.videoRenderer && result.videoRenderer.videoId).map((result, i) => `${i+1}. https://youtu.be/${result.videoRenderer.videoId}`);
+
+    if (results.length < 1) {
         message.channel.send(`⚠ No results found for this query!`);
         return;
     }
-
-    embedPages(message, pages, true);
+    embedPages(message, results.slice(0, 20), true);
     
 }
 
