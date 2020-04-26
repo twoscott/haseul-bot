@@ -10,8 +10,8 @@ const serverSettings = require("../utils/server_settings.js");
 const { resolveUsedInvite } = require("../utils/invite_cache.js");
 const { parseChannelID, trimArgs } = require("../functions/functions.js");
 
-const joinColour = 0x01b28f;
-const leaveColour = 0xf93452;
+const joinColour = 0x01b762;
+const leaveColour = 0xf93437;
 const welcomeColour = 0x7c62d1;
 
 exports.join = async function(member) {
@@ -49,7 +49,7 @@ exports.onCommand = async function(message, args) {
                         withTyping(channel, toggleJoin, [message]);
                     break;
                 default:
-                    message.channel.send(`Help with logs can be found here: https://haseulbot.xyz/#member-logs`);
+                    message.channel.send(`Help with member logs can be found here: https://haseulbot.xyz/#logs`);
                     break;
             }
             break;
@@ -87,22 +87,22 @@ async function welcome(member) {
     let { user, guild } = member;
 
     if (user.bot) return;
-    let welcomeOn = serverSettings.get(member.guild.id, "welcomeOn");
+    let welcomeOn = serverSettings.get(guild.id, "welcomeOn");
     if (!welcomeOn) return;
-    let welcomeChannelID = serverSettings.get(member.guild.id, "welcomeChan");
+    let welcomeChannelID = serverSettings.get(guild.id, "welcomeChan");
     let channel = Client.channels.cache.get(welcomeChannelID)
     if (!channel) return;
 
-    let memberNumber = await getMemberNumber(member);
+    // let memberNumber = await getMemberNumber(member);
     let defaultText = `**{username}**#{discriminator} has ${['arrived', 'joined', 'appeared'][Math.floor(Math.random() * 3)]}!`;
-    let welcomeText = serverSettings.get(member.guild.id, "welcomeMsg");
+    let welcomeText = serverSettings.get(guild.id, "welcomeMsg");
 
     let embed = new Discord.MessageEmbed({
         title: "New Member!",
         thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
-        description: (welcomeText || defaultText).replace('{default}', defaultText).replace('{user}', user).replace('{username}', user.username).replace('{discriminator}', user.discriminator).replace('{usertag}', user.tag).replace('{server}', guild.name).replace('{memberno}', memberNumber),
+        description: (welcomeText || defaultText).replace('{default}', defaultText).replace('{user}', user).replace('{username}', user.username).replace('{discriminator}', user.discriminator).replace('{usertag}', user.tag).replace('{server}', guild.name).replace('{memberno}', guild.memberCount),
         color: welcomeColour,
-        footer: { text: `Member #${memberNumber} 🎐` },
+        footer: { text: `Member #${guild.memberCount} 🎐` },
         timestamp: member.joinedTimestamp
     })
 
@@ -115,16 +115,15 @@ async function logJoin(member, welcomeMsgPromise) {
 
     let { user, guild } = member;
 
-    let logsOn = serverSettings.get(member.guild.id, "joinLogsOn");
+    let logsOn = serverSettings.get(guild.id, "joinLogsOn");
     if (!logsOn) return;
-    let logChannelID = serverSettings.get(member.guild.id, "joinLogsChan");
+    let logChannelID = serverSettings.get(guild.id, "joinLogsChan");
     let channel = Client.channels.cache.get(logChannelID);
     if (!channel) return;
 
-    let usedInvite = await resolveUsedInvite(guild);    
-    let memberNumber = await getMemberNumber(member);
+    let usedInvite = await resolveUsedInvite(guild);
     let embed = new Discord.MessageEmbed({
-        title: "Member Joined!",
+        title: "Member Joined",
         thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 256 }) },
         description: `**${user.tag}** (${user}) joined ${guild}.`,
         fields: [
@@ -132,7 +131,7 @@ async function logJoin(member, welcomeMsgPromise) {
             { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
         ],
         color: joinColour,
-        footer: { text: `Member #${memberNumber}` },
+        footer: { text: `Member #${guild.memberCount}` },
     });
 
     if (usedInvite) {
@@ -154,14 +153,14 @@ const logLeave = async function (member) {
     let leaveDate = new Date(Date.now());
     let { user, guild } = member;
 
-    let logsOn = serverSettings.get(member.guild.id, "joinLogsOn");
+    let logsOn = serverSettings.get(guild.id, "joinLogsOn");
     if (!logsOn) return;
-    let logChannelID = serverSettings.get(member.guild.id, "joinLogsChan");
+    let logChannelID = serverSettings.get(guild.id, "joinLogsChan");
     let channel = Client.channels.cache.get(logChannelID);
     if (!channel) return;
 
     let embed = new Discord.MessageEmbed({
-        title: "Member Left!",
+        title: "Member Left",
         thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
         description: `**${user.tag}** (${user}) left ${guild}.`,
         fields: [
@@ -214,7 +213,7 @@ async function setJoinChannel(message, channelArg) {
         return;
     }
     
-    await serverSettings.set(message.guild.id, "joinLogsChan", channelID)
+    await serverSettings.set(message.guild.id, "joinLogsChan", channelID);
     message.channel.send(`Join logs channel set to <#${channelID}>.`);
 
 }
@@ -277,7 +276,7 @@ async function setWelcomeMsg(message, args) {
     }
     
     let msg = trimArgs(args, 3, message.content);
-    await serverSettings.set(message.guild.id, "welcomeMsg", msg)
+    await serverSettings.set(message.guild.id, "welcomeMsg", msg);
     message.channel.send(`Welcome message set.`);
 
 }

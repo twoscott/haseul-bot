@@ -13,6 +13,8 @@ exports.template = {
     "pollOn": { name: "Poll Toggle", type: "toggle" },
     "joinLogsOn": { name: "Member Logs Toggle", type: "toggle" },
     "joinLogsChan": { name: "Member Logs Channel", type: "channel" },
+    "msgLogsOn": { name: "Message Logs Toggle", type: "toggle" },
+    "msgLogsChan": { name: "Message Logs Channel", type: "channel" },
     "welcomeOn": { name: "Welcome Toggle", type: "toggle" },
     "welcomeChan": { name: "Welcome Channel", type: "channel" },
     "welcomeMsg": { name: "Welcome Message", type: "text" },

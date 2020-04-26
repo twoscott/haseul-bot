@@ -183,11 +183,11 @@ async function repStatus(message) {
 
 async function repboard(message, local) {
 
-    let members = await message.guild.members.fetch();
     let reps = await database.getReps();
     let entries = reps.length;
 
     if (local) {
+        let members = await message.guild.members.fetch();
         reps = reps.filter(rep => members.has(rep.userID) && rep.rep > 0);
     } else {
         reps = reps.filter(rep => rep.rep > 0);
@@ -318,11 +318,11 @@ async function streaks(message) {
 async function streakboard(message, local) {
 
     let { createdTimestamp, guild } = message;
-    let members = await guild.members.fetch();
     
     await database.updateStreaks(createdTimestamp);
     let streaks = await database.getAllStreaks();
     if (local) {
+        let members = await guild.members.fetch();
         streaks = streaks.filter(streak => members.has(streak.user1) && members.has(streak.user2) && createdTimestamp - streak.firstRep > 86400000 && streak.user1LastRep && streak.user2LastRep);
     } else {
         streaks = streaks.filter(streak => createdTimestamp - streak.firstRep > 86400000 && streak.user1LastRep && streak.user2LastRep);   

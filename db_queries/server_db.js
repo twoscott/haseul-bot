@@ -20,6 +20,8 @@ dbopen.then(db => {
             pollOn INT NOT NULL DEFAULT 0,
             joinLogsOn INT NOT NULL DEFAULT 0, 
             joinLogsChan TEXT,
+            msgLogsOn INT NOT NULL DEFAULT 0,
+            msgLogsChan TEXT,
             welcomeOn INT NOT NULL DEFAULT 0,
             welcomeChan TEXT,
             welcomeMsg TEXT,
@@ -31,7 +33,8 @@ dbopen.then(db => {
 })
 
 // dbopen.then(async db => {
-//     await db.run(SQL`ALTER TABLE serverSettings ADD COLUMN muteroleID TEXT`);
+//     await db.run(SQL`ALTER TABLE serverSettings ADD COLUMN msgLogsOn INT NOT NULL DEFAULT 0`);
+//     await db.run(SQL`ALTER TABLE serverSettings ADD COLUMN msgLogsChan TEXT`);
 //     console.log("Finished altering servers.db");
 // })
 

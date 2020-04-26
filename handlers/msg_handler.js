@@ -8,9 +8,10 @@ const information = require("../modules/information.js");
 const instagram = require("../modules/instagram.js");
 const lastfm = require("../modules/lastfm.js");
 const levels = require("../modules/levels.js");
-const logs = require("../modules/logs.js");
 const management = require("../modules/management.js");
 const media = require("../modules/media.js");
+const memberLogs = require("../modules/member_logs.js");
+const messageLogs = require("../modules/message_logs.js");
 const misc = require("../modules/misc.js");
 const moderation = require("../modules/moderation.js");
 const notifications = require("../modules/notifications.js");
@@ -24,7 +25,7 @@ const vlive = require("../modules/vlive.js");
 
 const serverSettings = require("../utils/server_settings.js");
 
-exports.handleMsg = async function(message) {
+exports.onMessage = async function(message) {
 
     if (message.system) return;
     if (message.author.bot) return;
@@ -53,6 +54,28 @@ exports.handleMsg = async function(message) {
 
 }
 
+exports.onMessageDelete = async function(message) {
+    
+    if (message.system) return;
+    if (message.author.bot) return;
+    if (message.channel.type === "dm") return;
+    message.deletedTimestamp = Date.now();
+    message.deletedAt = new Date(message.deletedTimestamp);
+
+    processMessageDelete(message);
+
+}
+
+exports.onMessageEdit = async function(oldMessage, newMessage) {
+
+    if (oldMessage.system || newMessage.system) return;
+    if (oldMessage.author.bot || newMessage.author.bot) return;
+    if (oldMessage.channel.type === "dm" || newMessage.channel.type === "dm") return;
+
+    processMessageEdit(oldMessage, newMessage);
+
+}
+
 async function processCommand(message, args) {
     client.onCommand(message, args);
     commands.onCommand(message, args);
@@ -61,9 +84,10 @@ async function processCommand(message, args) {
     instagram.onCommand(message, args);
     lastfm.onCommand(message, args);
     levels.onCommand(message, args);
-    logs.onCommand(message, args);
     management.onCommand(message, args);
     media.onCommand(message, args);
+    memberLogs.onCommand(message, args);
+    messageLogs.onCommand(message, args);
     misc.onCommand(message, args);
     moderation.onCommand(message, args);
     notifications.onCommand(message, args);
@@ -85,4 +109,12 @@ async function processMessage(message) {
     management.onMessage(message);
     notifications.onMessage(message);
     roles.onMessage(message);
+}
+
+async function processMessageDelete(message) {
+    messageLogs.onMessageDelete(message);
+}
+
+async function processMessageEdit(oldMessage, newMessage) {
+    messageLogs.onMessageEdit(oldMessage, newMessage);
 }

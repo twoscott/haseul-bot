@@ -112,8 +112,11 @@ async function memberEmbed(author, member) {
             { name: "Status", value: `${status[user.presence.status]}${member.premiumSince ? " <:nitroboost:595699920422436894>" : ""}`, inline: false },
             { name: "Account Created", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false }
         ],
-        footer: { text: `Member #${memNo}` }
     });
+
+    if (memNo) {
+        embed.setFooter(`Member #${memNo}`);
+    }
 
     if (response) {
         let timestamp = new Date(response.headers['last-modified']);
@@ -228,7 +231,7 @@ async function userAvatar(message, args) {
 
     if (!userID) {
         target = trimArgs(args, 1, message.content)
-        members = await guild.members.fetch();
+        let members = await guild.members.fetch();
 
         member = await searchMembers(members, target)
         if (!member) {
@@ -310,8 +313,6 @@ async function guildInfo(message, target) {
 }
 
 async function serverEmbed(guild) {
-
-    guild.members.cache = await guild.members.fetch({ cache: false });
 
     let regions = {
         "amsterdam":   ":flag_nl: Amsterdam",    

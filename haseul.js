@@ -42,7 +42,15 @@ Client.on("ready", () => {
 })
 
 Client.on("message", message => {
-    messages.handleMsg(message);
+    messages.onMessage(message);
+})
+
+Client.on("messageDelete", message => {
+    messages.onMessageDelete(message);
+})
+
+Client.on("messageUpdate", (oldMessage, newMessage) => {
+    messages.onMessageEdit(oldMessage, newMessage);
 })
 
 Client.on("guildMemberAdd", member => {
