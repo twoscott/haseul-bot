@@ -170,7 +170,7 @@ async function instaLoop() {
         
                         if (type == "GraphVideo") {
                             embed.image = { url: post.display_url };
-                            embed.fields.push({ name: 'Video Link', value: `[\`>\`:film_frames:\`<\`](${post.video_url} "Click to Watch Video")` });
+                            embed.fields.push({ name: 'Video Link', value: `[Play Video](${post.video_url} "Click to Watch Video")` });
                             options = { embed };
                         }
 

@@ -143,7 +143,7 @@ async function instaNotifAdd(message, args) {
             if (userDiscordID == guild.ownerID) {
                 let member = patreonMembers.find(m => m.relationships.user.data.id == user.id);
                 let tier2Member = member.relationships.currently_entitled_tiers.data.find(t => t.id = tier2ID);
-                if (tier2Member) {
+                if (tier2Member && member.attributes.patron_status == "active_patron") {
                     ownerPatronT2 = true;
                 }
             }

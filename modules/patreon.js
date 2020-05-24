@@ -35,7 +35,7 @@ async function patrons(message) {
     }
     
     try {
-        let members = response.data.data.filter(m => m.attributes.patron_status != "former_patron");
+        let members = response.data.data.filter(m => m.attributes.patron_status == "active_patron");
         let users = response.data.included.filter(x => x.type == 'user');
         if (members.length < 1) {
             message.channel.send(`Nobody is currently supporting Haseul Bot :pensive:`);
@@ -46,12 +46,12 @@ async function patrons(message) {
             let aPledgeTime = new Date(a.attributes.pledge_relationship_start).getTime();
             let bPledgeTime = new Date(b.attributes.pledge_relationship_start).getTime();
             return aPledgeTime - bPledgeTime; 
-        }).filter(x => {
-            let user = users.find(u => u.id == x.relationships.user.data.id);
+        }).filter(member => {
+            let user = users.find(u => u.id == member.relationships.user.data.id);
             let socials = user.attributes.social_connections;
             return socials.discord;
-        }).map(x => {
-            let user = users.find(u => u.id == x.relationships.user.data.id);
+        }).map(member => {
+            let user = users.find(u => u.id == member.relationships.user.data.id);
             let { discord } = user.attributes.social_connections;
             let discordUser = Client.users.cache.get(discord.user_id);
             return `<@${discord.user_id}> (${discordUser ? discordUser.tag : discord.user_id})`;
