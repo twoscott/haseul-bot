@@ -37,7 +37,7 @@ exports.onMessage = async function(message) {
     if (content.startsWith(prefix)) {
         let args = content.slice(1).split(/\s+/);
         if (!message.member) {
-            message.member = await resolveMember(guild, author.id, message.member);
+            message.member = await resolveMember(guild, author.id);
         }
         processCommand(message, args);
     }
@@ -45,7 +45,7 @@ exports.onMessage = async function(message) {
     if (message.mentions.users.has(Client.user.id)) {
         let args = content.split(/\s+/);
         if (!message.member) {
-            message.member = await resolveMember(guild, author.id, message.member);
+            message.member = await resolveMember(guild, author.id);
         }
         processMention(message, args);
     }
