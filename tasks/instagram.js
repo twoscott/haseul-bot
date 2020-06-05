@@ -4,20 +4,32 @@ const Client = require("../haseul.js").Client;
 const imgMod = require("../functions/images.js");
 const database = require("../db_queries/instagram_db.js");
 
+let accounts = new Map();
+
 const {
     instagram, 
     graphql, 
-    timeline_hash, 
-    stories_hash, 
-    login
+    timeline_hash
 } = require("../utils/instagram.js");
 const HOST = 'haseulbot.xyz';
 
 exports.tasks = async function() {
 
     // await login();
+    accountRefreshLoop().catch(console.error);
     instaLoop().catch(console.error);
     // storyCleanup().catch(console.error);
+
+}
+
+async function accountRefreshLoop() {
+
+    let startTime = Date.now();
+
+    accounts = new Map();
+
+    console.log("Refreshed Instagram account cache.");
+    setTimeout(accountRefreshLoop, 86400000 - (Date.now() - startTime)); // daily
 
 }
 
@@ -27,7 +39,6 @@ async function instaLoop() {
 
     console.log("Started checking Instagram at " + new Date(startTime).toUTCString());
 
-    let accounts = new Map();
     let channelNotifs = await database.getAllInstaChannels();
     let instaIDs = new Set(channelNotifs.map(x => x.instaID));
 
@@ -72,12 +83,19 @@ async function instaLoop() {
                     if (!user) {
                         let response;
                         try {
-                            response = await instagram.get(`/${owner.username}/`, { params: {'__a': 1} });
-                            user = response.data.graphql.user;
-                            user = { full_name: user.full_name, profile_pic: user.profile_pic_url, username: user.username };
-                            accounts.set(instaID, user);
+                            response = await instagram.get(`/web/search/topsearch/`, { params: { query: owner.username, context: "user" } });
                         } catch(e) {
                             console.error(e);
+                        }
+                    
+                        let usersFound = response.data.users;
+                        let userFound = usersFound.find(user => user.user.pk == instaID);
+                        if (!userFound) {
+                            console.error(`Error: no user found for ${owner.username}.`);
+                        } else {
+                            user = userFound.user;
+                            user = { full_name: user.full_name, profile_pic: user.profile_pic_url, username: user.username };
+                            accounts.set(instaID, user);
                         }
                     }
 

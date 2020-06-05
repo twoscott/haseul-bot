@@ -12,9 +12,7 @@ const {
 const { 
     instagram, 
     graphql, 
-    timeline_hash, 
-    stories_hash, 
-    login
+    timeline_hash
 } = require("../utils/instagram.js");
 
 exports.onCommand = async function(message, args) {
@@ -45,15 +43,15 @@ exports.onCommand = async function(message, args) {
                             break;
                     }
                     break;
-                case "toggle":
-                    switch (args[2]) {
-                        case "stories":
-                        case "story":
-                            if (checkPermissions(member, ["MANAGE_GUILD"]))
-                                withTyping(channel, storiesToggle, [message, args.slice(3)]);
-                            break;
-                    }
-                    break;
+                // case "toggle":
+                //     switch (args[2]) {
+                //         case "stories":
+                //         case "story":
+                //             if (checkPermissions(member, ["MANAGE_GUILD"]))
+                //                 withTyping(channel, storiesToggle, [message, args.slice(3)]);
+                //             break;
+                //     }
+                //     break;
                 case "help":
                 default:
                     message.channel.send(`Help with Instagram can be found here: https://haseulbot.xyz/#instagram`);
@@ -172,14 +170,10 @@ async function instaNotifAdd(message, args) {
     }
 
     try {
-        response = await instagram.get(`/${instaUser}/`, { params: {'__a': 1} })
+        response = await instagram.get(`/web/search/topsearch/`, { params: { query: instaUser, context: "user" } });
     } catch(e) {
-        console.log(e.response.status);
+        console.error(e.response.status);
         switch (e.response.status) {
-            case 404:
-            case 403:
-                message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
-                break;
             case 429:
                 message.channel.send(`⚠ API rate limit exceeded.`);
                 break;
@@ -190,8 +184,15 @@ async function instaNotifAdd(message, args) {
         return;
     }
 
-    let { user } = response.data.graphql;
-    let { username, id } = user;
+    let usersFound = response.data.users;
+    let user = usersFound.find(user => user.user.username == instaUser);
+    if (!user) {
+        message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
+        return;
+    }
+
+    let { username } = user.user;
+    let id = user.user.pk;
 
     // store current posts
     try {
@@ -203,8 +204,7 @@ async function instaNotifAdd(message, args) {
     }
     let posts = response.data.data.user['edge_owner_to_timeline_media'].edges;
 
-    let now;
-    now = Date.now();
+    let now = Date.now();
     for (let post of posts) {
         post = post.node;
         let createdAt = new Date(post.taken_at_timestamp).getTime();
@@ -275,7 +275,7 @@ async function instaNotifRemove(message, args) {
 
     let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/www\.instagram\.com\/)?(.+?)(?:\/)?\s+<?#?(\d{8,})>?/i);
     if (!formatMatch) {
-        message.channel.send(`⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter`);
+        message.channel.send(`⚠ Incorrect formatting. For help with Instagram, see: https://haseulbot.xyz/#instagram`);
         return;
     }
 
@@ -290,13 +290,10 @@ async function instaNotifRemove(message, args) {
 
     let response;
     try {
-        response = await instagram.get(`/${instaUser}/`, { params: {'__a': 1} })
+        response = await instagram.get(`/web/search/topsearch/`, { params: { query: instaUser, context: "user" } });
     } catch(e) {
+        console.error(e.response.status);
         switch (e.response.status) {
-            case 404:
-            case 403:
-                message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
-                break;
             case 429:
                 message.channel.send(`⚠ API rate limit exceeded.`);
                 break;
@@ -307,8 +304,15 @@ async function instaNotifRemove(message, args) {
         return;
     }
 
-    let { user } = response.data.graphql;
-    let { username, id } = user;
+    let usersFound = response.data.users;
+    let user = usersFound.find(user => user.user.username == instaUser);
+    if (!user) {
+        message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
+        return;
+    }
+
+    let { username } = user.user;
+    let id = user.user.pk;
 
     let deleted;
     try {
@@ -372,71 +376,71 @@ async function instaNotifList(message) {
 }
 
 // toggle stories for insta/channel
-async function storiesToggle(message, args) {
+// async function storiesToggle(message, args) {
 
-    let { guild } = message;
+//     let { guild } = message;
 
-    let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/www\.instagram\.com\/)?(.+?)(?:\/)?\s+<?#?(\d{8,})>?/i);
-    if (!formatMatch) {
-        message.channel.send(`⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter`);
-        return;
-    }
+//     let formatMatch = args.join(' ').trim().match(/^(?:https:\/\/www\.instagram\.com\/)?(.+?)(?:\/)?\s+<?#?(\d{8,})>?/i);
+//     if (!formatMatch) {
+//         message.channel.send(`⚠ Incorrect formatting. For help with Twitter, see: https://haseulbot.xyz/#twitter`);
+//         return;
+//     }
 
-    let instaUser = formatMatch[1];
-    let channelID = formatMatch[2];
+//     let instaUser = formatMatch[1];
+//     let channelID = formatMatch[2];
 
-    let channel = guild.channels.cache.get(channelID);
-    if (!channel) {
-        message.channel.send(`⚠ The channel provided does not exist in this server.`);
-        return;
-    }
+//     let channel = guild.channels.cache.get(channelID);
+//     if (!channel) {
+//         message.channel.send(`⚠ The channel provided does not exist in this server.`);
+//         return;
+//     }
 
-    let response;
-    try {
-        response = await instagram.get(`/${instaUser}/`, { params: {'__a': 1} })
-    } catch(e) {
-        switch (e.response.status) {
-            case 404:
-            case 403:
-                message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
-                break;
-            case 429:
-                message.channel.send(`⚠ API rate limit exceeded.`);
-                break;
-            default:
-                message.channel.send(`⚠ Unknown error occurred.`);
-                break;
-        }
-        return;
-    }
+//     let response;
+//     try {
+//         response = await instagram.get(`/${instaUser}/`, { params: {'__a': 1} })
+//     } catch(e) {
+//         switch (e.response.status) {
+//             case 404:
+//             case 403:
+//                 message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
+//                 break;
+//             case 429:
+//                 message.channel.send(`⚠ API rate limit exceeded.`);
+//                 break;
+//             default:
+//                 message.channel.send(`⚠ Unknown error occurred.`);
+//                 break;
+//         }
+//         return;
+//     }
 
-    let { user } = response.data.graphql;
-    let { username, id } = user;
+//     let { user } = response.data.graphql;
+//     let { username, id } = user;
 
-    let instaChannel;
-    try {
-        instaChannel = await database.getInstaChannel(channel.id, id);
-    } catch (e) {
-        console.error(Error(e));
-        message.channel.send(`⚠ Unknown error occurred.`);
-        return;
-    }
+//     let instaChannel;
+//     try {
+//         instaChannel = await database.getInstaChannel(channel.id, id);
+//     } catch (e) {
+//         console.error(Error(e));
+//         message.channel.send(`⚠ Unknown error occurred.`);
+//         return;
+//     }
 
-    if (!instaChannel) {
-        message.channel.send(`⚠ Instagram notifications for \`@${screen_name}\` are not set up in ${channel} on this server.`);
-        return;
-    }
+//     if (!instaChannel) {
+//         message.channel.send(`⚠ Instagram notifications for \`@${screen_name}\` are not set up in ${channel} on this server.`);
+//         return;
+//     }
 
-    let toggle;
-    try {
-        toggle = await database.toggleStories(channel.id, id)
-    } catch(e) {
-        console.error(Error(e));
-        message.channel.send(`⚠ Unknown error occurred.`);
-        return;
-    }
+//     let toggle;
+//     try {
+//         toggle = await database.toggleStories(channel.id, id)
+//     } catch(e) {
+//         console.error(Error(e));
+//         message.channel.send(`⚠ Unknown error occurred.`);
+//         return;
+//     }
     
-    message.channel.send(toggle ? `You will now be notified for Instagram stories from \`@${username}\` in ${channel}.` :
-                                  `You will no longer be notified for Instagram stories from \`@${username}\` in ${channel}.`);
+//     message.channel.send(toggle ? `You will now be notified for Instagram stories from \`@${username}\` in ${channel}.` :
+//                                   `You will no longer be notified for Instagram stories from \`@${username}\` in ${channel}.`);
 
-}
+// }
