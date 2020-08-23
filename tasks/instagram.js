@@ -9,7 +9,8 @@ let accounts = new Map();
 const {
     instagram, 
     graphql, 
-    timeline_hash
+    timeline_hash,
+    post_hash
 } = require("../utils/instagram.js");
 const HOST = 'haseulbot.xyz';
 
@@ -70,7 +71,8 @@ async function instaLoop() {
                 let oldPostIDs = oldPosts.map(p => p.postID);
 
                 let newPosts = recentPosts.filter(post => !oldPostIDs.includes(post.id)).sort((a,b) => a.taken_at_timestamp - b.taken_at_timestamp) /*sort posts in date order*/
-                
+                let user = accounts.get(instaID);
+
                 for (let post of newPosts) {
 
                     let { id, shortcode, owner, taken_at_timestamp } = post;
@@ -78,26 +80,40 @@ async function instaLoop() {
                     caption = caption.length > 0 ? caption[0].node.text : undefined;
                     let timestamp = parseInt(taken_at_timestamp) * 1000;
                     let type = post['__typename'];
-        
-                    let user = accounts.get(instaID);
+
                     if (!user) {
                         let response;
                         try {
-                            response = await instagram.get(`/web/search/topsearch/`, { params: { query: owner.username, context: "user" } });
+                            response = await graphql.get(`/query/`, { params: { query_hash: post_hash, variables: { shortcode } } });
                         } catch(e) {
                             console.error(e);
                         }
-                    
-                        let usersFound = response.data.users;
-                        let userFound = usersFound.find(user => user.user.pk == instaID);
-                        if (!userFound) {
-                            console.error(`Error: no user found for ${owner.username}.`);
-                        } else {
-                            user = userFound.user;
-                            user = { full_name: user.full_name, profile_pic: user.profile_pic_url, username: user.username };
+
+                        if (response) {
+                            let owner = response.data.data.shortcode_media.owner;
+                            user = { full_name: owner.full_name, profile_pic: owner.profile_pic_url, username: owner.username };
                             accounts.set(instaID, user);
                         }
                     }
+        
+                    // if (!user) {
+                    //     let response;
+                    //     try {
+                    //         response = await instagram.get(`/web/search/topsearch/`, { params: { query: owner.username, context: "user" } });
+                    //     } catch(e) {
+                    //         console.error(e);
+                    //     }
+                    
+                    //     let usersFound = response.data.users;
+                    //     let userFound = usersFound.find(user => user.user.pk == instaID);
+                    //     if (!userFound) {
+                    //         console.error(`Error: no user found for ${owner.username}.`);
+                    //     } else {
+                    //         user = userFound.user;
+                    //         user = { full_name: user.full_name, profile_pic: user.profile_pic_url, username: user.username };
+                    //         accounts.set(instaID, user);
+                    //     }
+                    // }
 
                     await database.addPost(instaID, id);
         
@@ -124,9 +140,9 @@ async function instaLoop() {
                                 url: `https://www.instagram.com/${owner.username}/`
                             },
                             fields: [],
-                            color: 0xfefefe,
+                            color: 0xce0072,
                             url: `https://www.instagram.com/p/${shortcode}/`,
-                            footer: { icon_url: 'https://i.imgur.com/NNzsisb.png', text: 'Instagram' },
+                            footer: { icon_url: 'https://i.imgur.com/lQlsDlk.png', text: 'Instagram' },
                             timestamp
                         });
 

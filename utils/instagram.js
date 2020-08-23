@@ -20,6 +20,7 @@ exports.instagram = instagram;
 exports.graphql = graphql;
 exports.timeline_hash = 'f2405b236d85e8296cf30347c9f08c2a';
 exports.stories_hash = '638a95f198f0312787a7c58d042fafcf';
+exports.post_hash = '505f2f2dfcfce5b99cb7ac4155cbf299';
 
 const server = http.createServer(async (req, res) => {
     let customUrlMatch = req.url.match(new RegExp('/insta/(\\w+)/([0-9]+)'));
