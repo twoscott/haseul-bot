@@ -1,3 +1,6 @@
+const axios = require("axios");
+const getColors = require('get-image-colors');
+
 exports.randomHexColour = (maxBright) => {
     
     let rgb = [];
@@ -24,6 +27,7 @@ exports.rgbToHex = (c) => {
 }
 
 exports.rgbToHsv = ([red, green, blue]) => {
+
     red   /= 255;
     green /= 255;
     blue  /= 255;
@@ -51,4 +55,23 @@ exports.rgbToHsv = ([red, green, blue]) => {
 
     return [ hue, sat, val ];
 
+}
+
+exports.getImgColours = async function(url) {
+    let imgColours = null;
+    try {
+        response = await axios.get(url, {responseType: 'arraybuffer'});
+        imgColours = await getColors(response.data, response.headers['content-type']);
+    } catch (e) {
+        console.error(e);
+    }
+
+    return imgColours;
+}
+
+exports.colours = {
+    joinColour: 0x01b762,
+    leaveColour: 0xf93437,
+    welcomeColour: 0x7c62d1,
+    embedColour: 0x2f3136,
 }

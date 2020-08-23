@@ -1,5 +1,6 @@
 const Discord = require("discord.js");
 const {
+    embedPages,
     getMemberNumber, 
     searchMembers, 
     resolveMember, 
@@ -11,6 +12,7 @@ const axios = require("axios");
 
 const serverSettings = require("../utils/server_settings.js");
 const { parseUserID, trimArgs } = require("../functions/functions.js");
+const { colours, getImgColours } = require("../functions/colours.js");
 const { Image } = require("../functions/images.js");
 
 exports.onCommand = async function(message, args) {
@@ -26,6 +28,10 @@ exports.onCommand = async function(message, args) {
         case "avatar":
         case "dp":
             withTyping(channel, userAvatar, [message, args]);
+            break;
+        case "serverboosters":
+        case "boosters":
+            withTyping(channel, serverBoosters, [message]);
             break;
         case "serverinfo":
         case "sinfo":
@@ -354,17 +360,14 @@ async function serverEmbed(guild) {
     let statusData = Object.values(statusObj);
     statusObj.offline.count = guild.memberCount - statusData.slice(0, 3).reduce((a, c) => a + c.count, 0);
     let statuses = statusData.map(d => d.emoji + d.count.toLocaleString()).join('  ');
-    let autoroleID = serverSettings.get(guild.id, "autoroleID");
-    let autoroleColour = 0xdddddd;
-    if (autoroleID) {
-        let autorole = guild.roles.cache.get(autoroleID);
-        autoroleColour = autorole ? autorole.color : 0xdddddd;
-    }
+
+    let iconColours = await getImgColours(guild.iconURL({ format: 'png', dynamic: true, size: 512 }));
+    let iconColour = iconColours ? iconColours[1].saturate().hex() : colours.embedColour;
 
     let embed = new Discord.MessageEmbed({
         author: { name: guild.name, icon_url: guild.iconURL({ format: 'png', dynamic: true, size: 32 }) },
         thumbnail: { url: guild.iconURL({ format: 'png', dynamic: true, size: 512 }) },
-        color: autoroleColour || guild.members.cache.get(Client.user.id).displayColor || 0xffffff,
+        color: iconColour,
         fields: [
             { name: "Owner", value: `<@${guild.owner.user.id}>`, inline: true },
             { name: "Members", value: guild.memberCount.toLocaleString(), inline: true },
@@ -387,5 +390,57 @@ async function serverEmbed(guild) {
     }
 
     return embed;
+
+}
+
+async function serverBoosters(message) {
+
+    let { guild } = message;
+    guild.members.cache = await guild.members.fetch();
+    let boosters = guild.members.cache.filter(member => member.premiumSince);
+
+    if (boosters.size < 1) {
+        message.channel.send(`⚠ Nobody is currently boosting this server!`);
+        return;
+    }
+
+    let boosterString = boosters.sort((a,b) => {
+        return a.premiumSinceTimestamp - b.premiumSinceTimestamp;
+    }).map(member => {
+        return `<@${member.id}> (${member.user.tag})`;
+    }).join('\n');
+    
+    let descriptions = [];
+    while (boosterString.length > 2048 || boosterString.split('\n').length > 25) {
+        let currString = boosterString.slice(0, 2048);
+
+        let lastIndex = 0;
+        for (let i = 0; i < 25; i++) {
+            let index = currString.indexOf('\n', lastIndex) + 1;
+            if (index) lastIndex = index; else break;
+        }
+        currString   = currString.slice(0, lastIndex);
+        boosterString = boosterString.slice(lastIndex);
+
+        descriptions.push(currString);
+    }
+    descriptions.push(boosterString);
+
+    let pages = descriptions.map((desc, i) => {
+        return {
+            embed: {
+                author: {
+                    name: `${guild.name} Boosters`, icon_url: 'https://i.imgur.com/x0zhlDu.png'
+                },
+                description: desc,
+                color: 0xf47fff,
+                footer: {
+                    text: `${boosters.size} boosters; ${guild.premiumSubscriptionCount} boosts ${descriptions.length > 1 ? `| Page ${i+1} of ${descriptions.length}`:``}`
+                }
+            }
+        }
+    });
+
+    embedPages(message, pages);
 
 }

@@ -9,10 +9,7 @@ const { Client } = require("../haseul.js");
 const serverSettings = require("../utils/server_settings.js");
 const { resolveUsedInvite } = require("../utils/invite_cache.js");
 const { parseChannelID, trimArgs } = require("../functions/functions.js");
-
-const joinColour = 0x01b762;
-const leaveColour = 0xf93437;
-const welcomeColour = 0x7c62d1;
+const { colours, getImgColours } = require("../functions/colours.js");
 
 exports.join = async function(member) {
 
@@ -97,12 +94,22 @@ async function welcome(member) {
     let defaultText = `**{username}**#{discriminator} has ${['arrived', 'joined', 'appeared'][Math.floor(Math.random() * 3)]}!`;
     let welcomeText = serverSettings.get(guild.id, "welcomeMsg");
 
+    let dpColours = await getImgColours(user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 }));
+    dpColours.sort((a,b) => {
+        let bAltRgb = b.rgb().sort((a,b) => b - a);
+        let aAltRgb = a.rgb().sort((a,b) => b - a);
+        let bAltSat = bAltRgb[0] / bAltRgb[2];
+        let aAltSat = aAltRgb[0] / aAltRgb[2];
+        return ((bAltSat * (bAltRgb[0] - bAltRgb[2]) + (b.hsl()[2] * 50)) - (aAltSat * (aAltRgb[0] - aAltRgb[2]) + (a.hsl()[2] * 50)));
+    });
+
+    let dpColour = dpColours ? dpColours[0].saturate().hex() : colours.embedColour;
     let embed = new Discord.MessageEmbed({
         title: "New Member!",
         thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) },
         description: (welcomeText || defaultText).replace('{default}', defaultText).replace('{user}', user).replace('{username}', user.username).replace('{discriminator}', user.discriminator).replace('{usertag}', user.tag).replace('{server}', guild.name).replace('{memberno}', guild.memberCount),
-        color: welcomeColour,
-        footer: { text: `Member #${guild.memberCount} 🎐` },
+        color: dpColour,
+        footer: { text: `Member #${guild.memberCount} 🔖` },
         timestamp: member.joinedTimestamp
     })
 
@@ -130,7 +137,7 @@ async function logJoin(member, welcomeMsgPromise) {
             { name: "Joined On", value: member.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
             { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
         ],
-        color: joinColour,
+        color: colours.joinColour,
         footer: { text: `Member #${guild.memberCount}` },
     });
 
@@ -168,7 +175,7 @@ const logLeave = async function (member) {
             { name: "Account Created On", value: user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: true },
             { name: "User ID", value: user.id, inline: false }
         ],
-        color: leaveColour
+        color: colours.leaveColour
     })
     
     channel.send(embed);
