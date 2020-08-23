@@ -63,7 +63,7 @@ exports.onCommand = async function(message, args) {
 
 function channelSearch(channelList, query) {
 
-    let chanResult = channelList.find(chan => chan.channelCode == query);
+    let chanResult = channelList.find(chan => chan.channelCode.toLowerCase() == query);
     if (!chanResult) {
         chanResult = channelList.find(chan => chan.channelName.toLowerCase() == query);
     }
