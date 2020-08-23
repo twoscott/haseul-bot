@@ -30,12 +30,14 @@ exports.onCommand = async function(message, args) {
                     switch (args[2]) {
                         case "add":
                             if (checkPermissions(member, ["MANAGE_CHANNELS"]))
-                                withTyping(channel, instaNotifAdd, [message, args.slice(3)]);
+                                // withTyping(channel, instaNotifAdd, [message, args.slice(3)]);
+                                message.channel.send(`⚠ Adding and removing Instagram notifications is currently disabled as there are issues with Instagram. This may or may not be resolved. Already-configured Instagram notifications should continue to function as normal.`);
                             break;
                         case "remove":
                         case "delete":
                             if (checkPermissions(member, ["MANAGE_CHANNELS"]))
-                                withTyping(channel, instaNotifRemove, [message, args.slice(3)]);
+                                // withTyping(channel, instaNotifRemove, [message, args.slice(3)]);
+                                message.channel.send(`⚠ Adding and removing Instagram notifications is currently disabled as there are issues with Instagram. This may or may not be resolved. Already-configured Instagram notifications should continue to function as normal.`);
                             break;
                         case "list":
                             if (checkPermissions(member, ["MANAGE_CHANNELS"]))
@@ -143,6 +145,7 @@ async function instaNotifAdd(message, args) {
                 let tier2Member = member.relationships.currently_entitled_tiers.data.find(t => t.id = tier2ID);
                 if (tier2Member && member.attributes.patron_status == "active_patron") {
                     ownerPatronT2 = true;
+                    console.log(`Active patron: ${userDiscordID}`);
                 }
             }
         }
@@ -152,13 +155,13 @@ async function instaNotifAdd(message, args) {
 
     if (guild.id != '276766140938584085') {
         if (!ownerPatronT2) {
-            if (guild.members.size < 100) {
+            if (guild.memberCount < 100) {
                 message.channel.send(`⚠ Due to Instagram's limitations, you must have more than 100 members in the server to use Instagram notifications!`);
                 return;
-            } else if (guild.members.size < 500 && instaIDs.size >= 1) {
+            } else if (guild.memberCount < 500 && instaIDs.size >= 1) {
                 message.channel.send(`⚠ Due to Instagram's limitations, you must have more than 500 members in the server to have 2 Instagram notifications on the server!`);
                 return;
-            } else if (guild.members.size < 1000 && instaIDs.size >= 2) {
+            } else if (guild.memberCount < 1000 && instaIDs.size >= 2) {
                 message.channel.send(`⚠ Due to Instagram's limitations, you must have more than 1000 members in the server to have 3 Instagram notifications on the server!`);
                 return;
             }
@@ -169,11 +172,40 @@ async function instaNotifAdd(message, args) {
         }
     }
 
+    // try {
+    //     response = await instagram.get(`/web/search/topsearch/`, { params: { query: instaUser, context: "user" } });
+    // } catch(e) {
+    //     console.error(e.response.status);
+    //     switch (e.response.status) {
+    //         case 429:
+    //             message.channel.send(`⚠ API rate limit exceeded.`);
+    //             break;
+    //         default:
+    //             message.channel.send(`⚠ Unknown error occurred.`);
+    //             break;
+    //     }
+    //     return;
+    // }
+
+    // let usersFound = response.data.users;
+    // let user = usersFound.find(user => user.user.username == instaUser);
+    // if (!user) {
+    //     message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
+    //     return;
+    // }
+
+    // let { username } = user.user;
+    // let id = user.user.pk;
+
     try {
-        response = await instagram.get(`/web/search/topsearch/`, { params: { query: instaUser, context: "user" } });
+        response = await instagram.get(`/${instaUser}/`, { params: {'__a': 1} });
     } catch(e) {
-        console.error(e.response.status);
+        console.log(e.response.status);
         switch (e.response.status) {
+            case 404:
+            case 403:
+                message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
+                break;
             case 429:
                 message.channel.send(`⚠ API rate limit exceeded.`);
                 break;
@@ -184,15 +216,8 @@ async function instaNotifAdd(message, args) {
         return;
     }
 
-    let usersFound = response.data.users;
-    let user = usersFound.find(user => user.user.username == instaUser);
-    if (!user) {
-        message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
-        return;
-    }
-
-    let { username } = user.user;
-    let id = user.user.pk;
+    let { user } = response.data.graphql;
+    let { username, id } = user;
 
     // store current posts
     try {
@@ -288,12 +313,41 @@ async function instaNotifRemove(message, args) {
         return;
     }
 
-    let response;
+    // let response;
+    // try {
+    //     response = await instagram.get(`/web/search/topsearch/`, { params: { query: instaUser, context: "user" } });
+    // } catch(e) {
+    //     console.error(e.response.status);
+    //     switch (e.response.status) {
+    //         case 429:
+    //             message.channel.send(`⚠ API rate limit exceeded.`);
+    //             break;
+    //         default:
+    //             message.channel.send(`⚠ Unknown error occurred.`);
+    //             break;
+    //     }
+    //     return;
+    // }
+
+    // let usersFound = response.data.users;
+    // let user = usersFound.find(user => user.user.username == instaUser);
+    // if (!user) {
+    //     message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
+    //     return;
+    // }
+
+    // let { username } = user.user;
+    // let id = user.user.pk;
+
     try {
-        response = await instagram.get(`/web/search/topsearch/`, { params: { query: instaUser, context: "user" } });
+        response = await instagram.get(`/${instaUser}/`, { params: {'__a': 1} });
     } catch(e) {
-        console.error(e.response.status);
+        console.log(e.response.status);
         switch (e.response.status) {
+            case 404:
+            case 403:
+                message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
+                break;
             case 429:
                 message.channel.send(`⚠ API rate limit exceeded.`);
                 break;
@@ -304,15 +358,8 @@ async function instaNotifRemove(message, args) {
         return;
     }
 
-    let usersFound = response.data.users;
-    let user = usersFound.find(user => user.user.username == instaUser);
-    if (!user) {
-        message.channel.send(`⚠ \`${instaUser}\` is an invalid Instagram account.`);
-        return;
-    }
-
-    let { username } = user.user;
-    let id = user.user.pk;
+    let { user } = response.data.graphql;
+    let { username, id } = user;
 
     let deleted;
     try {
