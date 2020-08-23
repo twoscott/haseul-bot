@@ -185,7 +185,7 @@ async function notify(message) {
 
         let set = matches.get(userID);
         let keywords = set.toArray().sort().join('`, `');
-        let alert = `💬 **${author.username}** mentioned \`${keywords}\` in ${channel}`;
+        let alert = `💬 **${author.username}** mentioned \`${keywords}\` in **\`#${channel.name}\`**`;
         member.send(alert, {embed}).catch(e => console.error(e));
         
     }

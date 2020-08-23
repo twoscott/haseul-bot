@@ -3,6 +3,8 @@
         "avarole",
         "avatar",
         "ban",
+        "boosters",
+        "cachestats",
         "chart",
         "cmd",
         "cmds",
@@ -68,6 +70,7 @@
         "roles",
         "say",
         "sayraw",
+        "serverboosters",
         "serverinfo",
         "settings",
         "sinfo",
@@ -86,6 +89,7 @@
         "userinfo",
         "vlive",
         "vpick",
+        "whitelist",
         "youtube",
         "yt"
     ]

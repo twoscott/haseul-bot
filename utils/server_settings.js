@@ -23,18 +23,14 @@ exports.template = {
     "muteroleID": { name: "Mute Role", type: "role" },
 }
 
-exports.ready = async function() {
-    for (let guild of Client.guilds.cache.array()) {
-        await database.initServer(guild.id);
-    }
-
+exports.onReady = async function() {
     let rows = await database.getServers();
     for (row of rows) {
         servers[row.guildID] = row;
     }
 }
 
-exports.newGuild = async function(guildID) {
+exports.initGuild = async function(guildID) {
     await database.initServer(guildID);
     let row = await database.getServer(guildID);
     servers[row.guildID] = row;

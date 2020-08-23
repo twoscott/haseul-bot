@@ -1,5 +1,6 @@
 const Discord = require("discord.js");
 const { checkPermissions, embedPages, withTyping } = require("../functions/discord.js");
+const { getPrefix } = require("../functions/bot.js");
 
 const database = require("../db_queries/commands_db.js");
 const reservedCommands = require("../resources/JSON/commands.json");
@@ -205,7 +206,7 @@ async function listCommands(message) {
         message.channel.send(`⚠ There are no commands added to this server.`)
         return;
     }
-    let prefix = serverSettings.get(message.guild.id, 'prefix');
+    let prefix = getPrefix(message.guild.id);
     commandString = commandNames.sort((a,b) => a.localeCompare(b)).map(x => prefix+x).join('\n');
 
     let descriptions = [];
@@ -283,7 +284,7 @@ async function searchCommands(message, query) {
         return;
     }
     
-    let prefix = serverSettings.get(message.guild.id, 'prefix');
+    let prefix = getPrefix(message.guild.id);
     let commandString = commandNames.sort((a,b) => a.localeCompare(b)).sort((a,b)=> {
         let diff = a.length - b.length;
         if (diff == 0) return a.indexOf(query.toLowerCase()) - b.indexOf(query.toLowerCase());

@@ -50,6 +50,8 @@ exports.onCommand = async function(message, args) {
 
                 case "topalbums":
                 case "talb":
+                case "tal":
+                case "tab":
                     withTyping(channel, lfTopMedia, [message, args.slice(2), "album"]);
                     break;
 

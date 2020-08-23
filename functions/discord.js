@@ -82,6 +82,16 @@ exports.resolveRole = async function(guild, roleID, cache=false) {
     }
 }
 
+exports.sendAndDelete = async function(channel, options, timeout=1000) {
+    if (!channel || !options) {
+        let err = new Error("Invalid parameters given.");
+        console.error(err);
+    } else {
+        let message = await channel.send(options);
+        message.delete({ timeout });
+    }
+}
+
 exports.withTyping = async function(channel, task, args) {
     if (!channel || channel.type !== "text") {
         let err = new Error("Invalid channel to type in");
