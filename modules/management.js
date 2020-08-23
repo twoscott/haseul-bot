@@ -11,7 +11,7 @@ const database = require("../db_queries/server_db.js");
 const serverSettings = require("../utils/server_settings.js");
 const { parseChannelID, trimArgs } = require("../functions/functions.js");
 
-const messageUrlRegex = /https:\/\/discordapp\.com\/channels\/(\d+)\/(\d+)\/(\d+)/i;
+const messageUrlRegex = /https:\/\/discord(?:app)?\.com\/channels\/(\d+)\/(\d+)\/(\d+)/i;
 
 exports.onMessage = async function(message) {
 
