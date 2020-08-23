@@ -1,28 +1,51 @@
 const Discord = require("discord.js");
-const { embedPages, resolveMember, withTyping } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
+const { embedPages, resolveMember, withTyping } = require("../functions/discord.js");
+const { getPrefix } = require("../functions/bot.js");
 
 const fs = require("fs");
 const process = require("process");
-const serverSettings = require("../utils/server_settings.js");
 const { getDelta } = require("../functions/functions.js");
+
+exports.onReady = async function() {
+
+    await Client.user.setActivity(`in ${Client.guilds.cache.size} servers`, { type: "PLAYING" });
+
+}
+
+exports.newGuild = async function() {
+
+    await Client.user.setActivity(`in ${Client.guilds.cache.size} servers`, { type: "PLAYING" });
+
+}
+
+exports.removedGuild = async function() {
+
+    await Client.user.setActivity(`in ${Client.guilds.cache.size} servers`, { type: "PLAYING" });
+
+}
 
 exports.onCommand = async function(message, args) {
     let { channel } = message;
 
     switch (args[0]) {
-
         case "botinfo":
         case "binfo":
         case "clientinfo":
             withTyping(channel, botInfo, [message]);
             break
+        case "cachestats":
+            withTyping(channel, cacheStats, [message]);
+            break;
         case "serverlist":
         case "guildlist":
             if (message.author.id === "125414437229297664")
                 withTyping(channel, serverList, [message]);
             break;
-
+        case "test":
+            if (message.author.id === "125414437229297664")
+                (require("../modules/member_logs.js").join(message.member));
+            break;
     }
 
 }
@@ -78,10 +101,75 @@ async function botInfo(message) {
             { name: 'Cached Users', value: Client.users.cache.size.toLocaleString(), inline: true },
             { name: 'Bot Joined', value: botMember.joinedAt.toUTCString().replace(/^.*?\s/, '').replace(" GMT", " UTC"), inline: false },
             { name: 'Bot Created', value: Client.user.createdAt.toUTCString().replace(/^.*?\s/, '').replace(" GMT", " UTC"), inline: false },
-            { name: 'Memory', value: memory + 'MB', inline: true },
+            { name: 'Memory Usage', value: memory + 'MB', inline: true },
             { name: 'Links', value: '[Website](https://haseulbot.xyz/) - [Discord](https://discord.gg/w4q5qux) - [Patreon](https://www.patreon.com/haseulbot)' }
         ],
-        footer: { text: `Type ${serverSettings.get(guild.id, "prefix")}help for help with ${Client.user.username}` }
+        footer: { text: `Type ${getPrefix(message.guild.id)}help for help with ${Client.user.username}` }
+    });
+    
+    message.channel.send({embed});
+
+}
+
+async function cacheStats(message) {
+
+    let { guild } = message;
+
+    let stat;
+    try {
+        stat = fs.readFileSync(`/proc/${process.pid}/stat`);
+    } catch(e) {
+        console.error(Error(e));
+        message.channel.send(`⚠ Error occurred.`);
+        return;
+    }
+    let statArray = stat.toString().split(/(?<!\(\w+)\s(?!\w+\))/i);
+    let memory = Math.round((parseInt(statArray[23]) * 4096)/10000)/100;
+    // let threads = statArray[19];
+
+    let botMember = await resolveMember(guild, Client.user.id);
+    if (!botMember) {
+        message.channel.send(`⚠ Error occurred.`);
+        return;
+    }
+
+    let uptime = getDelta(Client.uptime, 'days');
+    let uptimeString = "";
+    if (uptime.days) uptimeString += `${uptime.days}d `;
+    if (uptime.hours) uptimeString += `${uptime.hours}h `;
+    if (uptime.minutes) uptimeString += `${uptime.minutes}m `;
+    if (uptime.seconds) uptimeString += `${uptime.seconds}s `;
+
+    let cachedMessageCount = 0;
+    let cachedMembers = 0;
+    let cachedPresences = 0;
+    let cachedRoles = 0;
+    for (let guild of Client.guilds.cache.values()) {
+        cachedPresences += guild.presences.cache.size;
+        cachedMembers += guild.members.cache.size;
+        cachedRoles += guild.roles.cache.size;
+        for (let channel of guild.channels.cache.values()) {
+            if (channel.type == "text") {
+                cachedMessageCount += channel.messages.cache.size;
+            }
+        }
+    }
+    
+    let embed = new Discord.MessageEmbed({
+        author: { name: `${Client.user.username} Cache Statistics`, icon_url: Client.user.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }) },
+        color: botMember.displayColor || 0xffffff,
+        fields: [
+            { name: 'Cached Servers', value: Client.guilds.cache.size.toLocaleString(), inline: true },
+            { name: 'Cached Channels', value: Client.channels.cache.size.toLocaleString(), inline: true },
+            { name: 'Cached Server Members', value: cachedMembers.toLocaleString(), inline: true },
+            { name: 'Cached Messages', value: cachedMessageCount.toLocaleString(), inline: true },
+            { name: 'Cached Emojis', value: Client.emojis.cache.size.toLocaleString(), inline: true },
+            { name: 'Cached Users', value: Client.users.cache.size.toLocaleString(), inline: true },
+            { name: 'Cached Roles', value: cachedRoles.toLocaleString(), inline: true },
+            { name: 'Cached Presences', value: cachedPresences.toLocaleString(), inline: true },
+            { name: 'Uptime', value: uptimeString, inline: true },
+            { name: 'Memory Usage', value: memory + 'MB', inline: true },
+        ],
     });
     
     message.channel.send({embed});
