@@ -42,11 +42,10 @@ exports.setVal = async function(guildID, col, val) {
     const db = await dbopen;
 
     let statement = await db.run(`
-        INSERT INTO serverSettings (guildID, ${col})
-        VALUES (?, ?)
-        ON CONFLICT (guildID) DO
-        UPDATE SET ${col} = ?`,
-        [guildID, val, val]
+        UPDATE OR IGNORE serverSettings 
+        SET ${col} = ?
+        WHERE guildID = ?`,
+        [val, guildID]
     );
     return statement.changes;
 }

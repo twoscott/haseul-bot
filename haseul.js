@@ -4,6 +4,7 @@ module.exports = { Client };
 
 const config = require("./config.json");
 const messages = require("./handlers/msg_handler.js");
+const reactions = require("./handlers/react_handler.js");
 const border = require("./handlers/border_handler.js");
 const checklist = require("./handlers/ready_handler.js");
 
@@ -53,6 +54,10 @@ Client.on("messageUpdate", (oldMessage, newMessage) => {
     messages.onMessageEdit(oldMessage, newMessage);
 })
 
+Client.on("messageReactionAdd", (reaction, user) => {
+    reactions.onReact(reaction, user);
+})
+
 Client.on("guildMemberAdd", member => {
     border.handleJoins(member);
 })
@@ -63,6 +68,10 @@ Client.on("guildMemberRemove", member => {
 
 Client.on("guildCreate", guild => {
     border.handleNewGuild(guild);
+})
+
+Client.on("guildDelete", guild => {
+    border.handleRemovedGuild(guild);
 })
 
 // Login

@@ -1,5 +1,6 @@
 const { resolveMember } = require("../functions/discord.js");
 const { Client } = require("../haseul.js");
+const { getPrefix } = require("../functions/bot.js");
 
 const client = require("../modules/client.js");
 const commands = require("../modules/commands.js");
@@ -22,8 +23,7 @@ const roles = require("../modules/roles.js");
 const twitter = require("../modules/twitter.js");
 const utility = require("../modules/utility.js");
 const vlive = require("../modules/vlive.js");
-
-const serverSettings = require("../utils/server_settings.js");
+const whitelist = require("../modules/whitelist.js");
 
 exports.onMessage = async function(message) {
 
@@ -32,7 +32,7 @@ exports.onMessage = async function(message) {
     if (message.channel.type === "dm") return;
 
     let { author, content, guild } = message;
-    let prefix = serverSettings.get(guild.id, "prefix");
+    let prefix = getPrefix(guild.id);
 
     if (content.startsWith(prefix)) {
         let args = content.slice(1).split(/\s+/);
@@ -98,6 +98,7 @@ async function processCommand(message, args) {
     twitter.onCommand(message, args);
     utility.onCommand(message, args);
     vlive.onCommand(message, args);
+    whitelist.onCommand(message, args);
 }
 
 async function processMention(message, args) {
@@ -109,6 +110,7 @@ async function processMessage(message) {
     management.onMessage(message);
     notifications.onMessage(message);
     roles.onMessage(message);
+    whitelist.onMessage(message);
 }
 
 async function processMessageDelete(message) {
