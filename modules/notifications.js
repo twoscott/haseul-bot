@@ -186,7 +186,16 @@ async function notify(message) {
         let set = matches.get(userID);
         let keywords = set.toArray().sort().join('`, `');
         let alert = `💬 **${author.username}** mentioned \`${keywords}\` in **\`#${channel.name}\`**`;
-        member.send(alert, {embed}).catch(e => console.error(e));
+
+        try {
+            await member.send(alert, { embed });
+        } catch (e) {
+            if (e.code == 50007) { // Cannot send messages to this user
+                database.clearGlobalNotifs(userID);
+                database.clearAllLocalNotifs(userID);
+                console.log(`Cleared all notifcations for ${member.user.tag}: Cannot send messages to this user`);
+            }
+        }
         
     }
 
@@ -199,7 +208,7 @@ async function addNotification(message, args, global) {
         return;
     }
 
-    message.delete({ timeout: 500 });
+    message.delete();
     
     let type;
     let typeArg = global ? args[3] : args[2];
@@ -228,8 +237,15 @@ async function addNotification(message, args, global) {
         return;
     }
 
-    author.send(`You will now be notified when \`${keyword}\` is mentioned ${global ? `globally` : `in \`${guild.name}\``} with \`${type}\` search mode.`);
-    message.channel.send(`Notification added.`);
+    try {
+        await author.send(`You will now be notified when \`${keyword}\` is mentioned ${global ? `globally` : `in \`${guild.name}\``} with \`${type}\` search mode.`);
+        message.channel.send(`Notification added.`);
+    } catch (e) {
+        if (e.code == 50007) {
+            message.channel.send(`⚠ I cannot send DMs to you. Please check your privacy settings and try again.`);
+            global ? database.removeGlobalNotif(author.id, keyword) : database.removeLocalNotif(guild.id, author.id, keyword);
+        }
+    }
     
 }
 
@@ -240,20 +256,26 @@ async function removeNotification(message, args, global) {
         return;
     }
 
+    message.delete();
     let keyphrase = trimArgs(args, global ? 3 : 2, message.content);
-    message.delete({ timeout: 500 });
 
     let { guild, author } = message;
     let removed = global  ? await database.removeGlobalNotif(author.id, keyphrase)
                           : await database.removeLocalNotif(guild.id, author.id, keyphrase);
     if (!removed) {
-        author.send(`Notification \`${keyphrase}\` does not exist. Please check for spelling errors.`);
+        author.send(`Notification \`${keyphrase}\` does not exist. Please check for spelling errors.`).catch(() => {});
         message.channel.send(`⚠ Notification does not exist.`);
         return;
     }
 
-    author.send(`You will no longer be notified when \`${keyphrase}\` is mentioned${!global ? ` in \`${guild.name}\`.` : `.`}`);
-    message.channel.send(`Notification removed.`);
+    try {
+        await author.send(`You will no longer be notified when \`${keyphrase}\` is mentioned${!global ? ` in \`${guild.name}\`.` : `.`}`);
+        message.channel.send(`Notification removed.`);
+    } catch (e) {
+        if (e.code == 50007) {
+            message.channel.send(`⚠ I cannot send DMs to you. Please check your privacy settings and try again.`);
+        }
+    }
 
 }
 
@@ -300,11 +322,18 @@ async function listNotifications(message, global) {
     } 
     pages.push(notifString);
 
-    for (let page of pages) {
-        await author.send(page);
+    try {
+        for (let page of pages) {
+            await author.send(page);
+        }
+        message.channel.send(`A list of your notifications has been sent to your DMs.`);
+    } catch (e) {
+        if (e.code == 50007) {
+            message.channel.send(`⚠ I cannot send DMs to you. Please check your privacy settings and try again.`);
+        }
     }
 
-    message.channel.send(`A list of your notifications has been sent to your DMs.`);
+
 }
 
 async function ignoreChannel(message, args) {

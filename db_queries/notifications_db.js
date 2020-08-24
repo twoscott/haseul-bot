@@ -169,6 +169,13 @@ exports.clearLocalNotifs = async function(guildID, userID) {
     return statement.changes;
 }
 
+exports.clearAllLocalNotifs = async function(userID) {
+    const db = await dbopen;
+
+    let statement = await db.run(SQL`DELETE FROM localNotifs WHERE userID = ${userID}`);
+    return statement.changes;
+}
+
 exports.toggleChannel = async function(userID, channelID) {
     const db = await dbopen;
 
