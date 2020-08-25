@@ -11,6 +11,7 @@ const twitter = axios.create({
     timeout: 10000,
     headers: {'authorization': 'Bearer ' + config.twt_bearer}
 })
+const { patreon } = require("../utils/patreon.js");
 
 exports.onCommand = async function(message, args) {
 
@@ -136,12 +137,51 @@ async function twitterNotifAdd(message, args) {
         return;
     }
     let { id_str, screen_name } = response.data;
+    
+    try {
+        response = await patreon.get('/campaigns/'+config.haseul_campaign_id+'/members?include=user,currently_entitled_tiers&fields'+encodeURI('[member]')+'=full_name,patron_status,pledge_relationship_start,currently_entitled_amount_cents&fields'+encodeURI('[tier]')+'title,&fields'+encodeURI('[user]')+'=social_connections');
+    } catch(e) {
+        console.error("Patreon error: " + e.response.status);
+        return;
+    }
+
+    let ownerPatronT4 = false;
+    try {
+        let patreonMembers = response.data.data;
+        let patreonUsers = response.data.included.filter(x => {
+            return x.type == 'user' && x.attributes.social_connections.discord;
+        });
+
+        for (let i = 0; i < patreonUsers.length && !ownerPatronT4; i++) {
+            let user = patreonUsers[i];
+            let userDiscord = user.attributes.social_connections.discord;
+            let userDiscordID = userDiscord ? userDiscord.user_id : null;
+            if (userDiscordID == guild.ownerID) {
+                let member = patreonMembers.find(m => m.relationships.user.data.id == user.id);
+                let entitledCents = member.attributes.currently_entitled_amount_cents;
+                if (entitledCents >= 1000 && member.attributes.patron_status == "active_patron") {
+                    ownerPatronT4 = true;
+                    console.log(`Active patron: ${userDiscordID}`);
+                }
+            }
+        }
+    } catch (e) {
+        console.error(Error("Patreon guild join check error: " + e));
+    }
 
     let twitterNotifs = await database.getGuildTwitterChannels(guild.id);
     let twitterIDs = new Set(twitterNotifs.map(x => x.twitterID));
-    if (twitterIDs.size >= 3) {
-        message.channel.send(`⚠ No more than 3 Twitter accounts may be set up for notifications on a server.`);
-        return;
+
+    if (ownerPatronT4) {
+        if (twitterIDs.size >= 10) {
+            message.channel.send(`⚠ No more than 10 Twitter accounts may be set up for notifications on this server.`);
+            return;
+        }
+    } else {
+        if (twitterIDs.size >= 3) {
+            message.channel.send(`⚠ No more than 3 Twitter accounts may be set up for notifications on a server.`);
+            return;
+        }
     }
 
     try {
