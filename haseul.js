@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const Client = new Discord.Client({ disableMentions: "everyone", messageCacheLifetime: 1800, messageSweepInterval: 1800 });
+const Client = new Discord.Client({ disableMentions: "everyone" });
 module.exports = { Client };
 
 const config = require("./config.json");
