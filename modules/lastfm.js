@@ -4,15 +4,22 @@ const { embedPages, withTyping } = require("../functions/discord.js");
 const axios = require("axios");
 const fs = require("fs");
 
-const config = require("../config.json");
-const database = require("../db_queries/lastfm_db.js");
+const { getTimeFrame, scrapeArtistImage, scrapeArtistsWithImages } = require("../functions/lastfm.js");
 const functions = require("../functions/functions.js");
 const html = require("../functions/html.js");
-const lastfm = require("../functions/lastfm.js");
-const media = require("./media.js");
 const { Image } = require("../functions/images.js");
 
+const database = require("../db_queries/lastfm_db.js");
+const config = require("../config.json");
+const media = require("./media.js");
+
 const api_key = config.lastfm_key;
+
+const lastfm = axios.create({
+    baseURL: "https://ws.audioscrobbler.com/2.0",
+    timeout: 5000,
+    params: { api_key, format: "json" }
+});
 
 
 exports.onCommand = async function(message, args) {
@@ -110,15 +117,18 @@ async function setLfUser(message, username) {
         message.channel.send(`⚠ Please provide a Last.fm username: \`.fm set <username>\`.`);
     } else {
         try {
-            let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`);
+            let response = await lastfm.get('/', {params: { method: "user.getinfo", user: encodeURIComponent(username) }});
             username = response.data.user.name;
         } catch (e) {
-            e = e.response.data;
-            if (e.error == 6) {
-                message.channel.send(`⚠ ${e.message || "Invalid Last.fm username"}.`);
+            if (e.response) {
+                console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
+                if (e.response.status >= 500) {
+                    message.channel.send(`⚠ Server Error. Last.fm is likely down or experiencing issues.`);
+                } else {
+                    message.channel.send(`⚠ Error occurred fetching Last.fm data.`);
+                }
             } else {
-                let err = new Error(e.message);
-                console.error(err);
+                console.error(e);
                 message.channel.send(`⚠ Unknown error occurred.`);
             }
             return;
@@ -165,10 +175,19 @@ async function lfRecents(message, args, limit) {
 
     let response;
     try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=${limit}`);
+        response = await lastfm.get('/', {params: { method: "user.getrecenttracks", user: encodeURIComponent(username), limit }});
     } catch (e) {
-        e = e.response.data;
-        message.channel.send(`⚠ ${e.message || "Unknown Error Occurred."}`);
+        if (e.response) {
+            console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
+            if (e.response.status >= 500) {
+                message.channel.send(`⚠ Server Error. Last.fm is likely down or experiencing issues.`);
+            } else {
+                message.channel.send(`⚠ Error occurred fetching Last.fm data.`);
+            }
+        } else {
+            console.error(e);
+            message.channel.send(`⚠ Unknown error occurred.`);
+        }
         return;
     }
 
@@ -187,15 +206,18 @@ async function lfRecents(message, args, limit) {
     let loved = false;
     if (tracks.length < 3) {
         try {
-            let response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=track.getInfo&user=${lfUser}&api_key=${api_key}&artist=${encodeURIComponent(tracks[0].artist["#text"])}&track=${encodeURIComponent(tracks[0].name)}&format=json`);
+            let response = await lastfm.get('/', {params: { method: "track.getinfo", user: encodeURIComponent(username), artist: encodeURIComponent(tracks[0].artist["#text"]), track: encodeURIComponent(tracks[0].name) }});
             if (response.data.track) {
                 let { userplaycount, userloved } = response.data.track;
                 playCount = userplaycount;    
                 loved = userloved;
             }
         } catch (e) {
-            e = e.response ? e.response.data : e;
-            console.error(new Error(e));
+            if (e.response) {
+                console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
+            } else {
+                console.error(e);
+            }
         }
     }
 
@@ -215,11 +237,11 @@ async function recent1Embed(message, track, lfUser, playCount, loved) {
     let np = track['@attr'] && track['@attr'].nowplaying ? true : false;
     let p = lfUser[lfUser.length-1].toLowerCase() == 's' ? "'" : "'s";
 
-    let thumbnail = track.image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    let thumbnail = track.image[2]["#text"] || "https://lastfm.freetls.fastly.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
     if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) {
-        thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+        thumbnail = "https://lastfm.freetls.fastly.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
     }
-    let image = track.image[track.image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
+    let image = track.image[track.image.length-1]["#text"].replace("300x300/", "") || "https://lastfm.freetls.fastly.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
     let embed = new Discord.MessageEmbed({
         author: { name: `${lfUser+p} ${np ? 'Now Playing' : 'Last Track'}`, icon_url: 'https://i.imgur.com/lQ3EqM6.png', url: `https://www.last.fm/user/${lfUser}/` },
@@ -252,9 +274,9 @@ async function recent2Embed (message, tracks, lfUser, playCount) {
     let np = tracks[0]['@attr'] && tracks[0]['@attr'].nowplaying ? true : false;
     let p = lfUser[lfUser.length-1].toLowerCase() == 's' ? "'" : "'s";
 
-    let thumbnail = tracks[0].image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
-    if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
-    let image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
+    let thumbnail = tracks[0].image[2]["#text"] || "https://lastfm.freetls.fastly.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = "https://lastfm.freetls.fastly.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    let image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "") || "https://lastfm.freetls.fastly.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     
     let embed = new Discord.MessageEmbed({
         author: { name: `${lfUser+p} Recent Tracks`, icon_url: `https://i.imgur.com/lQ3EqM6.png`, url: `https://www.last.fm/user/${lfUser}/` },
@@ -278,9 +300,9 @@ async function recent2Embed (message, tracks, lfUser, playCount) {
 
 async function recentListPages (message, tracks, lfUser) {
 
-    let thumbnail = tracks[0].image[2]["#text"] || "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
-    if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
-    let image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "") || "https://lastfm-img2.akamaized.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
+    let thumbnail = tracks[0].image[2]["#text"] || "https://lastfm.freetls.fastly.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = "https://lastfm.freetls.fastly.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png";
+    let image = tracks[0].image[tracks[0].image.length-1]["#text"].replace("300x300/", "") || "https://lastfm.freetls.fastly.net/i/u/c6f59c1e5e7240a4c0d427abd71f3dbb.png"
     let p = lfUser[lfUser.length-1].toLowerCase() == 's' ? "'" : "'s";
 
     let np = (track) => track['@attr'] && track['@attr'].nowplaying;
@@ -329,33 +351,33 @@ async function lfTopMedia(message, args, type) {
     let embeds = {
         'artist': { 
             colour: 0xf49023, image: 'https://i.imgur.com/FwnPEny.png',
-            defimg: "https://lastfm-img2.akamaized.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png" 
+            defimg: "https://lastfm.freetls.fastly.net/i/u/174s/2a96cbd8b46e442fc41c2b86b821562f.png" 
         },
         'album' : { 
             colour: 0x2f8f5e, image: 'https://i.imgur.com/LZmYwDG.png',
-            defimg: "https://lastfm-img2.akamaized.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png" 
+            defimg: "https://lastfm.freetls.fastly.net/i/u/174s/c6f59c1e5e7240a4c0d427abd71f3dbb.png" 
         },
         'track' : { 
             colour: 0x2b61fb, image: 'https://i.imgur.com/RFO9qp1.png',
-            defimg: "https://lastfm-img2.akamaized.net/i/u/174s/4128a6eb29f94943c9d206c08e625904.png" 
+            defimg: "https://lastfm.freetls.fastly.net/i/u/174s/4128a6eb29f94943c9d206c08e625904.png" 
         }
     }
     
     let time;
     let limit;
     if (args.length < 1) {
-        time  = lastfm.getTimeFrame();
+        time  = getTimeFrame();
         limit = 10;
     }
     else if (args.length < 2) {
-        time  = lastfm.getTimeFrame(args[0]);
+        time  = getTimeFrame(args[0]);
         limit = time.defaulted && +args[0] ? args[0] : 10;
     }
     else {
-        time  = lastfm.getTimeFrame(args[0]);
+        time  = getTimeFrame(args[0]);
         limit = time.defaulted ? +args[0] || null : +args[1] || 10;
 
-        if (time.defaulted) time = lastfm.getTimeFrame(args[1]);
+        if (time.defaulted) time = getTimeFrame(args[1]);
         limit = time.defaulted && !limit ? +args[1] || 1 : limit || 10;
     }
     
@@ -376,10 +398,19 @@ async function lfTopMedia(message, args, type) {
 
     let response;
     try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${limit}`);
+        response = await lastfm.get('/', {params: { method: `user.gettop${type}s`, user: username, period: timeframe, limit }});
     } catch (e) {
-        let { message } = e.response.data;
-        message.channel.send(`⚠ ${message || "Unknown Error Occurred."}`);
+        if (e.response) {
+            console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
+            if (e.response.status >= 500) {
+                message.channel.send(`⚠ Server Error. Last.fm is likely down or experiencing issues.`);
+            } else {
+                message.channel.send(`⚠ Error occurred fetching Last.fm data.`);
+            }
+        } else {
+            console.error(e);
+            message.channel.send(`⚠ Unknown error occurred.`);
+        }
         return;
     }
 
@@ -415,7 +446,7 @@ async function lfTopMedia(message, args, type) {
     if (type == 'track' || type == 'artist') {
         // response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${api_key}&artist=${encodeURIComponent(collection[0].artist.name)}&track=${encodeURIComponent(collection[0].name)}&format=json`);
         // thumbnail = response.data.track.album ? response.data.track.album.image[2]["#text"] : thumbnail = collection[0].image[2]["#text"];
-        thumbnail = await lastfm.scrapeArtistImage(type == 'track' ? collection[0].artist.name : collection[0].name);
+        thumbnail = await scrapeArtistImage(type == 'track' ? collection[0].artist.name : collection[0].name);
     } else {
         thumbnail = collection[0].image[2]["#text"];
         if (thumbnail.includes('2a96cbd8b46e442fc41c2b86b821562f')) thumbnail = embeds[type].defimg;
@@ -455,10 +486,19 @@ async function lfProfile(message, username) {
 
     let response;
     try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
+        response = await lastfm.get('/', {params: { method: "user.getinfo", user: encodeURIComponent(username) }});
     } catch (e) {
-        let { message } = e.response.data;
-        message.channel.send(`⚠ ${message || "Unknown Error Occurred."}`);
+        if (e.response) {
+            console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
+            if (e.response.status >= 500) {
+                message.channel.send(`⚠ Server Error. Last.fm is likely down or experiencing issues.`);
+            } else {
+                message.channel.send(`⚠ Error occurred fetching Last.fm data.`);
+            }
+        } else {
+            console.error(e);
+            message.channel.send(`⚠ Unknown error occurred.`);
+        }
         return;
     }
 
@@ -471,15 +511,33 @@ async function lfProfile(message, username) {
     date.setSeconds(user.registered.unixtime);
 
     let date_string = `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    let artist_count;
+    let album_count;
+    let track_count;
 
-    response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${username}&api_key=${api_key}&format=json`)
-    let artist_count = response.data.topartists["@attr"].total;
-
-    response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${username}&api_key=${api_key}&format=json`)
-    let album_count = response.data.topalbums["@attr"].total;
-
-    response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${username}&api_key=${api_key}&format=json`)
-    let track_count = response.data.toptracks["@attr"].total;
+    try {
+        response = await lastfm.get('/', {params: { method: "user.gettopartists", user: encodeURIComponent(username) }});
+        artist_count = response.data.topartists["@attr"].total;
+    
+        response = await lastfm.get('/', {params: { method: "user.gettopalbums", user: encodeURIComponent(username) }});
+        album_count = response.data.topalbums["@attr"].total;
+    
+        response = await lastfm.get('/', {params: { method: "user.gettoptracks", user: encodeURIComponent(username) }});
+        track_count = response.data.toptracks["@attr"].total;
+    } catch (e) {
+        if (e.response) {
+            console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
+            if (e.response.status >= 500) {
+                message.channel.send(`⚠ Server Error. Last.fm is likely down or experiencing issues.`);
+            } else {
+                message.channel.send(`⚠ Error occurred fetching Last.fm data.`);
+            }
+        } else {
+            console.error(e);
+            message.channel.send(`⚠ Unknown error occurred.`);
+        }
+        return;
+    }
 
     let embed = new Discord.MessageEmbed({
         author: { name: `${user.name}`, icon_url: `https://i.imgur.com/lQ3EqM6.png`, url: `https://www.last.fm/user/${user.name}/` },
@@ -511,26 +569,51 @@ async function lfAvatar(message, username) {
 
     let response;
     try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json`)
+        response = await lastfm.get('/', {params: { method: "user.getinfo", user: encodeURIComponent(username) }});
     } catch (e) {
-        let { message } = e.response.data;
-        message.channel.send(`⚠ ${message || "Unknown Error Occurred."}`);
+        if (e.response) {
+            console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
+            if (e.response.status >= 500) {
+                message.channel.send(`⚠ Server Error. Last.fm is likely down or experiencing issues.`);
+            } else {
+                message.channel.send(`⚠ Error occurred fetching Last.fm data.`);
+            }
+        } else {
+            console.error(e);
+            message.channel.send(`⚠ Unknown error occurred.`);
+        }
         return;
     }
 
     let { name, image } = response.data.user;
+    let avatar_match = image[0]['#text'].match(/(https:\/\/lastfm\.freetls\.fastly\.net\/i\/u)\/.*?\/(.+)\./i);
+    let avatar_url = avatar_match ? avatar_match.slice(1).join('/') + '.gif' : 'https://lastfm.freetls.fastly.net/i/u/818148bf682d429dc215c1705eb27b98.png';
 
-    let avatar_match = image[0]['#text'].match(/(https:\/\/lastfm-img2\.akamaized\.net\/i\/u)\/.*?\/(.+)/i)
-    let avatar_url = avatar_match ? avatar_match.slice(1).join('/') : 'https://lastfm-img2.akamaized.net/i/u/818148bf682d429dc215c1705eb27b98.png';
-    let res = await axios.get(avatar_url, {responseType: 'arraybuffer'});
-    let img_size = Math.max(Math.round(res.headers['content-length']/10000)/100, 1/100);
-    let img_type = res.headers['content-type'].split('/')[1];
+    try {
+        respose = await axios.get(avatar_url, {responseType: 'arraybuffer'});
+    } catch (e) {
+        if (e.response) {
+            console.error(Error(`Last.fm dp error: ${e.response.status} - ${e.response.statusText}`));
+            if (e.response.status >= 500) {
+                message.channel.send(`⚠ Server Error. Last.fm is likely down or experiencing issues.`);
+            } else {
+                message.channel.send(`⚠ Error occurred fetching Last.fm data.`);
+            }
+        } else {
+            console.error(e);
+            message.channel.send(`⚠ Unknown error occurred.`);
+        }
+        return;
+    }
 
-    let img  = new Image(res.data);
+    let img_size = Math.max(Math.round(respose.headers['content-length']/10000)/100, 1/100);
+    let img_type = respose.headers['content-type'].split('/')[1];
+
+    let img  = new Image(respose.data);
     let dims = img.dimensions;
     let p = username.toLowerCase().endsWith('s') ? "'" : "'s";
 
-    let embed = new Discord.RichEmbed()
+    let embed = new Discord.MessageEmbed()
     .setAuthor(`${name+p} Last.fm Avatar`, `https://i.imgur.com/lQ3EqM6.png`, `https://www.last.fm/user/${name}/`)
     .setImage(avatar_url)
     .setColor(0xb90000)
@@ -552,10 +635,19 @@ async function lfYoutube(message, username) {
 
     let response;
     try {
-        response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(username)}&api_key=${api_key}&format=json&limit=1`);
+        response = await lastfm.get('/', {params: { method: "user.getrecenttracks", user: encodeURIComponent(username), limit: 1 }});
     } catch (e) {
-        let { message } = e.response.data;
-        message.channel.send(`⚠ ${message || "Unknown Error Occurred."}`);
+        if (e.response) {
+            console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
+            if (e.response.status >= 500) {
+                message.channel.send(`⚠ Server Error. Last.fm is likely down or experiencing issues.`);
+            } else {
+                message.channel.send(`⚠ Error occurred fetching Last.fm data.`);
+            }
+        } else {
+            console.error(e);
+            message.channel.send(`⚠ Unknown error occurred.`);
+        }
         return;
     }
 
@@ -605,21 +697,30 @@ async function lfChart(message, args, type = "album") {
     if (dimension > 10) dimension = 10;
     let itemCount = dimension ** 2;
 
-    let { timeframe, displayTime, datePreset } = lastfm.getTimeFrame(time);
+    let { timeframe, displayTime, datePreset } = getTimeFrame(time);
 
     let collection;
     if (type == 'album') {
         let response;
         try {
-            response = await axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettop${type.toLowerCase()}s&user=${username}&api_key=${api_key}&format=json&period=${timeframe}&limit=${itemCount}`);
+            response = await lastfm.get('/', {params: { method: `user.gettop${type.toLowerCase()}s`, user: encodeURIComponent(username), period: timeframe, limit: itemCount }});
         } catch (e) {
-            let { message } = e.response.data;
-            message.channel.send(`⚠ ${message || "Unknown Error Occurred."}`);
+            if (e.response) {
+                console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
+                if (e.response.status >= 500) {
+                    message.channel.send(`⚠ Server Error. Last.fm is likely down or experiencing issues.`);
+                } else {
+                    message.channel.send(`⚠ Error occurred fetching Last.fm data.`);
+                }
+            } else {
+                console.error(e);
+                message.channel.send(`⚠ Unknown error occurred.`);
+            }
             return;
         }
         collection = response.data[`top${type}s`][type];
     } else {
-        collection = await lastfm.scrapeArtistsWithImages(username, datePreset, itemCount);
+        collection = await scrapeArtistsWithImages(username, datePreset, itemCount);
     }
 
     if (!collection || collection.length < 1) {
@@ -643,8 +744,8 @@ async function lfChart(message, args, type = "album") {
             let item = collection.shift();
 
             let image = item.image[item.image.length-1]["#text"] || (type == "artist" ? 
-                "https://lastfm-img2.akamaized.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png" :
-                "https://lastfm-img2.akamaized.net/i/u/300x300/c6f59c1e5e7240a4c0d427abd71f3dbb.png");
+                "https://lastfm.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png" :
+                "https://lastfm.freetls.fastly.net/i/u/300x300/c6f59c1e5e7240a4c0d427abd71f3dbb.png");
 
             if (type == "album") {
                 htmlString += [
