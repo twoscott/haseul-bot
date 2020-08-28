@@ -5,6 +5,7 @@ const clientSettings = require("../utils/client_settings.js");
 const serverSettings = require("../utils/server_settings.js");
 const inviteCache = require("../utils/invite_cache.js");
 
+const messageSweep = require("../tasks/sweep_messages.js");
 const instagram = require("../tasks/instagram.js");
 const twitter = require("../tasks/twitter.js");
 const vlive = require("../tasks/vlive.js");
@@ -23,6 +24,7 @@ exports.handleTasks = async function() {
     inviteCache.onReady();
 
     console.log("Starting tasks...");
+    messageSweep.tasks();
     instagram.tasks();
     twitter.tasks();
     vlive.tasks();
