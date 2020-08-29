@@ -18,6 +18,7 @@ const moderation = require("../modules/moderation.js");
 const notifications = require("../modules/notifications.js");
 const patreon = require("../modules/patreon.js");
 const profiles = require("../modules/profiles.js");
+const reminders = require("../modules/reminders.js");
 const reps = require("../modules/reps.js");
 const roles = require("../modules/roles.js");
 const twitter = require("../modules/twitter.js");
@@ -93,6 +94,7 @@ async function processCommand(message, args) {
     notifications.onCommand(message, args);
     patreon.onCommand(message, args);
     profiles.onCommand(message, args);
+    reminders.onCommand(message, args);
     reps.onCommand(message, args);
     roles.onCommand(message, args);
     twitter.onCommand(message, args);
