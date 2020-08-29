@@ -184,20 +184,22 @@ async function repStatus(message) {
 async function repboard(message, local) {
 
     let reps = await database.getReps();
-    let entries = reps.length;
-
+    
     if (local) {
         let members = await message.guild.members.fetch();
         reps = reps.filter(rep => members.has(rep.userID) && rep.rep > 0);
     } else {
         reps = reps.filter(rep => rep.rep > 0);
     }
-
+    
     if (reps.length < 1) {
         message.channel.send(`⚠ Nobody${local ? ' on this server ':' '}currently has any reps!`);
         return;
     }
-
+    
+    let entries = reps.length;
+    let originalReps = reps.slice();
+    reps = reps.sort((a,b) => b.rep - a.rep).slice(0,100); // show only top 100
     for (let i = 0; i < reps.length; i++) {
         let rep = reps[i]
         let user = await resolveUser(rep.userID);
@@ -207,7 +209,7 @@ async function repboard(message, local) {
         }
     }
 
-    let repString = reps.sort((a,b) => a.name.localeCompare(b.name)).sort((a,b) => b.rep - a.rep).map((data, i) => `${i+1}. **${data.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}** (${data.rep})`).join('\n');
+    let repString = reps.map((data, i) => `${i+1}. **${data.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}** (${data.rep})`).join('\n');
 
     let descriptions = [];
     while (repString.length > 2048 || repString.split('\n').length > 25) {
@@ -234,7 +236,7 @@ async function repboard(message, local) {
                 description: desc,
                 color: 0x44e389,
                 footer: {
-                    text: `Entries: ${entries}  |  Total Reps: ${reps.reduce((acc, curr) => acc + curr.rep, 0)}  |  Page ${i+1} of ${descriptions.length}`
+                    text: `Entries: ${entries}  |  Total Reps: ${originalReps.reduce((acc, curr) => acc + curr.rep, 0)}  |  Page ${i+1} of ${descriptions.length}`
                 }
             }
         }

@@ -64,7 +64,13 @@ async function leaderboard(message, local) {
     let ranks = local ? await database.getAllGuildXp(guild.id) :
                         await database.getAllGlobalXp();
 
+    if (ranks.length < 1) {
+        message.channel.send(`⚠ Nobody${local ? ' on this server ':' '}currently has any xp!`);
+        return;
+    }
+
     let entries = ranks.length;
+    let originalRanks = ranks.slice()
     ranks = ranks.sort((a,b) => b.xp - a.xp).slice(0,100); // show only top 100
     for (let i = 0; i < ranks.length; i++) {
         let rank = ranks[i]
@@ -76,7 +82,7 @@ async function leaderboard(message, local) {
         }
     }
 
-    let rankString = ranks.sort((a,b) => a.name.localeCompare(b.name)).sort((a,b) => b.xp - a.xp).map((data, i) => `${i+1}. **${data.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}** (Lvl ${data.lvl} - ${data.xp.toLocaleString()} XP)`).join('\n');
+    let rankString = ranks.map((data, i) => `${i+1}. **${data.name.replace(/([\(\)\`\*\~\_])/g, "\\$&")}** (Lvl ${data.lvl} - ${data.xp.toLocaleString()} XP)`).join('\n');
 
     let descriptions = [];
     while (rankString.length > 2048 || rankString.split('\n').length > 25) {
@@ -103,7 +109,7 @@ async function leaderboard(message, local) {
                 description: desc,
                 color: 0x6d5ffb,
                 footer: {
-                    text: `Entries: ${entries}  |  Avg. Lvl: ${Math.round(ranks.reduce((acc, curr) => acc + curr.lvl, 0) / ranks.length)}  |  Page ${i+1} of ${descriptions.length}`
+                    text: `Entries: ${entries}  |  Avg. Lvl: ${Math.round(originalRanks.reduce((acc, curr) => acc + local ? guildRank(curr.xp).lvl : globalRank(curr.xp).lvl, 0) / originalRanks.length)}  |  Page ${i+1} of ${descriptions.length}`
                 }
             }
         }
