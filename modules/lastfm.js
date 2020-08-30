@@ -117,7 +117,7 @@ async function setLfUser(message, username) {
         message.channel.send(`⚠ Please provide a Last.fm username: \`.fm set <username>\`.`);
     } else {
         try {
-            let response = await lastfm.get('/', {params: { method: "user.getinfo", user: encodeURIComponent(username) }});
+            let response = await lastfm.get('/', {params: { method: "user.getinfo", user: username }});
             username = response.data.user.name;
         } catch (e) {
             if (e.response) {
@@ -175,7 +175,7 @@ async function lfRecents(message, args, limit) {
 
     let response;
     try {
-        response = await lastfm.get('/', {params: { method: "user.getrecenttracks", user: encodeURIComponent(username), limit }});
+        response = await lastfm.get('/', {params: { method: "user.getrecenttracks", user: username, limit }});
     } catch (e) {
         if (e.response) {
             console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
@@ -201,12 +201,12 @@ async function lfRecents(message, args, limit) {
     }
     tracks = tracks.slice(0, limit);
     let lfUser = response.data.recenttracks['@attr'].user;
-
+    
     let playCount = "N/A";
     let loved = false;
     if (tracks.length < 3) {
         try {
-            let response = await lastfm.get('/', {params: { method: "track.getinfo", user: encodeURIComponent(username), artist: encodeURIComponent(tracks[0].artist["#text"]), track: encodeURIComponent(tracks[0].name) }});
+            response = await lastfm.get('/', {params: { method: "track.getInfo", user: lfUser, artist: tracks[0].artist["#text"], track: tracks[0].name }});
             if (response.data.track) {
                 let { userplaycount, userloved } = response.data.track;
                 playCount = userplaycount;    
@@ -486,7 +486,7 @@ async function lfProfile(message, username) {
 
     let response;
     try {
-        response = await lastfm.get('/', {params: { method: "user.getinfo", user: encodeURIComponent(username) }});
+        response = await lastfm.get('/', {params: { method: "user.getinfo", user: username }});
     } catch (e) {
         if (e.response) {
             console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
@@ -516,13 +516,13 @@ async function lfProfile(message, username) {
     let track_count;
 
     try {
-        response = await lastfm.get('/', {params: { method: "user.gettopartists", user: encodeURIComponent(username) }});
+        response = await lastfm.get('/', {params: { method: "user.gettopartists", user: username }});
         artist_count = response.data.topartists["@attr"].total;
     
-        response = await lastfm.get('/', {params: { method: "user.gettopalbums", user: encodeURIComponent(username) }});
+        response = await lastfm.get('/', {params: { method: "user.gettopalbums", user: username }});
         album_count = response.data.topalbums["@attr"].total;
     
-        response = await lastfm.get('/', {params: { method: "user.gettoptracks", user: encodeURIComponent(username) }});
+        response = await lastfm.get('/', {params: { method: "user.gettoptracks", user: username }});
         track_count = response.data.toptracks["@attr"].total;
     } catch (e) {
         if (e.response) {
@@ -569,7 +569,7 @@ async function lfAvatar(message, username) {
 
     let response;
     try {
-        response = await lastfm.get('/', {params: { method: "user.getinfo", user: encodeURIComponent(username) }});
+        response = await lastfm.get('/', {params: { method: "user.getinfo", user: username }});
     } catch (e) {
         if (e.response) {
             console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
@@ -635,7 +635,7 @@ async function lfYoutube(message, username) {
 
     let response;
     try {
-        response = await lastfm.get('/', {params: { method: "user.getrecenttracks", user: encodeURIComponent(username), limit: 1 }});
+        response = await lastfm.get('/', {params: { method: "user.getrecenttracks", user: username, limit: 1 }});
     } catch (e) {
         if (e.response) {
             console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
@@ -703,7 +703,7 @@ async function lfChart(message, args, type = "album") {
     if (type == 'album') {
         let response;
         try {
-            response = await lastfm.get('/', {params: { method: `user.gettop${type.toLowerCase()}s`, user: encodeURIComponent(username), period: timeframe, limit: itemCount }});
+            response = await lastfm.get('/', {params: { method: `user.gettop${type.toLowerCase()}s`, user: username, period: timeframe, limit: itemCount }});
         } catch (e) {
             if (e.response) {
                 console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
@@ -783,7 +783,7 @@ async function lfChart(message, args, type = "album") {
         `</html>\n`
     ].join(``);
  
-    let image = await html.toImage(htmlString, screen_width, screen_height);
+    let image = await html.toImage(htmlString, screen_width, screen_height).catch(console.error);
     let imageAttachment = new Discord.MessageAttachment(image, `${username}-${timeframe}-${new Date(Date.now()).toISOString()}.jpg`);
     let p = username[username.length-1].toLowerCase == 's' ? "'" : "'s";
     message.channel.send(`**${username+p}** ${displayTime} ${functions.capitalise(type)} Collage`, imageAttachment);
