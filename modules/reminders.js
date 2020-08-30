@@ -76,7 +76,7 @@ async function setReminder(message, args) {
 
     let weeks = timeString.match(/(\d+)\s*w(?:ee)?ks?/i);
     let days = timeString.match(/(\d+)\s*d(?:ays)?/i);
-    let hours = timeString.match(/(\d+)\s*h(?:ou)?rs?/i);
+    let hours = timeString.match(/(\d+)\s*h(?:ou)?r?s?/i);
     let minutes = timeString.match(/(\d+)\s*m(?:in(?:ute)?s?)?/i);
     let seconds = timeString.match(/(\d+)\s*s(?:ec(?:ond)?s?)?/i);
 
