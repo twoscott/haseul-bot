@@ -477,7 +477,12 @@ async function set_roles_channel(message, args) {
     let msg = await channel.send(data.msg, {embed: embed});
     if (data && data.messageID) {
         let rolesChannel = serverSettings.get(message.guild.id, "rolesChannel");
-        Client.channels.cache.get(rolesChannel).messages.fetch(data.messageID).then(msg => msg.delete());
+        if (rolesChannel) {
+            let channel = Client.channels.cache.get(rolesChannel);
+            if (channel) {
+                channel.messages.fetch(data.messageID).then(msg => msg.delete());
+            }
+        }
     }
 
     await database.set_msg_id(message.guild.id, msg.id)

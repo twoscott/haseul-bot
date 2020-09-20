@@ -16,7 +16,7 @@ db.serialize(() => {
 // Channel message
 
 exports.set_msg_id = async (guild_id, msg_id) => {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
         db.run("UPDATE rolesMessages SET messageID = ? WHERE guildID = ?", [msg_id, guild_id], (err) => {
             if (err) return reject(err);
             return resolve();
