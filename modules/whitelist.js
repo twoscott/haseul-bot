@@ -65,7 +65,7 @@ exports.newGuild = async function(guild) {
 
         if (ownerPatronT3) {
             try {
-                await serverSettings.initGuild(guildID);
+                await serverSettings.initGuild(guild.id);
             } catch (e) {
                 console.error(e);
             }
