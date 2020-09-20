@@ -233,3 +233,10 @@ exports.getDnD = async function(userID) {
     let row = await db.get(SQL`SELECT * FROM DnD WHERE userID = ${userID}`);
     return row;
 }
+
+exports.getAllDnD = async function() {
+    const db = await dbopen;
+
+    let rows = await db.all(SQL`SELECT * FROM DnD`);
+    return rows.map(row => row.userID);
+}

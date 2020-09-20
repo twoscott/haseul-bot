@@ -108,6 +108,7 @@ async function notify(message) {
 
     let ignored_channels = await database.getIgnoredChannels();
     let ignored_servers = await database.getIgnoredServers();
+    let dnd_users = await database.getAllDnD();
 
     let embed = new Discord.MessageEmbed({
         author: { name: author.tag, icon_url: author.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }) },
@@ -124,14 +125,13 @@ async function notify(message) {
         if (notif.guildID && notif.guildID != guild.id) { 
             continue;
         }
-
-        let dnd = await database.getDnD(notif.userID);
-        if (dnd) continue;
-
+        
         let ignored_server = ignored_servers.find(x => x.userID == notif.userID && x.guildID == guild.id);
         if (ignored_server) continue;
         let ignored_channel = ignored_channels.find(x => x.userID == notif.userID && x.channelID == channel.id);
         if (ignored_channel) continue;
+        let doNotDisturb = dnd_users.find(userID => userID == notif.userID);
+        if (doNotDisturb) continue;
 
         let regexp;
         switch (notif.type) {
