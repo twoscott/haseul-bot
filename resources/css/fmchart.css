@@ -1,13 +1,13 @@
 div {
-        font-size: 0px;
+    font-size: 0px;
 	overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 body {
-        display: block;
-        margin: 0px;
+    display: block;
+    margin: 0px;
 }
 
 .grid {
