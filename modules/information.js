@@ -372,7 +372,7 @@ async function serverEmbed(guild) {
             { name: "Owner", value: `<@${guild.owner.user.id}>`, inline: true },
             { name: "Members", value: guild.memberCount.toLocaleString(), inline: true },
             { name: "Roles", value: guild.roles.cache.size, inline: true },
-            { name: "Text Channels", value: guild.channels.cache.array().filter(c => c.type == 'text').length, inline: true },
+            { name: "Text Channels", value: guild.channels.cache.array().filter(c => c.type == 'text' || c.type == "news").length, inline: true },
             { name: "Voice Channels", value: guild.channels.cache.array().filter(c => c.type == 'voice').length, inline: true },
             { name: "Created On", value: guild.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false },
             { name: "Region", value: regions[guild.region] || guild.region, inline: true },
