@@ -2,10 +2,11 @@ const Discord = require("discord.js");
 const { Client } = require("../haseul.js");
 const { embedPages, resolveMember, withTyping } = require("../functions/discord.js");
 const { getPrefix } = require("../functions/bot.js");
+const { getDelta } = require("../functions/functions.js");
 
+const heapdump = require('heapdump');
 const fs = require("fs");
 const process = require("process");
-const { getDelta } = require("../functions/functions.js");
 
 exports.onReady = async function() {
 
@@ -46,8 +47,25 @@ exports.onCommand = async function(message, args) {
             if (message.author.id === "125414437229297664")
                 (require("../modules/member_logs.js").join(message.member));
             break;
+        case "heapdump":
+            if (message.author.id === "125414437229297664")
+                heapdump.writeSnapshot('./heapdumps/' + Date.now() + '.heapsnapshot', (err, filename) => {
+                    if (err) {
+                        console.error(err);
+                        message.channel.send(`⚠ Error occurred writing heapdump.`)
+                    } else {
+                        message.channel.send(`Heapdump written to ${filename}`);
+                    }
+                });
+            break;
     }
 
+}
+
+exports.onMention = async function(message, args) {
+    if (args.length == 1) {
+        message.channel.send(`Prefix: \`${getPrefix(message.guild.id)}\``);
+    }
 }
 
 async function botInfo(message) {
@@ -149,7 +167,7 @@ async function cacheStats(message) {
         cachedMembers += guild.members.cache.size;
         cachedRoles += guild.roles.cache.size;
         for (let channel of guild.channels.cache.values()) {
-            if (channel.type == "text") {
+            if (channel.type == "text" || channel.type == "news") {
                 cachedMessageCount += channel.messages.cache.size;
             }
         }

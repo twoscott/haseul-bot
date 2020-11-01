@@ -105,6 +105,7 @@ async function processCommand(message, args) {
 
 async function processMention(message, args) {
     emojis.onMention(message, args);
+    client.onMention(message, args);
 }
 
 async function processMessage(message) {
