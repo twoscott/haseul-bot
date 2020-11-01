@@ -93,7 +93,7 @@ exports.sendAndDelete = async function(channel, options, timeout=1000) {
 }
 
 exports.withTyping = async function(channel, task, args) {
-    if (!channel || channel.type !== "text" || channel.type != "news") {
+    if (!channel || (channel.type !== "text" && channel.type !== "news")) {
         let err = new Error("Invalid channel to type in");
         console.error(err);
     } else {
