@@ -124,7 +124,7 @@ async function vliveNotifAdd(message, args) {
         message.channel.send(`⚠ The Discord channel provided does not exist in this server.`);
         return;
     }
-    if (channel.type != "text" || channel.type == "news") {
+    if (channel.type !== "text" && channel.type !== "news") {
         message.channel.send(`⚠ Please provide a text channel to send notifications to.`);
         return;
     }
