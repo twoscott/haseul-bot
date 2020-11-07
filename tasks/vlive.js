@@ -31,17 +31,17 @@ async function vliveLoop() {
             try {
                 response = await vlive.get('getChannelVideoList', { params: { app_id, channelSeq, maxNumOfRows: 10, pageNo: 1 } });
             } catch(e) {
-                console.error(channelSeq + ' ' + Error(e));
+                // console.error(channelSeq + ' ' + Error(e));
                 continue;
             }
             if (!response.data) {
-                console.error("couldn't fetch videos for " + channelSeq);
+                // console.error("couldn't fetch videos for " + channelSeq);
                 continue;
             }
 
             let channelData = response.data["result"];
             if (!channelData) {
-                console.error("couldn't resolve channelInfo or videoList for " + channelSeq);
+                // console.error("couldn't resolve channelInfo or videoList for " + channelSeq);
                 continue;
             }
             let { channelInfo, videoList } = channelData;
@@ -94,19 +94,19 @@ async function vliveLoop() {
 
                     let guild = Client.guilds.cache.get(guildID);
                     if (!guild) {
-                        console.error(Error("Guild couldn't be retrieved to send VLIVE notif to."));
+                        // console.error(Error("Guild couldn't be retrieved to send VLIVE notif to."));
                         continue;
                     }
                     let discordChannel = Client.channels.cache.get(discordChanID) || guild.channels.cache.get(discordChanID);
                     if (!discordChannel) {
-                        console.error(Error("Channel couldn't be retrieved to send VLIVE notif to."));
+                        // console.error(Error("Channel couldn't be retrieved to send VLIVE notif to."));
                         continue;
                     }
 
                     let message = `https://www.vlive.tv/video/${videoSeq}/${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
 
                     discordChannel.send(message, {embed}).catch(error => {
-                        console.error(Error(error));
+                        // console.error(Error(error));
                     });
                 }   
 

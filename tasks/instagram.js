@@ -55,13 +55,13 @@ async function instaLoop() {
                 try {
                     response = await graphql.get('/query/', { params: {query_hash: timeline_hash, variables: {id: instaID, first: 20}} });
                 } catch(e) {
-                    console.error("Instagram posts error: " + (e.response ? e.response.status : e));
+                    // console.error("Instagram posts error: " + (e.response ? e.response.status : e));
                     return;
                 }
 
                 let data = response.data.data;
                 if (!data || !data.user) {
-                    console.error("couldn't resolve recent Instagram posts for " + instaID);
+                    // console.error("couldn't resolve recent Instagram posts for " + instaID);
                     return;
                 }
                 
@@ -86,7 +86,7 @@ async function instaLoop() {
                         try {
                             response = await graphql.get(`/query/`, { params: { query_hash: post_hash, variables: { shortcode } } });
                         } catch(e) {
-                            console.error(e);
+                            // console.error(e);
                         }
 
                         if (response) {
@@ -122,12 +122,12 @@ async function instaLoop() {
         
                         let guild = Client.guilds.cache.get(guildID);
                         if (!guild) {
-                            console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
+                            // console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
                             continue;
                         }
                         let channel = Client.channels.cache.get(channelID) || guild.channels.cache.get(channelID);
                         if (!channel) {
-                            console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
+                            // console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
                             continue;
                         }
 
@@ -208,7 +208,7 @@ async function instaLoop() {
                             options = { embed };
                         }
 
-                        channel.send(message, options).catch(console.error);
+                        channel.send(message, options).catch(/*console.error*/);
                     }
         
                 }

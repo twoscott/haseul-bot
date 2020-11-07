@@ -34,13 +34,13 @@ async function twitterLoop() {
             try {
                 response = await twitter.get('/1.1/statuses/user_timeline.json', { params: {user_id: twitterID, count: 20, exclude_replies: 0, tweet_mode: 'extended'} })
             } catch(e) {
-                console.error(twitterID + ' ' + Error(e));
+                // console.error(twitterID + ' ' + Error(e));
                 continue;
             }
 
             let recentTweets = response.data;
             if (!recentTweets) {
-                console.error("couldn't resolve recent tweets for " + twitterID);
+                // console.error("couldn't resolve recent tweets for " + twitterID);
                 continue;
             }
 
@@ -70,7 +70,7 @@ async function twitterLoop() {
                         // console.log(`No guild found for ${guildID}, removing notification.`);
                         // database.removeTwitterChannel(channelID, twitterID);
                         // continue;
-                        console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
+                        // console.error(Error("Guild couldn't be retrieved to send Instagram notif to."));
                         continue;
                     }
                     let channel = Client.channels.cache.get(channelID) || guild.channels.cache.get(channelID);
@@ -78,13 +78,13 @@ async function twitterLoop() {
                         // console.log(`No channel found for ${channelID} in ${guildID}, removing notification.`);
                         // database.removeTwitterChannel(channelID, twitterID);
                         // continue;
-                        console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
+                        // console.error(Error("Channel couldn't be retrieved to send Instagram notif to."));
                         continue;
                     }
 
                     let message = `https://twitter.com/${user.screen_name}/status/${id_str}/${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
 
-                    channel.send(message/*, options*/).catch(console.error);
+                    channel.send(message/*, options*/).catch(/*console.error*/);
                 }
 
             }
