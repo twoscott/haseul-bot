@@ -222,11 +222,11 @@ async function lfRecents(message, args, limit) {
     }
 
     if (tracks.length < 2) {
-        recent1Embed(message, tracks[0], lfUser, playCount, loved);
+        recent1Embed(message, tracks[0], lfUser, playCount, loved).catch(console.error);
     } else if (tracks.length < 3) {
-        recent2Embed(message, tracks, lfUser, playCount);
+        recent2Embed(message, tracks, lfUser, playCount).catch(console.error);
     } else {
-        recentListPages(message, tracks, lfUser);
+        recentListPages(message, tracks, lfUser).catch(console.error);
     }
 
 }

@@ -58,9 +58,9 @@ async function userInfo(message, args) {
 
     if (!userID) {
         target = trimArgs(args, 1, message.content)
-        let members = await guild.members.fetch();
+        // let members = await guild.members.fetch();
 
-        member = await searchMembers(members, target)
+        member = await searchMembers(guild.members.cache, target);
         if (!member) {
             message.channel.send(`⚠ Invalid user or user ID.`);
             return;
@@ -91,7 +91,8 @@ async function userInfo(message, args) {
 async function memberEmbed(author, member) {
 
     let { user, guild } = member;
-    let memNo = await getMemberNumber(member);
+    // let memNo = await getMemberNumber(member);
+    let memNo = "N/A";
     let lastMsg = member.lastMessage
 
     let status = {
@@ -237,9 +238,9 @@ async function userAvatar(message, args) {
 
     if (!userID) {
         target = trimArgs(args, 1, message.content)
-        let members = await guild.members.fetch();
+        // let members = await guild.members.fetch();
 
-        member = await searchMembers(members, target)
+        member = await searchMembers(guild.members.cache, target)
         if (!member) {
             message.channel.send(`⚠ Invalid user or user ID.`);
             return;
@@ -396,7 +397,7 @@ async function serverEmbed(guild) {
 async function serverBoosters(message) {
 
     let { guild } = message;
-    guild.members.cache = await guild.members.fetch();
+    // guild.members.cache = await guild.members.fetch();
     let boosters = guild.members.cache.filter(member => member.premiumSince);
 
     if (boosters.size < 1) {
