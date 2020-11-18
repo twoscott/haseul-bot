@@ -58,9 +58,9 @@ async function userInfo(message, args) {
 
     if (!userID) {
         target = trimArgs(args, 1, message.content)
-        // let members = await guild.members.fetch();
+        let members = await guild.members.fetch();
 
-        member = await searchMembers(guild.members.cache, target);
+        member = await searchMembers(members, target);
         if (!member) {
             message.channel.send(`⚠ Invalid user or user ID.`);
             return;
@@ -91,8 +91,7 @@ async function userInfo(message, args) {
 async function memberEmbed(author, member) {
 
     let { user, guild } = member;
-    // let memNo = await getMemberNumber(member);
-    let memNo = "N/A";
+    let memNo = await getMemberNumber(member);
     let lastMsg = member.lastMessage
 
     let status = {
@@ -238,9 +237,9 @@ async function userAvatar(message, args) {
 
     if (!userID) {
         target = trimArgs(args, 1, message.content)
-        // let members = await guild.members.fetch();
+        let members = await guild.members.fetch();
 
-        member = await searchMembers(guild.members.cache, target)
+        member = await searchMembers(members, target)
         if (!member) {
             message.channel.send(`⚠ Invalid user or user ID.`);
             return;
@@ -370,7 +369,7 @@ async function serverEmbed(guild) {
         thumbnail: { url: guild.iconURL({ format: 'png', dynamic: true, size: 512 }) },
         color: iconColour,
         fields: [
-            { name: "Owner", value: `<@${guild.owner.user.id}>`, inline: true },
+            { name: "Owner", value: `<@${guild.ownerID}>`, inline: true },
             { name: "Members", value: guild.memberCount.toLocaleString(), inline: true },
             { name: "Roles", value: guild.roles.cache.size, inline: true },
             { name: "Text Channels", value: guild.channels.cache.array().filter(c => c.type == 'text' || c.type == "news").length, inline: true },
@@ -397,7 +396,7 @@ async function serverEmbed(guild) {
 async function serverBoosters(message) {
 
     let { guild } = message;
-    // guild.members.cache = await guild.members.fetch();
+    guild.members.cache = await guild.members.fetch();
     let boosters = guild.members.cache.filter(member => member.premiumSince);
 
     if (boosters.size < 1) {
