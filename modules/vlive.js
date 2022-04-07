@@ -26,16 +26,19 @@ exports.onCommand = async function(message, args) {
                     switch (args[2]) {
                         case "add":
                             if (checkPermissions(member, ["MANAGE_CHANNELS"]))
-                                withTyping(channel, vliveNotifAdd, [message, args.slice(3)]);
+                                // withTyping(channel, vliveNotifAdd, [message, args.slice(3)]);
+                                message.channel.send(`⚠ VLIVE notifications are currently disabled due to changes made by VLIVE.`);
                             break;
                         case "remove":
                         case "delete":
                             if (checkPermissions(member, ["MANAGE_CHANNELS"]))
-                                withTyping(channel, vliveNotifRemove, [message, args.slice(3)]);
+                                // withTyping(channel, vliveNotifRemove, [message, args.slice(3)]);
+                                message.channel.send(`⚠ VLIVE notifications are currently disabled due to changes made by VLIVE.`);
                             break;
                         case "list":
                             if (checkPermissions(member, ["MANAGE_CHANNELS"]))
-                                withTyping(channel, vliveNotifList, [message, args.slice(3)]);
+                                // withTyping(channel, vliveNotifList, [message, args.slice(3)]);
+                                message.channel.send(`⚠ VLIVE notifications are currently disabled due to changes made by VLIVE.`);
                             break;
                     }
                     break;
@@ -43,13 +46,15 @@ exports.onCommand = async function(message, args) {
                     switch (args[2]) {
                         case "vpick":
                             if (checkPermissions(member, ["MANAGE_GUILD"]))
-                                withTyping(channel, vpickToggle, [message, args.slice(3)]);
+                                // withTyping(channel, vpickToggle, [message, args.slice(3)]);
+                                message.channel.send(`⚠ VLIVE notifications are currently disabled due to changes made by VLIVE.`);
                             break;
                     }
                     break;
                 case "channelinfo":
                 case "channel":
-                    withTyping(channel, vliveChannelInfo, [message, args.slice(2)]);
+                    // withTyping(channel, vliveChannelInfo, [message, args.slice(2)]);
+                    message.channel.send(`⚠ VLIVE notifications are currently disabled due to changes made by VLIVE.`);
                     break;
                 case "help":
                 default:
@@ -199,14 +204,16 @@ async function vliveNotifAdd(message, args) {
     }
 
     let { videoList } = channelData;
-    let now = Date.now();
-    for (let video of videoList) {
-        let { videoSeq, onAirStartAt } = video; 
+    if (videoList && videoList.length > 0) {
+        let now = Date.now();
+        for (let video of videoList) {
+            let { videoSeq, onAirStartAt } = video; 
 
-        let releaseTimestamp = new Date(onAirStartAt + " UTC+9:00").getTime();
-        if (releaseTimestamp > (now - 1000*60)) continue; // don't add videos in last minute; prevent conflicts with task
+            let releaseTimestamp = new Date(onAirStartAt + " UTC+9:00").getTime();
+            if (releaseTimestamp > (now - 1000*60)) continue; // don't add videos in last minute; prevent conflicts with task
 
-        await database.addVideo(videoSeq, channelSeq);
+            await database.addVideo(videoSeq, channelSeq);
+        }
     }
 
     let added;

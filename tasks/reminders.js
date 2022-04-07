@@ -12,7 +12,7 @@ exports.tasks = async function() {
 async function remindersLoop() {
 
     let startTime = Date.now();
-    console.log("Started checking reminders at " + new Date(startTime).toUTCString());
+    // console.log("Started checking reminders at " + new Date(startTime).toUTCString());
     
     let overdueReminders = await database.getOverdueReminders();
     for (let reminder of overdueReminders) {
@@ -31,7 +31,7 @@ async function remindersLoop() {
         database.removeReminder(reminderID);
     }
     
-    console.log("Finished checking reminders, took " + (Date.now() - startTime) / 1000 + "s");
+    // console.log("Finished checking reminders, took " + (Date.now() - startTime) / 1000 + "s");
     setTimeout(remindersLoop, Math.max(10000 - (Date.now() - startTime), 0));
 
 }

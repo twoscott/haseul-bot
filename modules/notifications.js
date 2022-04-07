@@ -22,7 +22,7 @@ const notif_nums = {
 
 exports.onMessage = async function(message) {
 
-    notify(message);
+    notify(message).catch(console.error);
 
 }
 
@@ -97,9 +97,13 @@ exports.onCommand = async function(message, args) {
 
 async function notify(message) {
 
+    if (!message.content) return;
+
     let { guild, channel, author, content, member } = message;
-    if (!content) return;
-    
+    if (!member) {
+        member = await resolveMember(guild, author.id);
+    }
+
     let locals = await database.getAllLocalNotifs(guild.id);
     let globals = await database.getAllGlobalNotifs();
     let notifs = locals.concat(globals).filter(n => n.userID != author.id);

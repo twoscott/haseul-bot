@@ -6,10 +6,11 @@ const serverSettings = require("../utils/server_settings.js");
 const inviteCache = require("../utils/invite_cache.js");
 
 const messageSweep = require("../tasks/sweep_messages.js");
-const instagram = require("../tasks/instagram.js");
+const moderation = require("../tasks/moderation.js")
+// const instagram = require("../tasks/instagram.js");
 const reminders = require("../tasks/reminders.js");
 const twitter = require("../tasks/twitter.js");
-const vlive = require("../tasks/vlive.js");
+// const vlive = require("../tasks/vlive.js");
 
 exports.handleTasks = async function() {
     
@@ -26,9 +27,10 @@ exports.handleTasks = async function() {
 
     console.log("Starting tasks...");
     messageSweep.tasks();
-    instagram.tasks();
+    // instagram.tasks();
+    moderation.tasks();
     reminders.tasks();
     twitter.tasks();
-    vlive.tasks();
+    // vlive.tasks();
 
 }

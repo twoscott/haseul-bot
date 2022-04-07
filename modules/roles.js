@@ -442,9 +442,10 @@ async function list_roles(message) {
     main_roles = "__**Main Roles**__\n" + main_roles.join(" **|** ") + "\n";
     sub_roles = "__**Sub Roles**__\n" + sub_roles.join(" **|** ") + "\n";
     other_roles = "__**Other Roles**__\n" + other_roles.join(" **|** ") + "\n";
-    let list = [main_roles, sub_roles, other_roles].join("\n");
-    message.channel.send(list);
-
+    
+    await message.channel.send(main_roles);
+    await message.channel.send(sub_roles);
+    await message.channel.send(other_roles);
 }
 
 

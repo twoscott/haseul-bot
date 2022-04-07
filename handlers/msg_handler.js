@@ -82,7 +82,7 @@ async function processCommand(message, args) {
     commands.onCommand(message, args);
     emojis.onCommand(message, args);
     information.onCommand(message, args);
-    instagram.onCommand(message, args);
+    // instagram.onCommand(message, args);
     lastfm.onCommand(message, args);
     levels.onCommand(message, args);
     management.onCommand(message, args);
@@ -111,6 +111,7 @@ async function processMention(message, args) {
 async function processMessage(message) {
     levels.onMessage(message);
     management.onMessage(message);
+    moderation.onMessage(message);
     notifications.onMessage(message);
     roles.onMessage(message);
     whitelist.onMessage(message);

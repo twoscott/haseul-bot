@@ -3,7 +3,6 @@ const Client = require("../haseul.js").Client;
 
 const axios = require("axios");
 
-const images = require("../functions/images.js");
 const database = require("../db_queries/twitter_db.js");
 
 const twitter = axios.create({
@@ -82,9 +81,9 @@ async function twitterLoop() {
                         continue;
                     }
 
-                    let message = `https://twitter.com/${user.screen_name}/status/${id_str}/${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
+                    let message = `https://twitter.com/${user.screen_name}/status/${id_str}${mentionRoleID ? ` <@&${mentionRoleID}>`:``}`;
 
-                    channel.send(message/*, options*/).catch(/*console.error*/);
+                    channel.send(message/*, options*/).catch(err => {});
                 }
 
             }

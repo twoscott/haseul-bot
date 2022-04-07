@@ -33,8 +33,7 @@ dbopen.then(db => {
 })
 
 // dbopen.then(async db => {
-//     await db.run(SQL`ALTER TABLE serverSettings ADD COLUMN msgLogsOn INT NOT NULL DEFAULT 0`);
-//     await db.run(SQL`ALTER TABLE serverSettings ADD COLUMN msgLogsChan TEXT`);
+//     await db.run(SQL`ALTER TABLE serverSettings ADD COLUMN spamFilterLvl INT NOT NULL DEFAULT 0`);
 //     console.log("Finished altering servers.db");
 // })
 

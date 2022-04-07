@@ -16,7 +16,7 @@ async function cacheGuildInvites(guild) {
             console.error(e);
         }
         try {
-            let vanityInvite = await guild.fetchVanityData();
+            let vanityInvite = await guild.fetchVanityData()
             vanityInvite.url = `https://discord.gg/${vanityInvite.code}`;
             vanityCache.set(guild.id, vanityInvite);
         } catch(e) {
@@ -42,13 +42,15 @@ exports.onReady = async function() {
 exports.resolveUsedInvite = async function(guild) {
     let currentCache = await inviteCache.get(guild.id);
     let currentVanity = await vanityCache.get(guild.id);
+    // console.log(currentCache);
     let newInvites;
     let newVanity;
 
     let usedInvite = null;
     let inviteChanges = 0;
 
-    newInvites = await guild.fetchInvites().catch(() => {});
+    newInvites = await guild.fetchInvites().catch(console.error);
+    // console.log(newInvites);
     if (currentCache && newInvites && newInvites.size > 0) {
         for (let newInvite of newInvites.array()) {
             let currentInvite = currentCache.get(newInvite.code);
@@ -64,7 +66,8 @@ exports.resolveUsedInvite = async function(guild) {
         }
     }
 
-    newVanity = await guild.fetchVanityData().catch(() => {});
+    newVanity = await guild.fetchVanityData().catch(console.error);
+    // console.log(newVanity);
     if (currentVanity && newVanity && inviteChanges < 2) {
         newVanity.url = `https://discord.gg/${newVanity.code}`;
         if (currentVanity) {

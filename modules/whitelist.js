@@ -28,6 +28,7 @@ exports.onReady = async function() {
 
 exports.newGuild = async function(guild) {
     let guildEntry = serverSettings.getServer(guild.id);
+    console.log(`Bot added to new server, ID: ${guild.id}`);
     if (!guildEntry) { // << SERVER NOT WHITELISTED >> \\
         let response;
         try {
@@ -41,19 +42,25 @@ exports.newGuild = async function(guild) {
 
         let ownerPatronT3 = false;
         try {
+            console.log(JSON.stringify(response.data));
             let patreonMembers = response.data.data;
             let patreonUsers = response.data.included.filter(x => {
                 return x.type == 'user' && x.attributes.social_connections.discord;
             });
 
+            console.log("Checking if guild owner is Patreon...");
             for (let i = 0; i < patreonUsers.length && !ownerPatronT3; i++) {
                 let user = patreonUsers[i];
                 let userDiscord = user.attributes.social_connections.discord;
                 let userDiscordID = userDiscord ? userDiscord.user_id : null;
+                console.log(`Checking ${userDiscordID}`);
                 if (userDiscordID == guild.ownerID) {
+                    console.log(`${userDiscordID} is owner`);
                     let member = patreonMembers.find(m => m.relationships.user.data.id == user.id);
+                    console.log(`Patreon member:\n ${member}`);
                     let entitledCents = member.attributes.currently_entitled_amount_cents;
                     if (entitledCents >= 500 && member.attributes.patron_status == "active_patron") {
+                        console.log("Owner is patron");
                         ownerPatronT3 = true;
                         console.log(`Active patron: ${userDiscordID}`);
                     }

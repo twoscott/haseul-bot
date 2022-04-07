@@ -31,17 +31,18 @@ exports.onCommand = async function(message, args) {
                         case "add":
                             if (checkPermissions(member, ["MANAGE_CHANNELS"]))
                                 // withTyping(channel, instaNotifAdd, [message, args.slice(3)]);
-                                message.channel.send(`⚠ Adding and removing Instagram notifications is currently disabled as there are issues with Instagram. This may or may not be resolved. Already-configured Instagram notifications should continue to function as normal.`);
+                                message.channel.send(`⚠ Instagram notifications are currently disabled due to changes made by Instagram.`);
                             break;
                         case "remove":
                         case "delete":
                             if (checkPermissions(member, ["MANAGE_CHANNELS"]))
                                 // withTyping(channel, instaNotifRemove, [message, args.slice(3)]);
-                                message.channel.send(`⚠ Adding and removing Instagram notifications is currently disabled as there are issues with Instagram. This may or may not be resolved. Already-configured Instagram notifications should continue to function as normal.`);
+                                message.channel.send(`⚠ Instagram notifications are currently disabled due to changes made by Instagram.`);
                             break;
                         case "list":
                             if (checkPermissions(member, ["MANAGE_CHANNELS"]))
-                                withTyping(channel, instaNotifList, [message]);
+                                // withTyping(channel, instaNotifList, [message]);
+                                message.channel.send(`⚠ Instagram notifications are currently disabled due to changes made by Instagram.`);
                             break;
                     }
                     break;

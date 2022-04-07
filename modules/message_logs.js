@@ -1,11 +1,13 @@
 const Discord = require("discord.js");
 const { Client } = require("../haseul.js");
 const { checkPermissions, resolveMember, withTyping } = require("../functions/discord.js");
+const filterCache = require("../utils/filter_cache");
 
 const serverSettings = require("../utils/server_settings.js");
 const { parseChannelID } = require("../functions/functions.js");
 
 const deleteColour = 0xf93437;
+const spamColour = 0xf74623;
 const editColour = 0xff9b35;
 
 exports.onCommand = async function(message, args) {
@@ -47,7 +49,7 @@ exports.onMessageEdit = async function(oldMessage, newMessage) {
 
 async function logDeletedMessage(message) {
 
-    let { author, content, guild } = message;
+    let { id, author, content, guild } = message;
 
     let logsOn = serverSettings.get(guild.id, "msgLogsOn");
     if (!logsOn) return;
@@ -59,10 +61,15 @@ async function logDeletedMessage(message) {
     let proximityMessage = proximityMessages.find(msg => msg.author.id !== author.id);
     proximityMessage = proximityMessage || proximityMessages.first();
 
+    let isSpam = filterCache.deletedSpamMsgs.includes(id)
+    if (isSpam) {
+        filterCache.deletedSpamMsgs = filterCache.deletedSpamMsgs.filter(mid => mid != id)
+    }
+
     let embed = new Discord.MessageEmbed({
         author: { name: author.tag, icon_url: author.displayAvatarURL({ format: 'png', dynamic: true, size: 128 }) },
-        title: "Message Deleted",
-        color: deleteColour,
+        title: isSpam ? "Spam Message Deleted" : "Message Deleted",
+        color: isSpam ? spamColour : deleteColour,
         footer: { text: `#${message.channel.name}` },
         timestamp: message.deletedAt
     })
@@ -76,6 +83,10 @@ async function logDeletedMessage(message) {
     }
 
     embed.addField("Message Area", `[Go To Area](${proximityMessage.url})`, false);
+    
+    if (isSpam) {
+        embed.addField("User ID", author.id);
+    }
 
     channel.send({ embed });
 

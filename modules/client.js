@@ -10,19 +10,19 @@ const process = require("process");
 
 exports.onReady = async function() {
 
-    await Client.user.setActivity(`in ${Client.guilds.cache.size} servers`, { type: "PLAYING" });
+    await Client.user.setActivity(`in ${Client.guilds.cache.size.toLocaleString()} servers`, { type: "PLAYING" });
 
 }
 
 exports.newGuild = async function() {
 
-    await Client.user.setActivity(`in ${Client.guilds.cache.size} servers`, { type: "PLAYING" });
+    await Client.user.setActivity(`in ${Client.guilds.cache.size.toLocaleString()} servers`, { type: "PLAYING" });
 
 }
 
 exports.removedGuild = async function() {
 
-    await Client.user.setActivity(`in ${Client.guilds.cache.size} servers`, { type: "PLAYING" });
+    await Client.user.setActivity(`in ${Client.guilds.cache.size.toLocaleString()} servers`, { type: "PLAYING" });
 
 }
 
@@ -43,21 +43,21 @@ exports.onCommand = async function(message, args) {
             if (message.author.id === "125414437229297664")
                 withTyping(channel, serverList, [message]);
             break;
-        case "test":
-            if (message.author.id === "125414437229297664")
-                (require("../modules/member_logs.js").join(message.member));
-            break;
-        case "heapdump":
-            if (message.author.id === "125414437229297664")
-                heapdump.writeSnapshot('./heapdumps/' + Date.now() + '.heapsnapshot', (err, filename) => {
-                    if (err) {
-                        console.error(err);
-                        message.channel.send(`⚠ Error occurred writing heapdump.`)
-                    } else {
-                        message.channel.send(`Heapdump written to ${filename}`);
-                    }
-                });
-            break;
+        // case "test":
+        //     if (message.author.id === "125414437229297664")
+        //         message.channel.send("test");
+        //     break;
+        // case "heapdump":
+        //     if (message.author.id === "125414437229297664")
+        //         heapdump.writeSnapshot('./heapdumps/' + Date.now() + '.heapsnapshot', (err, filename) => {
+        //             if (err) {
+        //                 console.error(err);
+        //                 message.channel.send(`⚠ Error occurred writing heapdump.`)
+        //             } else {
+        //                 message.channel.send(`Heapdump written to ${filename}`);
+        //             }
+        //         });
+        //     break;
     }
 
 }

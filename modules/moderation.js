@@ -4,9 +4,20 @@ const { checkPermissions, resolveMember, resolveRole, resolveUser, withTyping } 
 const { setMuteRolePerms } = require("../functions/moderation.js");
 
 const serverSettings = require("../utils/server_settings.js");
+const filterCache = require("../utils/filter_cache");
 const { trimArgs } = require("../functions/functions.js");
 
 const userIDsRegex = /^(?:<@\D?)?(\d+)(?:>)?\s*,?\s*/;
+const domainRegex = /\S+\.\S+/gi;
+
+exports.onMessage = async function(message) {
+
+    let filterOn = serverSettings.get(message.guild.id, "spamFilterOn");
+    if (filterOn) {
+        filterSpam(message);
+    }
+
+}
 
 exports.onCommand = async function(message, args) {
 
@@ -65,9 +76,36 @@ exports.onCommand = async function(message, args) {
                     break;
             }
             break;
-        
+        case "spamfilter":
+            switch(args[1]) {
+                case "toggle":
+                    if (checkPermissions(member, ["MANAGE_MESSAGES"]))
+                        withTyping(channel, toggleSpamFilter, [message]);
+                    else
+                        channel.send(`⚠ You do not have permission to manage messages.`);
+                    break;
+            } 
     }
 
+}
+
+async function filterSpam(message) {
+    if (!filterCache.spamDomainsRegex) {
+        return;
+    }
+
+    let domains = message.content.match(domainRegex);
+    if (!domains) {
+        return;
+    }
+
+    for (let domain of domains) {
+        if (filterCache.spamDomainsRegex.test(domain) == true) {
+            filterCache.deletedSpamMsgs.push(message.id);
+            message.delete();
+            return;
+        }
+    }
 }
 
 async function banUsers(message, args, days=0) {
@@ -555,4 +593,9 @@ async function updateMuteRole(message) {
     await setMuteRolePerms(channelsArray, role.id);
     message.channel.send(`Updated channel permissions for the mute role: \`${role.name}\``);
     
+}
+
+async function toggleSpamFilter(message) {
+    let tog = await serverSettings.toggle(message.guild.id, "spamFilterOn");
+    message.channel.send(`Spam filter turned ${tog ? "on":"off"}.`);
 }
