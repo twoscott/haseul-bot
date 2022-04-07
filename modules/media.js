@@ -12,10 +12,10 @@ const letterboxd = axios.create({
 const youtube = axios.create({
     baseURL: "https://youtube.com",
     timeout: 5000,
-    headers: { "X-YouTube-Client-Name": "1", "X-YouTube-Client-Version": "2.20200424.06.00"}
+    headers: { "X-YouTube-Client-Name": "1", "X-YouTube-Client-Version": "2.20200424.06.00" }
 });
 
-exports.onCommand = async function(message, args) {
+exports.onCommand = async function (message, args) {
 
     let { channel } = message;
 
@@ -24,10 +24,10 @@ exports.onCommand = async function(message, args) {
         case "yt":
             withTyping(channel, ytPages, [message, args]);
             break;
-        case "letterboxd":
-        case "lb":
-            withTyping(channel, lbMovieQuery, [message, args]);
-            break;
+        // case "letterboxd":
+        // case "lb":
+        //     withTyping(channel, lbMovieQuery, [message, args]);
+        //     break;
     }
 
 }
@@ -58,26 +58,39 @@ async function ytPages(message, args) {
 
     let query = trimArgs(args, 1, message.content);
     let response = await youtube.get('/results', { params: { search_query: query, pbj: 1, sp: 'EgIQAQ==' } });
+    
     let results;
     try {
-        results = response.data[1].response.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents;
+        results = response
+            .data
+            .response
+            .contents
+            .twoColumnSearchResultsRenderer
+            .primaryContents
+            .sectionListRenderer
+            .contents[0]
+            .itemSectionRenderer
+            .contents;
     } catch (e) {
         console.error(e);
-        return null;
+        message.channel.send(`⚠ Error occurred searching YouTube.`);
+        return;
     }
 
-    results = results.filter(result => result.videoRenderer && result.videoRenderer.videoId).map((result, i) => `${i+1}. https://youtu.be/${result.videoRenderer.videoId}`);
+    results = results
+        .filter(result => result.videoRenderer && result.videoRenderer.videoId)
+        .map((result, i) => `${i + 1}. https://youtu.be/${result.videoRenderer.videoId}`);
 
     if (results.length < 1) {
         message.channel.send(`⚠ No results found for this query!`);
         return;
     }
+
     embedPages(message, results.slice(0, 20), true);
-    
 }
 
 async function lbMovieQuery(message, args) {
-    
+
     if (args.length < 2) {
         message.channel.send(`⚠ Please provide a query to search for!`);
         return;
@@ -87,7 +100,7 @@ async function lbMovieQuery(message, args) {
     let { data } = await letterboxd.get(`/search/films/${encodeURIComponent(query)}`);
     let regExp = /<ul class="results">[^]*?data-film-link="(.*?)"/i;
     let result = data.match(regExp);
-    
+
     message.channel.send(result ? "https://letterboxd.com" + result[1] : "⚠ No results found.");
 
 }
