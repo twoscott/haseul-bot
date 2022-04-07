@@ -4,7 +4,7 @@
   "description": "A General purpose Discord bot aimed at K-pop servers.",
   "main": "haseul.js",
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "discord.js": "^12.5.3",
     "get-image-colors": "^2.0.1",
     "hashset": "0.0.6",
