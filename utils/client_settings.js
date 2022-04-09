@@ -1,45 +1,39 @@
-const { Client } = require("../haseul.js");
+const database = require('../db_queries/client_db.js');
 
-const database = require("../db_queries/client_db.js");
-
-let settings = new Object();
+let settings = {};
 
 exports.template = {
-    "guildWhitelistChannelID": { name: "Whitelist Channel", type: "ID" },
-    "guildWhitelistOn": { name: "Whitelist On", type: "toggle" },
-}
+    'guildWhitelistChannelID': { name: 'Whitelist Channel', type: 'ID' },
+    'guildWhitelistOn': { name: 'Whitelist On', type: 'toggle' },
+};
 
 exports.onReady = async function() {
     settings = await database.getSettings();
-}
+};
 
 exports.get = function(setting) {
     return settings ? settings[setting] : null;
-}
+};
 
 exports.getSettings = function() {
     return settings;
-}
+};
 
 exports.set = async function(setting, value) {
-
-    await database.setVal(setting, value)
+    await database.setVal(setting, value);
     if (settings) {
         settings[setting] = value;
     } else {
         settings = await database.getSettings();
     }
-
-}
+};
 
 exports.toggle = async function(toggle) {
-
-    let tog = await database.toggle(toggle)
+    const tog = await database.toggle(toggle);
     if (settings) {
         settings[toggle] = tog;
     } else {
         settings = await database.getSettings();
     }
     return tog;
-
-}
+};

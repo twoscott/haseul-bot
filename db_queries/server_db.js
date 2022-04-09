@@ -1,5 +1,5 @@
-const sqlite = require("sqlite");
-const SQL = require("sql-template-strings");
+const sqlite = require('sqlite');
+const SQL = require('sql-template-strings');
 const dbopen = sqlite.open('./haseul_data/servers.db');
 
 dbopen.then(db => {
@@ -30,7 +30,7 @@ dbopen.then(db => {
             muteroleID TEXT
         )
     `);
-})
+});
 
 // dbopen.then(async db => {
 //     await db.run(SQL`ALTER TABLE serverSettings ADD COLUMN spamFilterLvl INT NOT NULL DEFAULT 0`);
@@ -40,74 +40,74 @@ dbopen.then(db => {
 exports.setVal = async function(guildID, col, val) {
     const db = await dbopen;
 
-    let statement = await db.run(`
+    const statement = await db.run(`
         UPDATE OR IGNORE serverSettings 
         SET ${col} = ?
         WHERE guildID = ?`,
-        [val, guildID]
+    [val, guildID],
     );
     return statement.changes;
-}
+};
 
 exports.toggle = async function(guildID, col) {
     const db = await dbopen;
 
-    let statement = await db.run(`
+    const statement = await db.run(`
         UPDATE OR IGNORE serverSettings
         SET ${col} = ~${col} & 1
-        WHERE guildID = ?`, [guildID]  
+        WHERE guildID = ?`, [guildID],
     );
 
     let toggle = 0;
     if (statement.changes) {
-        let row = await db.get(`SELECT ${col} FROM serverSettings WHERE guildID = ?`, [guildID]);
+        const row = await db.get(`SELECT ${col} FROM serverSettings WHERE guildID = ?`, [guildID]);
         toggle = row ? row[col] : 0;
     }
     return toggle;
-}
+};
 
 exports.initServer = async function(guildID) {
     const db = await dbopen;
 
-    let statement = await db.run(SQL`
+    const statement = await db.run(SQL`
         INSERT OR IGNORE INTO serverSettings 
         (guildID) 
         VALUES (${guildID})
     `);
     return statement.changes;
-}
+};
 
 exports.getServers = async function() {
     const db = await dbopen;
 
-    let rows = await db.all(SQL`SELECT * FROM serverSettings`);
+    const rows = await db.all(SQL`SELECT * FROM serverSettings`);
     return rows;
-}
+};
 
 exports.getServer = async function(guildID) {
     const db = await dbopen;
 
-    let row = await db.get(SQL`SELECT * FROM serverSettings WHERE guildID = ${guildID}`);
+    const row = await db.get(SQL`SELECT * FROM serverSettings WHERE guildID = ${guildID}`);
     return row;
-}
+};
 
 exports.addPollChannel = async function(guildID, channelID) {
     const db = await dbopen;
 
-    let statement = await db.run(SQL`INSERT OR IGNORE INTO pollChans VALUES (${guildID}, ${channelID})`);
+    const statement = await db.run(SQL`INSERT OR IGNORE INTO pollChans VALUES (${guildID}, ${channelID})`);
     return statement.changes;
-}
+};
 
 exports.removePollChannel = async function(guildID, channelID) {
     const db = await dbopen;
 
-    let statement = await db.run(SQL`DELETE FROM pollChans WHERE guildID = ${guildID} AND channelID = ${channelID}`);
+    const statement = await db.run(SQL`DELETE FROM pollChans WHERE guildID = ${guildID} AND channelID = ${channelID}`);
     return statement.changes;
-}
+};
 
 exports.getPollChannels = async function(guildID) {
     const db = await dbopen;
 
-    let rows = await db.all(SQL`SELECT channelID FROM pollChans WHERE guildID = ${guildID}`);
+    const rows = await db.all(SQL`SELECT channelID FROM pollChans WHERE guildID = ${guildID}`);
     return rows.map(x => x.channelID);
-}
+};

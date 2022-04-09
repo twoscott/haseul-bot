@@ -8,7 +8,6 @@
     "discord.js": "^12.5.3",
     "get-image-colors": "^2.0.1",
     "hashset": "0.0.6",
-    "heapdump": "^0.3.15",
     "jsdom": "^16.4.0",
     "sqlite": "^3.0.3"
   },

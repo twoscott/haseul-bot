@@ -1,25 +1,24 @@
-const Discord = require("discord.js");
-const { Client } = require("../haseul.js");
-const { checkPermissions, resolveMember } = require("../functions/discord.js");
+const { Client } = require('../haseul.js');
+const { checkPermissions, resolveMember } = require('../functions/discord.js');
 
-let inviteCache = new Map();
-let vanityCache = new Map();
+const inviteCache = new Map();
+const vanityCache = new Map();
 
 async function cacheGuildInvites(guild) {
-    let botMember = await resolveMember(guild, Client.user.id);
-    if (checkPermissions(botMember, ["MANAGE_GUILD"])) {
+    const botMember = await resolveMember(guild, Client.user.id);
+    if (checkPermissions(botMember, ['MANAGE_GUILD'])) {
         try {
-            let guildInvites = await guild.fetchInvites();
+            const guildInvites = await guild.fetchInvites();
             inviteCache.set(guild.id, guildInvites || new Map());
-        } catch(e) {
+        } catch (e) {
             inviteCache.set(guild.id, new Map());
             console.error(e);
         }
         try {
-            let vanityInvite = await guild.fetchVanityData()
+            const vanityInvite = await guild.fetchVanityData();
             vanityInvite.url = `https://discord.gg/${vanityInvite.code}`;
             vanityCache.set(guild.id, vanityInvite);
-        } catch(e) {
+        } catch (e) {
             vanityCache.set(guild.id, null);
         }
     } else {
@@ -30,32 +29,30 @@ async function cacheGuildInvites(guild) {
 
 exports.newGuild = async function(guild) {
     cacheGuildInvites(guild);
-}
+};
 
 exports.onReady = async function() {
-    for (let guild of Client.guilds.cache.array()) {
+    for (const guild of Client.guilds.cache.array()) {
         await cacheGuildInvites(guild);
     }
     console.log(`Cached invites for ${inviteCache.size} servers.`);
-}
+};
 
 exports.resolveUsedInvite = async function(guild) {
-    let currentCache = await inviteCache.get(guild.id);
-    let currentVanity = await vanityCache.get(guild.id);
-    // console.log(currentCache);
-    let newInvites;
-    let newVanity;
+    const currentCache = await inviteCache.get(guild.id);
+    const currentVanity = await vanityCache.get(guild.id);
 
     let usedInvite = null;
     let inviteChanges = 0;
 
-    newInvites = await guild.fetchInvites().catch(console.error);
+    const newInvites = await guild.fetchInvites().catch(console.error);
     // console.log(newInvites);
     if (currentCache && newInvites && newInvites.size > 0) {
-        for (let newInvite of newInvites.array()) {
-            let currentInvite = currentCache.get(newInvite.code);
+        for (const newInvite of newInvites.array()) {
+            const currentInvite = currentCache.get(newInvite.code);
             if (currentInvite) {
-                if (currentInvite.uses !== null && newInvite.uses > currentInvite.uses) {
+                if (currentInvite.uses !== null &&
+                    newInvite.uses > currentInvite.uses) {
                     usedInvite = newInvite;
                     inviteChanges++;
                 }
@@ -66,12 +63,13 @@ exports.resolveUsedInvite = async function(guild) {
         }
     }
 
-    newVanity = await guild.fetchVanityData().catch(console.error);
+    const newVanity = await guild.fetchVanityData().catch(console.error);
     // console.log(newVanity);
     if (currentVanity && newVanity && inviteChanges < 2) {
         newVanity.url = `https://discord.gg/${newVanity.code}`;
         if (currentVanity) {
-            if (currentVanity.uses !== null && newVanity.uses > currentVanity.uses) {
+            if (currentVanity.uses !== null &&
+                newVanity.uses > currentVanity.uses) {
                 usedInvite = newVanity;
                 inviteChanges++;
             }
@@ -84,4 +82,4 @@ exports.resolveUsedInvite = async function(guild) {
     inviteCache.set(guild.id, newInvites);
     vanityCache.set(guild.id, newVanity);
     return inviteChanges == 1 ? usedInvite : null;
-}
+};

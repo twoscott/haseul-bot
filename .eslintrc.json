@@ -11,5 +11,25 @@
         "ecmaVersion": "latest"
     },
     "rules": {
+        "require-jsdoc": "off",
+        "object-curly-spacing": ["error", "always"],
+        "indent": ["error", 4],
+        "arrow-parens": ["error", "as-needed"],
+        "no-unneeded-ternary": "error",
+        "quotes": ["error", "single"],
+        "max-len": ["error", {
+            "code": 80,
+            "tabWidth": 4,
+            "ignoreUrls": true,
+            "ignoreStrings": true,
+            "ignoreTemplateLiterals": true,
+            "ignoreRegExpLiterals": true,
+            "ignoreComments": true
+        }],
+        "no-irregular-whitespace": ["error", {
+            "skipStrings": true,
+            "skipTemplates": true
+        }],
+        "object-shorthand": ["error", "always"]
     }
 }

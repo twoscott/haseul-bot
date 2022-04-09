@@ -1,33 +1,33 @@
-const axios = require("axios");
-const filterCache = require("../utils/filter_cache")
+const axios = require('axios');
+const filterCache = require('../utils/filter_cache');
 
 const hyperphish = axios.create({
     baseURL: 'https://api.hyperphish.com/',
-    timeout: 5000
-})
+    timeout: 5000,
+});
 
 exports.tasks = async function() {
-
     updateFiltersLoop().catch(console.error);
-
-}
+};
 
 async function updateFiltersLoop() {
-    let startTime = Date.now();
+    const startTime = Date.now();
 
     try {
-        let res = await hyperphish.get("/gimme-domains");
-        let spamDomains = res.data;
+        const res = await hyperphish.get('/gimme-domains');
+        const spamDomains = res.data;
         if (!spamDomains) {
             return;
         }
         if (spamDomains.length < 1) {
             return;
         }
-        filterCache.spamDomainsRegex = new RegExp(`(https?://|^|\\W)(${spamDomains.join("|")})($|\\W)`, "i")
+        filterCache.spamDomainsRegex = new RegExp(`(https?://|^|\\W)(${spamDomains.join('|')})($|\\W)`, 'i');
     } catch (e) {
-        console.error(e)
-        setTimeout(updateFiltersLoop, 30000 - (Date.now() - startTime)); // 30 secs
+        console.error(e);
+
+        // 30 secs
+        setTimeout(updateFiltersLoop, 30000 - (Date.now() - startTime));
         return;
     }
 

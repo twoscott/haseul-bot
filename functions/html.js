@@ -1,20 +1,18 @@
-const axios = require("axios");
+const axios = require('axios');
 
-exports.toImage = async function (html, width, height, type="jpeg") {
-    
-    let image = await axios({
+exports.toImage = async function(html, width, height, type='jpeg') {
+    const image = await axios({
         method: 'post',
-        url: "http://localhost:3000/html",
+        url: 'http://localhost:3000/html',
         data: {
-            html: html, 
-            width: width, 
-            height: height,
+            html,
+            width,
+            height,
             imageFormat: type,
-            quality: 100
+            quality: 100,
         },
-        responseType: "stream"
-    })
-    
-    return image.data;
+        responseType: 'stream',
+    });
 
-}
+    return image.data;
+};
