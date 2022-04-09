@@ -199,7 +199,7 @@ async function assignRoles(message) {
     for (i = 0; i < roleCommands.length; i++) {
         const roleCommand = roleCommands[i].trim();
         const roleId = await database
-            .get_roleId(roleCommand, message.guild.id, type);
+            .getRoleId(roleCommand, message.guild.id, type);
         let role;
         if (roleId) {
             role = await message.guild.roles.fetch(roleId);
