@@ -116,7 +116,7 @@ async function welcome(member) {
         timestamp: member.joinedTimestamp,
     });
 
-    const welcomeMsg = await channel.send(embed);
+    const welcomeMsg = await channel.send({ embeds: [embed] });
     return welcomeMsg.url;
 }
 
@@ -153,7 +153,7 @@ async function logJoin(member, welcomeMsgPromise) {
 
     embed.addField('User ID', user.id, !!welcomeMsgUrl);
 
-    channel.send(embed);
+    channel.send({ embeds: [embed] });
 }
 
 const logLeave = async function(member) {
@@ -178,7 +178,7 @@ const logLeave = async function(member) {
         color: colours.leaveColour,
     });
 
-    channel.send(embed);
+    channel.send({ embeds: [embed] });
 };
 
 async function setJoinChannel(message, channelArg) {
