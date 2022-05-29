@@ -42,7 +42,7 @@ async function setReminder(message, args) {
     const startTimestamp = Date.now() / 1000; // seconds since 1970
 
     if (args.length < 4) {
-        message.channel.send('⚠ Please provide a reminder and a time.');
+        message.channel.send({ content: '⚠ Please provide a reminder and a time.' });
         return;
     }
 
@@ -50,13 +50,13 @@ async function setReminder(message, args) {
 
     let inPos = content.search(/(?<!\w)in(?!\w)/i);
     if (inPos < 0) {
-        message.channel.send('⚠ Please provide a time to set your reminder for.');
+        message.channel.send({ content: '⚠ Please provide a time to set your reminder for.' });
         return;
     }
 
     const toPos = content.search(/(?<!\w)to(?!\w)/i);
     if (toPos < 0) {
-        message.channel.send('⚠ Please provide content to be reminded of.');
+        message.channel.send({ content: '⚠ Please provide content to be reminded of.' });
         return;
     }
 
@@ -78,7 +78,7 @@ async function setReminder(message, args) {
     const seconds = timeString.match(/(\d+)\s*s(?:ec(?:ond)?s?)?/i);
 
     if (!(weeks || days || hours || minutes || seconds)) {
-        message.channel.send('⚠ Please provide a time to set your reminder for.');
+        message.channel.send({ content: '⚠ Please provide a time to set your reminder for.' });
         return;
     }
 
@@ -98,26 +98,26 @@ async function setReminder(message, args) {
     const timeDiff = remindTimestamp - startTimestamp;
 
     if (timeDiff < 10) {
-        message.channel.send('⚠ Reminder must be set more than 10 seconds into the future.');
+        message.channel.send({ content: '⚠ Reminder must be set more than 10 seconds into the future.' });
         return;
     }
 
     if (timeDiff > 157680000) {
-        message.channel.send('⚠ Reminder must be set less than 5 years into the future.');
+        message.channel.send({ content: '⚠ Reminder must be set less than 5 years into the future.' });
         return;
     }
 
     const lastID = await database
         .addReminder(author.id, remindContent, remindTimestamp, startTimestamp);
     if (!lastID) {
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send({ content: '⚠ Error occurred.' });
     } else {
         try {
-            await author.send(`🔔 You will be reminded in \`${remindTimeString}\` to "${remindContent}"`);
-            message.channel.send('Reminder set.');
+            await author.send({ content: `🔔 You will be reminded in \`${remindTimeString}\` to "${remindContent}"` });
+            message.channel.send({ content: 'Reminder set.' });
         } catch (e) {
             if (e.code == 50007) {
-                message.channel.send('⚠ I cannot send DMs to you. Please check your privacy settings and try again.');
+                message.channel.send({ content: '⚠ I cannot send DMs to you. Please check your privacy settings and try again.' });
                 database.removeReminder(lastID);
             }
         }
@@ -129,7 +129,7 @@ async function listReminders(message, args) {
     const reminders = await database.getUserReminders(author.id);
 
     if (reminders.length < 1) {
-        message.channel.send('⚠ You don\'t have any reminders set!');
+        message.channel.send({ content: '⚠ You don\'t have any reminders set!' });
         return;
     }
 
@@ -157,10 +157,10 @@ async function listReminders(message, args) {
         for (const page of pages) {
             await author.send(page);
         }
-        message.channel.send('A list of your notifications has been sent to your DMs.');
+        message.channel.send({ content: 'A list of your notifications has been sent to your DMs.' });
     } catch (e) {
         if (e.code == 50007) {
-            message.channel.send('⚠ I cannot send DMs to you. Please check your privacy settings and try again.');
+            message.channel.send({ content: '⚠ I cannot send DMs to you. Please check your privacy settings and try again.' });
         }
     }
 }
@@ -169,9 +169,9 @@ async function clearReminders(message, args) {
     const { author } = message;
     const changes = await database.clearUserReminders(author.id);
     if (!changes) {
-        message.channel.send('⚠ No reminders to remove.');
+        message.channel.send({ content: '⚠ No reminders to remove.' });
     } else {
-        message.channel.send('Reminders cleared.');
+        message.channel.send({ content: 'Reminders cleared.' });
     }
 }
 

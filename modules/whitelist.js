@@ -16,13 +16,13 @@ exports.onReady = async function() {
         whitelistChannel.messages.fetch({ limit: 100 }, true);
     }
 
-    for (const guild of Client.guilds.cache.array()) {
+    Client.guilds.cache.forEach(guild => {
         const guildEntry = serverSettings.getServer(guild.id);
         if (!guildEntry) { // << SERVER NOT WHITELISTED >> \\
             // await guild.leave();
             console.log(`[DRY RUN] LEFT ${guild.name} ${guild.id}`);
         }
-    }
+    })
 };
 
 exports.newGuild = async function(guild) {
@@ -155,7 +155,7 @@ exports.onReact = async function(reaction, user) {
             const currentWhitelistEntry = serverSettings.getServer(guildID);
             if (currentWhitelistEntry) {
                 await message.react('🗒️');
-                message.channel.send(`<@${message.author.id}> ${guildName ? `**${guildName}**` : 'Your submitted server'} is already whitelisted.`);
+                message.channel.send({ content: `<@${message.author.id}> ${guildName ? `**${guildName}**` : 'Your submitted server'} is already whitelisted.` });
                 break;
             }
 
@@ -169,7 +169,7 @@ exports.onReact = async function(reaction, user) {
             }
             await message.reactions.removeAll();
             message.react('✅');
-            message.channel.send(`<@${message.author.id}> ${guildName ? `**${guildName}**` : 'your submitted server'} has been whitelisted. You can now use this link to invite Haseul Bot: <https://haseulbot.xyz/invite>`);
+            message.channel.send({ content: `<@${message.author.id}> ${guildName ? `**${guildName}**` : 'your submitted server'} has been whitelisted. You can now use this link to invite Haseul Bot: <https://haseulbot.xyz/invite>` });
             break;
         case '❌':
             await message.reactions.removeAll();
@@ -178,7 +178,7 @@ exports.onReact = async function(reaction, user) {
         case '✏️':
             await message.reactions.removeAll();
             message.react('✏️');
-            message.channel.send(`<@${message.author.id}> please follow the provided instructions.`);
+            message.channel.send({ content: `<@${message.author.id}> please follow the provided instructions.` });
             break;
         }
     }
@@ -206,7 +206,7 @@ async function whitelistReact(message) {
                 const currentWhitelistEntry = serverSettings.getServer(guildID);
                 if (currentWhitelistEntry) {
                     await message.react('🗒️');
-                    message.channel.send(`<@${message.author.id}> ${guildName ? `**${guildName}**` : 'Your submitted server'} is already whitelisted.`);
+                    message.channel.send({ content: `<@${message.author.id}> ${guildName ? `**${guildName}**` : 'Your submitted server'} is already whitelisted.` });
                     return;
                 }
             }
@@ -221,7 +221,7 @@ async function whitelistReact(message) {
 async function whitelistServer(message, invLink) {
     const inviteMatch = invLink.match(/(?:\W|^)(?:https?\:\/\/)?discord(?:\.gg|\.com\/invite)\/(\S+)/);
     if (!inviteMatch) {
-        message.channel.send('⚠ Invalid invite link.');
+        message.channel.send({ content: '⚠ Invalid invite link.' });
         return;
     }
 
@@ -231,7 +231,7 @@ async function whitelistServer(message, invLink) {
         invite = await Client.fetchInvite(inviteCode);
     } catch (e) {
         console.error(e);
-        message.channel.send('⚠ Unable to fetch invite link');
+        message.channel.send({ content: '⚠ Unable to fetch invite link' });
         return;
     }
     const guild = invite.guild || invite.channel ?
@@ -240,13 +240,13 @@ async function whitelistServer(message, invLink) {
     const guildID = invite.guildID || guild ? guild.id : null;
     const guildName = guild ? guild.name : null;
     if (!guildID) {
-        message.channel.send('⚠ Unable to fetch guild ID from invite link.');
+        message.channel.send({ content: '⚠ Unable to fetch guild ID from invite link.' });
         return;
     }
 
     const currentWhitelistEntry = serverSettings.getServer(guildID);
     if (currentWhitelistEntry) {
-        message.channel.send('⚠ This server is already whitelisted.');
+        message.channel.send({ content: '⚠ This server is already whitelisted.' });
         return;
     }
 
@@ -254,10 +254,10 @@ async function whitelistServer(message, invLink) {
         await serverSettings.initGuild(guildID);
     } catch (e) {
         console.error(e);
-        message.channel.send('⚠ Error occurred whitelisting server');
+        message.channel.send({ content: '⚠ Error occurred whitelisting server' });
         return;
     }
-    message.channel.send(`${guildName ? `**${guildName}**` : `<${invLink}>`} has been whitelisted.`);
+    message.channel.send({ content: `${guildName ? `**${guildName}**` : `<${invLink}>`} has been whitelisted.` });
 }
 
 async function setWhitelistChannel(message, channelArg) {
@@ -271,37 +271,37 @@ async function setWhitelistChannel(message, channelArg) {
     }
 
     if (!channelID) {
-        message.channel.send('⚠ Invalid channel or channel ID.');
+        message.channel.send({ content: '⚠ Invalid channel or channel ID.' });
         return;
     }
 
     const channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send('⚠ Channel doesn\'t exist in this server.');
+        message.channel.send({ content: '⚠ Channel doesn\'t exist in this server.' });
         return;
     }
 
     const member = await resolveMember(guild, Client.user.id);
     if (!member) {
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send({ content: '⚠ Error occurred.' });
         return;
     }
 
     const botPerms = channel.permissionsFor(member);
     if (!botPerms.has('VIEW_CHANNEL', true)) {
-        message.channel.send('⚠ I cannot see this channel!');
+        message.channel.send({ content: '⚠ I cannot see this channel!' });
         return;
     }
     if (!botPerms.has('SEND_MESSAGES', true)) {
-        message.channel.send('⚠ I cannot send messages to this channel!');
+        message.channel.send({ content: '⚠ I cannot send messages to this channel!' });
         return;
     }
 
     await clientSettings.set('whitelistChan', channelID);
-    message.channel.send(`Whitelist channel set to <#${channelID}>.`);
+    message.channel.send({ content: `Whitelist channel set to <#${channelID}>.` });
 }
 
 async function toggleWhitelist(message) {
     const tog = await clientSettings.toggle('whitelistOn');
-    message.channel.send(`Whitelist turned ${tog ? 'on':'off'}.`);
+    message.channel.send({ content: `Whitelist turned ${tog ? 'on':'off'}.` });
 }

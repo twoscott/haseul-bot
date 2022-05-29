@@ -28,7 +28,7 @@ async function colour(message, args) {
     let rgb = colour.match(/(^\d{1,3})\s*,?\s*(\d{1,3})\s*,?\s*(\d{1,3}$)/i);
 
     if (!rgb && !hex) {
-        message.channel.send('⚠ Please provide a valid colour hexcode or RGB values.');
+        message.channel.send({ content: '⚠ Please provide a valid colour hexcode or RGB values.' });
         return;
     }
 
@@ -44,13 +44,13 @@ async function colour(message, args) {
 
     const hexValue = parseInt(hex, 16);
     if (hexValue < 0 || hexValue > 16777215) {
-        message.channel.send('⚠ Please provide a valid colour hexcode or RGB values.');
+        message.channel.send({ content: '⚠ Please provide a valid colour hexcode or RGB values.' });
         return;
     }
 
     for (const component of rgb) {
         if (component < 0 || component > 255) {
-            message.channel.send('⚠ Please provide a valid colour hexcode or RGB values.');
+            message.channel.send({ content: '⚠ Please provide a valid colour hexcode or RGB values.' });
             return;
         }
     }

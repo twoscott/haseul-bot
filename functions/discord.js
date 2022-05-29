@@ -6,10 +6,7 @@ exports.checkPermissions = function(member, permissions, checkAdmin=true) {
         const err = new Error('Invalid member to check permissions for');
         console.error(err);
     } else {
-        const hasPerms = permissions
-            .some(p => member
-                .hasPermission(p, { checkAdmin, checkOwner: true }));
-        return hasPerms;
+        return member.permissions.any(permissions, checkAdmin);
     }
 };
 
@@ -20,7 +17,7 @@ exports.getMemberNumber = async function(member) {
     } else {
         let members = await member.guild.members.fetch().catch(console.error);
         if (members) {
-            members = members.array();
+            members = members.values();
             members = members
                 .sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
             const memberNumber = members.findIndex(e => e.id == member.id) + 1;
@@ -96,13 +93,12 @@ exports.sendAndDelete = async function(channel, options, timeout=1000) {
 };
 
 exports.withTyping = async function(channel, task, args) {
-    if (!channel || (channel.type !== 'text' && channel.type !== 'news')) {
+    if (!channel || (channel.type !== 'GUILD_TEXT' && channel.type !== 'GUILD_NEWS')) {
         const err = new Error('Invalid channel to type in');
         console.error(err);
     } else {
-        channel.startTyping();
+        channel.sendTyping();
         const rv = await task(...args).catch(console.error);
-        channel.stopTyping();
         return rv;
     }
 };

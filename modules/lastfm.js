@@ -81,7 +81,7 @@ exports.onCommand = async function(message, args) {
             break;
 
         case 'help':
-            channel.send('Help with Last.fm can be found here: https://haseulbot.xyz/#last.fm');
+            channel.send({ content: 'Help with Last.fm can be found here: https://haseulbot.xyz/#last.fm' });
             break;
 
         default:
@@ -112,7 +112,7 @@ exports.onCommand = async function(message, args) {
 
 async function setLfUser(message, username) {
     if (!username) {
-        message.channel.send('⚠ Please provide a Last.fm username: `.fm set <username>`.');
+        message.channel.send({ content: '⚠ Please provide a Last.fm username: `.fm set <username>`.' });
     } else {
         try {
             const response = await lastfm.get('/', { params: { method: 'user.getinfo', user: username } });
@@ -121,19 +121,19 @@ async function setLfUser(message, username) {
             if (e.response) {
                 console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
                 if (e.response.status >= 500) {
-                    message.channel.send('⚠ Server Error. Last.fm is likely down or experiencing issues.');
+                    message.channel.send({ content: '⚠ Server Error. Last.fm is likely down or experiencing issues.' });
                 } else {
-                    message.channel.send('⚠ Error occurred fetching Last.fm data.');
+                    message.channel.send({ content: '⚠ Error occurred fetching Last.fm data.' });
                 }
             } else {
                 console.error(e);
-                message.channel.send('⚠ Unknown error occurred.');
+                message.channel.send({ content: '⚠ Unknown error occurred.' });
             }
             return;
         }
 
         await database.setLfUser(message.author.id, username);
-        message.channel.send(`Last.fm username set to ${username}.`);
+        message.channel.send({ content: `Last.fm username set to ${username}.` });
     }
 }
 
@@ -161,7 +161,7 @@ async function lfRecents(message, args, limit) {
         username = await database.getLfUser(message.author.id);
     }
     if (!username) {
-        message.channel.send('⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`.');
+        message.channel.send({ content: '⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`.' });
         return;
     }
 
@@ -174,20 +174,20 @@ async function lfRecents(message, args, limit) {
         if (e.response) {
             console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
             if (e.response.status >= 500) {
-                message.channel.send('⚠ Server Error. Last.fm is likely down or experiencing issues.');
+                message.channel.send({ content: '⚠ Server Error. Last.fm is likely down or experiencing issues.' });
             } else {
-                message.channel.send('⚠ Error occurred fetching Last.fm data.');
+                message.channel.send({ content: '⚠ Error occurred fetching Last.fm data.' });
             }
         } else {
             console.error(e);
-            message.channel.send('⚠ Unknown error occurred.');
+            message.channel.send({ content: '⚠ Unknown error occurred.' });
         }
         return;
     }
 
     let tracks = response.data.recenttracks.track;
     if (!tracks || tracks.length < 1) {
-        message.channel.send(`⚠ ${username} hasn't listened to any music.`);
+        message.channel.send({ content: `⚠ ${username} hasn't listened to any music.` });
         return;
     }
     if (!Array.isArray(tracks)) {
@@ -254,7 +254,7 @@ async function recent1Embed(message, track, lfUser, playCount, loved) {
         embed.timestamp = new Date(0).setSeconds(track.date.uts);
     }
 
-    message.channel.send({ embed });
+    message.channel.send({ embeds: [embed] });
 }
 
 async function recent2Embed(message, tracks, lfUser, playCount) {
@@ -285,7 +285,7 @@ async function recent2Embed(message, tracks, lfUser, playCount) {
         embed.timestamp = new Date(0).setSeconds(tracks[0].date.uts);
     }
 
-    message.channel.send({ embed });
+    message.channel.send({ embeds: [embed] });
 }
 
 async function recentListPages(message, tracks, lfUser) {
@@ -369,7 +369,7 @@ async function lfTopMedia(message, args, type) {
         username = await database.getLfUser(message.author.id);
     }
     if (!username) {
-        message.channel.send('⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.');
+        message.channel.send({ content: '⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm <username>` to get recent tracks for a specific Last.fm user.' });
         return;
     }
 
@@ -386,13 +386,13 @@ async function lfTopMedia(message, args, type) {
         if (e.response) {
             console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
             if (e.response.status >= 500) {
-                message.channel.send('⚠ Server Error. Last.fm is likely down or experiencing issues.');
+                message.channel.send({ content: '⚠ Server Error. Last.fm is likely down or experiencing issues.' });
             } else {
-                message.channel.send('⚠ Error occurred fetching Last.fm data.');
+                message.channel.send({ content: '⚠ Error occurred fetching Last.fm data.' });
             }
         } else {
             console.error(e);
-            message.channel.send('⚠ Unknown error occurred.');
+            message.channel.send({ content: '⚠ Unknown error occurred.' });
         }
         return;
     }
@@ -400,7 +400,7 @@ async function lfTopMedia(message, args, type) {
     const lfUser = response.data[`top${type}s`]['@attr'].user;
     const collection = response.data[`top${type}s`][type];
     if (!collection || collection.length < 1) {
-        message.channel.send(`⚠ ${lfUser} hasn't listened to any music during this time.`);
+        message.channel.send({ content: `⚠ ${lfUser} hasn't listened to any music during this time.` });
         return;
     }
 
@@ -459,7 +459,7 @@ async function lfProfile(message, username) {
         username = await database.getLfUser(message.author.id);
     }
     if (!username) {
-        message.channel.send('⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm profile <username>` to see the Last.fm profile of a specific user.');
+        message.channel.send({ content: '⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fm profile <username>` to see the Last.fm profile of a specific user.' });
         return;
     }
 
@@ -470,13 +470,13 @@ async function lfProfile(message, username) {
         if (e.response) {
             console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
             if (e.response.status >= 500) {
-                message.channel.send('⚠ Server Error. Last.fm is likely down or experiencing issues.');
+                message.channel.send({ content: '⚠ Server Error. Last.fm is likely down or experiencing issues.' });
             } else {
-                message.channel.send('⚠ Error occurred fetching Last.fm data.');
+                message.channel.send({ content: '⚠ Error occurred fetching Last.fm data.' });
             }
         } else {
             console.error(e);
-            message.channel.send('⚠ Unknown error occurred.');
+            message.channel.send({ content: '⚠ Unknown error occurred.' });
         }
         return;
     }
@@ -507,13 +507,13 @@ async function lfProfile(message, username) {
         if (e.response) {
             console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
             if (e.response.status >= 500) {
-                message.channel.send('⚠ Server Error. Last.fm is likely down or experiencing issues.');
+                message.channel.send({ content: '⚠ Server Error. Last.fm is likely down or experiencing issues.' });
             } else {
-                message.channel.send('⚠ Error occurred fetching Last.fm data.');
+                message.channel.send({ content: '⚠ Error occurred fetching Last.fm data.' });
             }
         } else {
             console.error(e);
-            message.channel.send('⚠ Unknown error occurred.');
+            message.channel.send({ content: '⚠ Unknown error occurred.' });
         }
         return;
     }
@@ -532,7 +532,7 @@ async function lfProfile(message, username) {
         ],
     });
 
-    message.channel.send({ embed });
+    message.channel.send({ embeds: [embed] });
 }
 
 async function lfAvatar(message, username) {
@@ -540,7 +540,7 @@ async function lfAvatar(message, username) {
         username = await database.getLfUser(message.author.id);
     }
     if (!username) {
-        message.channel.send('⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.');
+        message.channel.send({ content: '⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.' });
         return;
     }
 
@@ -551,13 +551,13 @@ async function lfAvatar(message, username) {
         if (e.response) {
             console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
             if (e.response.status >= 500) {
-                message.channel.send('⚠ Server Error. Last.fm is likely down or experiencing issues.');
+                message.channel.send({ content: '⚠ Server Error. Last.fm is likely down or experiencing issues.' });
             } else {
-                message.channel.send('⚠ Error occurred fetching Last.fm data.');
+                message.channel.send({ content: '⚠ Error occurred fetching Last.fm data.' });
             }
         } else {
             console.error(e);
-            message.channel.send('⚠ Unknown error occurred.');
+            message.channel.send({ content: '⚠ Unknown error occurred.' });
         }
         return;
     }
@@ -572,13 +572,13 @@ async function lfAvatar(message, username) {
         if (e.response) {
             console.error(Error(`Last.fm dp error: ${e.response.status} - ${e.response.statusText}`));
             if (e.response.status >= 500) {
-                message.channel.send('⚠ Server Error. Last.fm is likely down or experiencing issues.');
+                message.channel.send({ content: '⚠ Server Error. Last.fm is likely down or experiencing issues.' });
             } else {
-                message.channel.send('⚠ Error occurred fetching Last.fm data.');
+                message.channel.send({ content: '⚠ Error occurred fetching Last.fm data.' });
             }
         } else {
             console.error(e);
-            message.channel.send('⚠ Unknown error occurred.');
+            message.channel.send({ content: '⚠ Unknown error occurred.' });
         }
         return;
     }
@@ -596,7 +596,7 @@ async function lfAvatar(message, username) {
         .setColor(0xb90000)
         .setFooter(`Type: ${imgType.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${imgSize}MB`);
 
-    message.channel.send({ embed });
+    message.channel.send({ embeds: [embed] });
 }
 
 async function lfYoutube(message, username) {
@@ -604,7 +604,7 @@ async function lfYoutube(message, username) {
         username = await database.getLfUser(message.author.id);
     }
     if (!username) {
-        message.channel.send('⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.');
+        message.channel.send({ content: '⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set <username>`, alternatively, use `.fmyt <username>` to get a youtube video of the most recent song listened to by a specific user.' });
         return;
     }
 
@@ -615,20 +615,20 @@ async function lfYoutube(message, username) {
         if (e.response) {
             console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
             if (e.response.status >= 500) {
-                message.channel.send('⚠ Server Error. Last.fm is likely down or experiencing issues.');
+                message.channel.send({ content: '⚠ Server Error. Last.fm is likely down or experiencing issues.' });
             } else {
-                message.channel.send('⚠ Error occurred fetching Last.fm data.');
+                message.channel.send({ content: '⚠ Error occurred fetching Last.fm data.' });
             }
         } else {
             console.error(e);
-            message.channel.send('⚠ Unknown error occurred.');
+            message.channel.send({ content: '⚠ Unknown error occurred.' });
         }
         return;
     }
 
     const track = response.data.recenttracks.track[0];
     if (!track.artist) {
-        message.channel.send(`⚠ ${username} hasn't listened to any music.`);
+        message.channel.send({ content: `⚠ ${username} hasn't listened to any music.` });
         return;
     }
     const query = `${track.artist['#text']} - ${track.name}`;
@@ -636,16 +636,16 @@ async function lfYoutube(message, username) {
 
     const video = await media.ytVidQuery(query);
     if (!video) {
-        message.channel.send(`⚠ Couldn't find a YouTube video for \`${query}\``);
+        message.channel.send({ content: `⚠ Couldn't find a YouTube video for \`${query}\`` });
     } else {
-        message.channel.send(`${np ? 'Now Playing' : 'Last Played'}: https://youtu.be/${video}`);
+        message.channel.send({ content: `${np ? 'Now Playing' : 'Last Played'}: https://youtu.be/${video}` });
     }
 }
 
 async function lfChart(message, args, type = 'album') {
     const username = await database.getLfUser(message.author.id);
     if (!username) {
-        message.channel.send('⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set {username}`');
+        message.channel.send({ content: '⚠ No Last.fm username linked to your account. Please link a username to your account using `.fm set {username}`' });
         return;
     }
 
@@ -679,13 +679,13 @@ async function lfChart(message, args, type = 'album') {
             if (e.response) {
                 console.error(Error(`Last.fm error: ${e.response.status} - ${e.response.statusText}`));
                 if (e.response.status >= 500) {
-                    message.channel.send('⚠ Server Error. Last.fm is likely down or experiencing issues.');
+                    message.channel.send({ content: '⚠ Server Error. Last.fm is likely down or experiencing issues.' });
                 } else {
-                    message.channel.send('⚠ Error occurred fetching Last.fm data.');
+                    message.channel.send({ content: '⚠ Error occurred fetching Last.fm data.' });
                 }
             } else {
                 console.error(e);
-                message.channel.send('⚠ Unknown error occurred.');
+                message.channel.send({ content: '⚠ Unknown error occurred.' });
             }
             return;
         }
@@ -697,7 +697,7 @@ async function lfChart(message, args, type = 'album') {
     }
 
     if (!collection || collection.length < 1) {
-        message.channel.send(`⚠ ${username} hasn't listened to any music during this time.`);
+        message.channel.send({ content: `⚠ ${username} hasn't listened to any music during this time.` });
         return;
     }
 

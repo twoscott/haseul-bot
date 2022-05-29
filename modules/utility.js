@@ -14,11 +14,11 @@ exports.onCommand = async function(message, args) {
     switch (args[0]) {
     case 'github':
     case 'git':
-        message.channel.send('https://github.com/twoscott/haseul-bot');
+        message.channel.send({ content: 'https://github.com/twoscott/haseul-bot' });
         break;
     case 'discord':
     case 'invite':
-        message.channel.send('https://discord.gg/w4q5qux');
+        message.channel.send({ content: 'https://discord.gg/w4q5qux' });
         break;
     case 'translate':
     case 'trans':
@@ -26,11 +26,11 @@ exports.onCommand = async function(message, args) {
         withTyping(channel, translate, [message, args]);
         break;
     case 'help':
-        message.channel.send('Commands can be found here: https://haseulbot.xyz/');
+        message.channel.send({ content: 'Commands can be found here: https://haseulbot.xyz/' });
         break;
     case 'ping':
         const start = Date.now();
-        message.channel.send('Response: ').then(msg => {
+        message.channel.send({ content: 'Response: ' }).then(msg => {
             const end = Date.now();
             const ms = end - start;
             msg.edit(`Response: \`${ms}ms\``);
@@ -95,11 +95,11 @@ async function translate(message, args) {
     }
 
     if (!targetLangCode) {
-        message.channel.send('⚠ Invalid language or language code given.');
+        message.channel.send({ content: '⚠ Invalid language or language code given.' });
         return;
     }
     if (!text) {
-        message.channel.send('⚠ No text given to be translated.');
+        message.channel.send({ content: '⚠ No text given to be translated.' });
         return;
     }
 
@@ -117,5 +117,5 @@ async function translate(message, args) {
         sourceLangCode;
     const targetLanguage = translations[0].to;
 
-    message.channel.send(`**${sourceLanguage}-${targetLanguage}** Translation: ${translations[0].text}`);
+    message.channel.send({ content: `**${sourceLanguage}-${targetLanguage}** Translation: ${translations[0].text}` });
 }

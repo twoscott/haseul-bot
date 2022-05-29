@@ -80,7 +80,7 @@ async function twitterLoop() {
 
                     const message = `https://twitter.com/${user.screen_name}/status/${idString}${mentionRoleID ? ` <@&${mentionRoleID}>`:''}`;
 
-                    channel.send(message/* , options*/).catch(err => {});
+                    channel.send(message).catch(err => {});
                 }
             }
         }

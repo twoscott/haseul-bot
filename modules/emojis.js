@@ -18,7 +18,7 @@ exports.onCommand = async function(message, args) {
             withTyping(channel, searchEmojis, [message, args[2]]);
             break;
         case 'help':
-            channel.send('Help with emojis can be found here: https://haseulbot.xyz/#emoji');
+            channel.send({ content: 'Help with emojis can be found here: https://haseulbot.xyz/#emoji' });
             break;
         default:
             withTyping(channel, largeEmoji, [message, args]);
@@ -39,10 +39,10 @@ exports.onMention = async function(message, args) {
 
 async function listEmojis(message) {
     const { guild } = message;
-    let emojis = guild.emojis.cache.array();
+    let emojis = guild.emojis.cache.values();
 
     if (emojis.length < 1) {
-        message.channel.send('⚠ There are no emojis added to this server.');
+        message.channel.send({ content: '⚠ There are no emojis added to this server.' });
         return;
     }
 
@@ -87,7 +87,7 @@ async function listEmojis(message) {
 
 async function searchEmojis(message, query) {
     if (!query) {
-        message.channel.send('⚠ Please provide a search query.');
+        message.channel.send({ content: '⚠ Please provide a search query.' });
         return;
     }
 
@@ -97,7 +97,7 @@ async function searchEmojis(message, query) {
         .filter(x => x.name.toLowerCase().includes(query.toLowerCase()));
 
     if (emojis.length < 1) {
-        message.channel.send(`⚠ No results were found searching for "${query}".`);
+        message.channel.send({ content: `⚠ No results were found searching for "${query}".` });
         return;
     }
 
@@ -148,7 +148,7 @@ async function searchEmojis(message, query) {
 
 async function largeEmoji(message, args) {
     if (args[0] == 'emoji' && args.length < 2) {
-        message.channel.send('⚠ Please provide an emoji to enlarge.');
+        message.channel.send({ content: '⚠ Please provide an emoji to enlarge.' });
         return;
     } else if (message.mentions.length < 1 || args.length < 2) {
         return;
@@ -158,7 +158,7 @@ async function largeEmoji(message, args) {
 
     if (!emojiMatch) {
         if (args[0] == 'emoji') {
-            message.channel.send('⚠ Invalid emoji provided!');
+            message.channel.send({ content: '⚠ Invalid emoji provided!' });
         }
         return;
     }
@@ -179,6 +179,6 @@ async function largeEmoji(message, args) {
         footer: { text: `Type: ${imageType.toUpperCase()}  |  Size: ${imageSize}KB` },
     });
 
-    message.channel.send({ embed });
+    message.channel.send({ embeds: [embed] });
     message.channel.stopTyping();
 }

@@ -84,7 +84,7 @@ exports.onCommand = async function(message, args) {
             break;
         case 'help':
         default:
-            channel.send('Help with notifications can be found here: https://haseulbot.xyz/#notifications');
+            channel.send({ content: 'Help with notifications can be found here: https://haseulbot.xyz/#notifications' });
             break;
         }
         break;
@@ -188,7 +188,7 @@ async function notify(message) {
         const alert = `💬 **${author.username}** mentioned \`${keywords}\` in **\`#${channel.name}\`**`;
 
         try {
-            await member.send(alert, { embed });
+            await member.send({content: alert, embeds: [embed]});
         } catch (e) {
             if (e.code == 50007) { // Cannot send messages to this user
                 database.clearGlobalNotifs(userID);
@@ -201,7 +201,7 @@ async function notify(message) {
 
 async function addNotification(message, args, global) {
     if (args.length < (global ? 4 : 3)) {
-        message.channel.send('⚠ Please specify a key word or phrase to add.');
+        message.channel.send({ content: '⚠ Please specify a key word or phrase to add.' });
         return;
     }
 
@@ -219,7 +219,7 @@ async function addNotification(message, args, global) {
     }
 
     if (keyword.length > 128) {
-        message.channel.send('⚠ Keywords must not exceed 128 character in length.');
+        message.channel.send({ content: '⚠ Keywords must not exceed 128 character in length.' });
         return;
     }
 
@@ -233,16 +233,16 @@ async function addNotification(message, args, global) {
             guild.id, author.id, keyword, keyrgx, type,
         );
     if (!addedNotif) {
-        message.channel.send('⚠ Notification with this keyword already added.');
+        message.channel.send({ content: '⚠ Notification with this keyword already added.' });
         return;
     }
 
     try {
-        await author.send(`You will now be notified when \`${keyword}\` is mentioned ${global ? 'globally' : `in \`${guild.name}\``} with \`${type}\` search mode.`);
-        message.channel.send('Notification added.');
+        await author.send({ content: `You will now be notified when \`${keyword}\` is mentioned ${global ? 'globally' : `in \`${guild.name}\``} with \`${type}\` search mode.` });
+        message.channel.send({ content: 'Notification added.' });
     } catch (e) {
         if (e.code == 50007) {
-            message.channel.send('⚠ I cannot send DMs to you. Please check your privacy settings and try again.');
+            message.channel.send({ content: '⚠ I cannot send DMs to you. Please check your privacy settings and try again.' });
             if (global) {
                 database.removeGlobalNotif(author.id, keyword);
             } else {
@@ -254,7 +254,7 @@ async function addNotification(message, args, global) {
 
 async function removeNotification(message, args, global) {
     if (args.length < (global ? 4 : 3)) {
-        message.channel.send('⚠ Please specify a key word or phrase to remove.');
+        message.channel.send({ content: '⚠ Please specify a key word or phrase to remove.' });
         return;
     }
 
@@ -266,17 +266,17 @@ async function removeNotification(message, args, global) {
         await database.removeGlobalNotif(author.id, keyphrase) :
         await database.removeLocalNotif(guild.id, author.id, keyphrase);
     if (!removed) {
-        author.send(`Notification \`${keyphrase}\` does not exist. Please check for spelling errors.`).catch(() => {});
-        message.channel.send('⚠ Notification does not exist.');
+        author.send({ content: `Notification \`${keyphrase}\` does not exist. Please check for spelling errors.` }).catch(() => {});
+        message.channel.send({ content: '⚠ Notification does not exist.' });
         return;
     }
 
     try {
-        await author.send(`You will no longer be notified when \`${keyphrase}\` is mentioned${!global ? ` in \`${guild.name}\`.` : '.'}`);
-        message.channel.send('Notification removed.');
+        await author.send({ content: `You will no longer be notified when \`${keyphrase}\` is mentioned${!global ? ` in \`${guild.name}\`.` : '.'}` });
+        message.channel.send({ content: 'Notification removed.' });
     } catch (e) {
         if (e.code == 50007) {
-            message.channel.send('⚠ I cannot send DMs to you. Please check your privacy settings and try again.');
+            message.channel.send({ content: '⚠ I cannot send DMs to you. Please check your privacy settings and try again.' });
         }
     }
 }
@@ -299,7 +299,7 @@ async function listNotifications(message, global) {
         await database.getLocalNotifs(guild.id, author.id);
 
     if (notifs.length < 1) {
-        message.channel.send(`⚠ You don't have any notifications${!global ? ` in ${message.guild.name}` : ''}!`);
+        message.channel.send({ content: `⚠ You don't have any notifications${!global ? ` in ${message.guild.name}` : ''}!` });
         return;
     }
 
@@ -325,10 +325,10 @@ async function listNotifications(message, global) {
         for (const page of pages) {
             await author.send(page);
         }
-        message.channel.send('A list of your notifications has been sent to your DMs.');
+        message.channel.send({ content: 'A list of your notifications has been sent to your DMs.' });
     } catch (e) {
         if (e.code == 50007) {
-            message.channel.send('⚠ I cannot send DMs to you. Please check your privacy settings and try again.');
+            message.channel.send({ content: '⚠ I cannot send DMs to you. Please check your privacy settings and try again.' });
         }
     }
 }
@@ -339,7 +339,7 @@ async function ignoreChannel(message, args) {
     if (args.length >= 1) {
         let channelId = args[0].match(/<?#?!?(\d+)>?/);
         if (!channelId) {
-            message.channel.send('⚠ Invalid channel or channel ID.');
+            message.channel.send({ content: '⚠ Invalid channel or channel ID.' });
             return;
         }
         channelId = channelId[1];
@@ -347,11 +347,11 @@ async function ignoreChannel(message, args) {
     }
 
     if (!channel) {
-        message.channel.send('⚠ Channel doesn\'t exist in this server.');
+        message.channel.send({ content: '⚠ Channel doesn\'t exist in this server.' });
         return;
     }
     if (channel.type !== 'text' && channel.type !== 'news') {
-        message.channel.send('⚠ Channel must be a text channel.');
+        message.channel.send({ content: '⚠ Channel must be a text channel.' });
         return;
     }
 
@@ -369,5 +369,5 @@ async function ignoreServer(message) {
 
 async function toggleDnD(message) {
     const dnd = await database.toggleDnD(message.author.id);
-    message.channel.send(`Do not disturb turned ${dnd ? 'on':'off'}.`);
+    message.channel.send({ content: `Do not disturb turned ${dnd ? 'on':'off'}.` });
 }

@@ -32,7 +32,7 @@ exports.onCommand = async function(message, args) {
             }
             break;
         default:
-            message.channel.send('Help with message logs can be found here: https://haseulbot.xyz/#logs');
+            message.channel.send({ content: 'Help with message logs can be found here: https://haseulbot.xyz/#logs' });
             break;
         }
         break;
@@ -90,7 +90,7 @@ async function logDeletedMessage(message) {
         embed.addField('User ID', author.id);
     }
 
-    channel.send({ embed });
+    channel.send({ embeds: [embed] });
 }
 
 async function logEditedMessage(oldMessage, newMessage) {
@@ -120,7 +120,7 @@ async function logEditedMessage(oldMessage, newMessage) {
 
     embed.addField('Message Link', `[View Message](${newMessage.url})`, false);
 
-    channel.send({ embed });
+    channel.send({ embeds: [embed] });
 }
 
 async function setMsgLogsChannel(message, channelArg) {
@@ -134,37 +134,37 @@ async function setMsgLogsChannel(message, channelArg) {
     }
 
     if (!channelID) {
-        message.channel.send('⚠ Invalid channel or channel ID.');
+        message.channel.send({ content: '⚠ Invalid channel or channel ID.' });
         return;
     }
 
     const channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send('⚠ Channel doesn\'t exist in this server.');
+        message.channel.send({ content: '⚠ Channel doesn\'t exist in this server.' });
         return;
     }
 
     const member = await resolveMember(guild, Client.user.id);
     if (!member) {
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send({ content: '⚠ Error occurred.' });
         return;
     }
 
     const botPerms = channel.permissionsFor(member);
     if (!botPerms.has('VIEW_CHANNEL', true)) {
-        message.channel.send('⚠ I cannot see this channel!');
+        message.channel.send({ content: '⚠ I cannot see this channel!' });
         return;
     }
     if (!botPerms.has('SEND_MESSAGES', true)) {
-        message.channel.send('⚠ I cannot send messages to this channel!');
+        message.channel.send({ content: '⚠ I cannot send messages to this channel!' });
         return;
     }
 
     await serverSettings.set(message.guild.id, 'msgLogsChan', channelID);
-    message.channel.send(`Message logs channel set to <#${channelID}>.`);
+    message.channel.send({ content: `Message logs channel set to <#${channelID}>.` });
 }
 
 async function toggleMsgLogs(message) {
     const tog = await serverSettings.toggle(message.guild.id, 'msgLogsOn');
-    message.channel.send(`Message logs turned ${tog ? 'on':'off'}.`);
+    message.channel.send({ content: `Message logs turned ${tog ? 'on':'off'}.` });
 }

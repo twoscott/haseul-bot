@@ -42,7 +42,7 @@ exports.onCommand = async function(message, args) {
 
 exports.onMention = async function(message, args) {
     if (args.length == 1) {
-        message.channel.send(`Prefix: \`${getPrefix(message.guild.id)}\``);
+        message.channel.send({ content: `Prefix: \`${getPrefix(message.guild.id)}\`` });
     }
 };
 
@@ -54,7 +54,7 @@ async function botInfo(message) {
         stat = fs.readFileSync(`/proc/${process.pid}/stat`);
     } catch (e) {
         console.error(Error(e));
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send({ content: '⚠ Error occurred.' });
         return;
     }
     const statArray = stat.toString().split(/(?<!\(\w+)\s(?!\w+\))/i);
@@ -63,7 +63,7 @@ async function botInfo(message) {
 
     const botMember = await resolveMember(guild, Client.user.id);
     if (!botMember) {
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send({ content: '⚠ Error occurred.' });
         return;
     }
     const uptime = getDelta(Client.uptime, 'days');
@@ -102,7 +102,7 @@ async function botInfo(message) {
         footer: { text: `Type ${getPrefix(message.guild.id)}help for help with ${Client.user.username}` },
     });
 
-    message.channel.send({ embed });
+    message.channel.send({ embeds: [embed] });
 }
 
 async function cacheStats(message) {
@@ -113,7 +113,7 @@ async function cacheStats(message) {
         stat = fs.readFileSync(`/proc/${process.pid}/stat`);
     } catch (e) {
         console.error(Error(e));
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send({ content: '⚠ Error occurred.' });
         return;
     }
     const statArray = stat.toString().split(/(?<!\(\w+)\s(?!\w+\))/i);
@@ -122,7 +122,7 @@ async function cacheStats(message) {
 
     const botMember = await resolveMember(guild, Client.user.id);
     if (!botMember) {
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send({ content: '⚠ Error occurred.' });
         return;
     }
 
@@ -165,11 +165,11 @@ async function cacheStats(message) {
         ],
     });
 
-    message.channel.send({ embed });
+    message.channel.send({ embeds: [embed] });
 }
 
 async function serverList(message) {
-    let guildString = Client.guilds.cache.array().sort((a, b) => b.memberCount - a.memberCount).map(guild => `${guild.name} (${guild.id}) (${guild.memberCount} members)`).join('\n');
+    let guildString = Client.guilds.cache.values().sort((a, b) => b.memberCount - a.memberCount).map(guild => `${guild.name} (${guild.id}) (${guild.memberCount} members)`).join('\n');
 
     const descriptions = [];
     while (guildString.length > 2048 || guildString.split('\n').length > 25) {

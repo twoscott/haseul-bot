@@ -58,7 +58,7 @@ async function leaderboard(message, local) {
         await database.getAllGlobalXp();
 
     if (ranks.length < 1) {
-        message.channel.send(`⚠ Nobody${local ? ' on this server ':' '}currently has any xp!`);
+        message.channel.send({ content: `⚠ Nobody${local ? ' on this server ':' '}currently has any xp!` });
         return;
     }
 

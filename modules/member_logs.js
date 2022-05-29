@@ -42,7 +42,7 @@ exports.onCommand = async function(message, args) {
             }
             break;
         default:
-            message.channel.send('Help with member logs can be found here: https://haseulbot.xyz/#logs');
+            message.channel.send({ content: 'Help with member logs can be found here: https://haseulbot.xyz/#logs' });
             break;
         }
         break;
@@ -192,39 +192,39 @@ async function setJoinChannel(message, channelArg) {
     }
 
     if (!channelID) {
-        message.channel.send('⚠ Invalid channel or channel ID.');
+        message.channel.send({ content: '⚠ Invalid channel or channel ID.' });
         return;
     }
 
     const channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send('⚠ Channel doesn\'t exist in this server.');
+        message.channel.send({ content: '⚠ Channel doesn\'t exist in this server.' });
         return;
     }
 
     const member = await resolveMember(guild, Client.user.id);
     if (!member) {
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send({ content: '⚠ Error occurred.' });
         return;
     }
 
     const botPerms = channel.permissionsFor(member);
     if (!botPerms.has('VIEW_CHANNEL', true)) {
-        message.channel.send('⚠ I cannot see this channel!');
+        message.channel.send({ content: '⚠ I cannot see this channel!' });
         return;
     }
     if (!botPerms.has('SEND_MESSAGES', true)) {
-        message.channel.send('⚠ I cannot send messages to this channel!');
+        message.channel.send({ content: '⚠ I cannot send messages to this channel!' });
         return;
     }
 
     await serverSettings.set(message.guild.id, 'joinLogsChan', channelID);
-    message.channel.send(`Join logs channel set to <#${channelID}>.`);
+    message.channel.send({ content: `Join logs channel set to <#${channelID}>.` });
 }
 
 async function toggleJoin(message) {
     const tog = await serverSettings.toggle(message.guild.id, 'joinLogsOn');
-    message.channel.send(`Join logs turned ${tog ? 'on':'off'}.`);
+    message.channel.send({ content: `Join logs turned ${tog ? 'on':'off'}.` });
 }
 
 async function setWelcomeChannel(message, channelArg) {
@@ -238,48 +238,48 @@ async function setWelcomeChannel(message, channelArg) {
     }
 
     if (!channelID) {
-        message.channel.send('⚠ Invalid channel or channel ID.');
+        message.channel.send({ content: '⚠ Invalid channel or channel ID.' });
         return;
     }
 
     const channel = guild.channels.cache.get(channelID);
     if (!channel) {
-        message.channel.send('⚠ Channel doesn\'t exist in this server.');
+        message.channel.send({ content: '⚠ Channel doesn\'t exist in this server.' });
         return;
     }
 
     const member = await resolveMember(guild, Client.user.id);
     if (!member) {
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send({ content: '⚠ Error occurred.' });
         return;
     }
 
     const botPerms = channel.permissionsFor(member);
     if (!botPerms.has('VIEW_CHANNEL', true)) {
-        message.channel.send('⚠ I cannot see this channel!');
+        message.channel.send({ content: '⚠ I cannot see this channel!' });
         return;
     }
     if (!botPerms.has('SEND_MESSAGES', true)) {
-        message.channel.send('⚠ I cannot send messages to this channel!');
+        message.channel.send({ content: '⚠ I cannot send messages to this channel!' });
         return;
     }
 
     await serverSettings.set(message.guild.id, 'welcomeChan', channelID);
-    message.channel.send(`Welcome channel set to <#${channelID}>.`);
+    message.channel.send({ content: `Welcome channel set to <#${channelID}>.` });
 }
 
 async function setWelcomeMsg(message, args) {
     if (args.length < 4) {
-        message.channel.send('⚠ Please provide a message.');
+        message.channel.send({ content: '⚠ Please provide a message.' });
         return;
     }
 
     const msg = trimArgs(args, 3, message.content);
     await serverSettings.set(message.guild.id, 'welcomeMsg', msg);
-    message.channel.send('Welcome message set.');
+    message.channel.send({ content: 'Welcome message set.' });
 }
 
 async function toggleWelcome(message) {
     const tog = await serverSettings.toggle(message.guild.id, 'welcomeOn');
-    message.channel.send(`Welcome turned ${tog ? 'on':'off'}.`);
+    message.channel.send({ content: `Welcome turned ${tog ? 'on':'off'}.` });
 }

@@ -58,7 +58,7 @@ async function userInfo(message, args) {
 
         member = await searchMembers(members, target);
         if (!member) {
-            message.channel.send('⚠ Invalid user or user ID.');
+            message.channel.send({ content: '⚠ Invalid user or user ID.' });
             return;
         } else {
             userID = member.id;
@@ -74,12 +74,12 @@ async function userInfo(message, args) {
 
     if (member) {
         const embed = await memberEmbed(author, member);
-        message.channel.send({ embed });
+        message.channel.send({ embeds: [embed] });
     } else if (user) {
         const embed = await userEmbed(user);
-        message.channel.send({ embed });
+        message.channel.send({ embeds: [embed] });
     } else {
-        message.channel.send('⚠ Invalid user.');
+        message.channel.send({ content: '⚠ Invalid user.' });
     }
 }
 
@@ -230,7 +230,7 @@ async function userAvatar(message, args) {
 
         member = await searchMembers(members, target);
         if (!member) {
-            message.channel.send('⚠ Invalid user or user ID.');
+            message.channel.send({ content: '⚠ Invalid user or user ID.' });
             return;
         } else {
             userID = member.id;
@@ -245,7 +245,7 @@ async function userAvatar(message, args) {
     }
 
     if (!user) {
-        message.channel.send('⚠ Invalid user.');
+        message.channel.send({ content: '⚠ Invalid user.' });
         return;
     }
 
@@ -280,7 +280,7 @@ async function userAvatar(message, args) {
         embed.timestamp = timestamp;
     }
 
-    message.channel.send({ embed });
+    message.channel.send({ embeds: [embed] });
 }
 
 async function guildInfo(message, target) {
@@ -290,18 +290,18 @@ async function guildInfo(message, target) {
     } else {
         const match = target.match(/^\d+$/);
         if (!match) {
-            message.channel.send('⚠ Invalid guild ID.');
+            message.channel.send({ content: '⚠ Invalid guild ID.' });
             return;
         }
         guild = Client.guilds.cache.get(match[0]);
         if (!guild) {
-            message.channel.send('⚠ Invalid guild or bot is not in this server.');
+            message.channel.send({ content: '⚠ Invalid guild or bot is not in this server.' });
             return;
         }
     }
 
     const embed = await serverEmbed(guild);
-    message.channel.send({ embed });
+    message.channel.send({ embeds: [embed] });
 }
 
 async function serverEmbed(guild) {
@@ -341,7 +341,7 @@ async function serverEmbed(guild) {
         '<:boostlvl3:697919571998539916>',
     ];
 
-    guild.presences.cache.array().forEach(p => statusObj[p.status].count += 1);
+    guild.presences.cache.forEach(p => statusObj[p.status].count += 1);
     const statusData = Object.values(statusObj);
     statusObj.offline.count = guild.memberCount - statusData
         .slice(0, 3).reduce((a, c) => a + c.count, 0);
@@ -360,11 +360,11 @@ async function serverEmbed(guild) {
             { name: 'Owner', value: `<@${guild.ownerID}>`, inline: true },
             { name: 'Members', value: guild.memberCount.toLocaleString(), inline: true },
             { name: 'Roles', value: guild.roles.cache.size, inline: true },
-            { name: 'Text Channels', value: guild.channels.cache.array().filter(c => c.type == 'text' || c.type == 'news').length, inline: true },
-            { name: 'Voice Channels', value: guild.channels.cache.array().filter(c => c.type == 'voice').length, inline: true },
+            { name: 'Text Channels', value: guild.channels.cache.values().filter(c => c.type == 'text' || c.type == 'news').length, inline: true },
+            { name: 'Voice Channels', value: guild.channels.cache.values().filter(c => c.type == 'voice').length, inline: true },
             { name: 'Created On', value: guild.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false },
             { name: 'Region', value: regions[guild.region] || guild.region, inline: true },
-            { name: 'Emojis', value: `${guild.emojis.cache.size} (${guild.emojis.cache.array().filter(e=>e.animated).length} animated)`, inline: true },
+            { name: 'Emojis', value: `${guild.emojis.cache.size} (${guild.emojis.cache.values().filter(e=>e.animated).length} animated)`, inline: true },
             { name: 'Statuses', value: statuses, inline: false },
             { name: 'Level', value: `${boostLvlEmojis[guild.premiumTier]} ${guild.premiumTier}`, inline: true },
             { name: 'Boosters', value: `<:nitroboost:595699920422436894> ${guild.premiumSubscriptionCount}`, inline: true },
@@ -386,7 +386,7 @@ async function serverBoosters(message) {
     const boosters = guild.members.cache.filter(member => member.premiumSince);
 
     if (boosters.size < 1) {
-        message.channel.send('⚠ Nobody is currently boosting this server!');
+        message.channel.send({ content: '⚠ Nobody is currently boosting this server!' });
         return;
     }
 

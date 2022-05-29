@@ -1,4 +1,5 @@
 const { Client } = require('../haseul.js');
+const { Permissions } = require('discord.js')
 const { checkPermissions, resolveMember } = require('../functions/discord.js');
 
 const inviteCache = new Map();
@@ -6,9 +7,9 @@ const vanityCache = new Map();
 
 async function cacheGuildInvites(guild) {
     const botMember = await resolveMember(guild, Client.user.id);
-    if (checkPermissions(botMember, ['MANAGE_GUILD'])) {
+    if (checkPermissions(botMember, [Permissions.FLAGS.MANAGE_GUILD])) {
         try {
-            const guildInvites = await guild.fetchInvites();
+            const guildInvites = await guild.invites.fetch();
             inviteCache.set(guild.id, guildInvites || new Map());
         } catch (e) {
             inviteCache.set(guild.id, new Map());
@@ -32,9 +33,9 @@ exports.newGuild = async function(guild) {
 };
 
 exports.onReady = async function() {
-    for (const guild of Client.guilds.cache.array()) {
+    Client.guilds.cache.forEach(async guild => {
         await cacheGuildInvites(guild);
-    }
+    })
     console.log(`Cached invites for ${inviteCache.size} servers.`);
 };
 
@@ -45,7 +46,7 @@ exports.resolveUsedInvite = async function(guild) {
     let usedInvite = null;
     let inviteChanges = 0;
 
-    const newInvites = await guild.fetchInvites().catch(console.error);
+    const newInvites = await guild.invites.fetch().catch(console.error);
     // console.log(newInvites);
     if (currentCache && newInvites && newInvites.size > 0) {
         for (const newInvite of newInvites.array()) {

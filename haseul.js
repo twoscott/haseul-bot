@@ -1,5 +1,22 @@
 const Discord = require('discord.js');
-const Client = new Discord.Client({ disableMentions: 'everyone', messageCacheLifetime: 600, messageSweepInterval: 300 });
+
+const intents = new Discord.Intents();
+intents.add(
+    Discord.Intents.FLAGS.GUILDS,
+    Discord.Intents.FLAGS.GUILD_MEMBERS,
+    Discord.Intents.FLAGS.GUILD_BANS,
+    Discord.Intents.FLAGS.GUILD_INVITES,
+    Discord.Intents.FLAGS.GUILD_MESSAGES,
+    Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+    Discord.Intents.FLAGS.GUILD_MESSAGE_TYPING
+);
+
+const Client = new Discord.Client({
+    disableMentions: 'everyone',
+    messageCacheLifetime: 600,
+    messageSweepInterval: 300,
+    intents,
+});
 module.exports = { Client };
 
 const config = require('./config.json');
@@ -30,11 +47,13 @@ Client.on('warn', warning => {
 
 // Discord
 
-Client.on('ready', () => {
+Client.on('ready', async () => {
     console.log('Ready!');
 
-    const botChannel = Client.channels.cache.get(config.bot_channel, true);
-    botChannel.send('Ready!');
+    const botChannel = await Client.channels.fetch(config.bot_channel, true);
+    if (botChannel) {
+        botChannel.send({ content: 'Ready!' });
+    }
 
     if (!initialised) {
         checklist.handleTasks();
@@ -42,7 +61,7 @@ Client.on('ready', () => {
     }
 });
 
-Client.on('message', message => {
+Client.on('messageCreate', message => {
     messages.onMessage(message);
 });
 

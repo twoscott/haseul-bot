@@ -22,7 +22,7 @@ async function remindersLoop() {
                 timestamp: reminderSetTime * 1000,
                 color: 0x01b762,
             });
-            recipient.send('🔔 Reminder has been triggered.', { embed });
+            recipient.send({ content: '🔔 Reminder has been triggered.', embeds: [embed] });
         }
         database.removeReminder(reminderID);
     }

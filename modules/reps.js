@@ -74,37 +74,37 @@ async function rep(message, args) {
             if (timeFromNow.hours) fromNowText += `${timeFromNow.hours}h `;
             if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
             if (timeFromNow.seconds) fromNowText += `${timeFromNow.seconds}s `;
-            message.channel.send(`⚠ You have no reps remaining today! Your reps will be replenished in ${fromNowText.trim()}.`);
+            message.channel.send({ content: `⚠ You have no reps remaining today! Your reps will be replenished in ${fromNowText.trim()}.` });
             return;
         }
     }
 
     if (args.length < 1) {
-        message.channel.send('⚠ Please provide a user to rep!');
+        message.channel.send({ content: '⚠ Please provide a user to rep!' });
         return;
     }
 
     const userID = parseUserID(args[0]);
     if (!userID) {
-        message.channel.send('⚠ Please provide a valid user to rep!');
+        message.channel.send({ content: '⚠ Please provide a valid user to rep!' });
         return;
     }
     if (userID == author.id) {
-        message.channel.send('⚠ You may not rep yourself!');
+        message.channel.send({ content: '⚠ You may not rep yourself!' });
         return;
     }
     if (userID == Client.user.id) {
-        message.channel.send('⚠ I\'m delighted but you cannot rep me!');
+        message.channel.send({ content: '⚠ I\'m delighted but you cannot rep me!' });
         return;
     }
 
     const recipient = await resolveMember(guild, userID);
     if (!recipient) {
-        message.channel.send('⚠ The user provided is not in this server or does not exist.');
+        message.channel.send({ content: '⚠ The user provided is not in this server or does not exist.' });
         return;
     }
     if (recipient.user.bot) {
-        message.channel.send('⚠ You may not rep a bot!');
+        message.channel.send({ content: '⚠ You may not rep a bot!' });
         return;
     }
 
@@ -116,7 +116,7 @@ async function rep(message, args) {
         const senderLastRep = repStreak[`${sendingUser}LastRep`];
         const lastUserRepDate = Math.floor(senderLastRep / 86400000);
         if (senderLastRep && lastUserRepDate == todayDate) {
-            message.channel.send('⚠ You may not rep the same user twice in one day!');
+            message.channel.send({ content: '⚠ You may not rep the same user twice in one day!' });
             return;
         }
     }
@@ -180,7 +180,7 @@ async function repStatus(message) {
     if (timeFromNow.minutes) fromNowText += `${timeFromNow.minutes}m `;
     if (timeFromNow.seconds) fromNowText += `${timeFromNow.seconds}s `;
 
-    message.channel.send(`You have **${repProfile.repsRemaining}** rep${repProfile.repsRemaining != 1 ? 's':''} remaining to give! ${repProfile.repsRemaining <= 0 ? `Your reps will be replenished in ${fromNowText.trim()}.` : ''}`);
+    message.channel.send({ content: `You have **${repProfile.repsRemaining}** rep${repProfile.repsRemaining != 1 ? 's':''} remaining to give! ${repProfile.repsRemaining <= 0 ? `Your reps will be replenished in ${fromNowText.trim()}.` : ''}` });
     return;
 }
 
@@ -195,7 +195,7 @@ async function repboard(message, local) {
     }
 
     if (reps.length < 1) {
-        message.channel.send(`⚠ Nobody${local ? ' on this server ':' '}currently has any reps!`);
+        message.channel.send({ content: `⚠ Nobody${local ? ' on this server ':' '}currently has any reps!` });
         return;
     }
 
@@ -253,7 +253,7 @@ async function streaks(message) {
     const streaks = await database.getUserStreaks(author.id);
 
     if (streaks.length < 1) {
-        message.channel.send('⚠ You do not currently have any rep streaks!');
+        message.channel.send({ content: '⚠ You do not currently have any rep streaks!' });
         return;
     }
 
@@ -335,7 +335,7 @@ async function streakboard(message, local) {
     }
 
     if (streaks.length < 1) {
-        message.channel.send(`⚠ Nobody${local ? ' on this server ':' '}currently has any rep streaks!`);
+        message.channel.send({ content: `⚠ Nobody${local ? ' on this server ':' '}currently has any rep streaks!` });
         return;
     }
 

@@ -10,7 +10,7 @@ exports.onCommand = async function(message, args) {
     switch (args[0]) {
     case 'donate':
     case 'patreon':
-        message.channel.send('https://www.patreon.com/haseulbot');
+        message.channel.send({ content: 'https://www.patreon.com/haseulbot' });
         break;
     case 'donors':
     case 'donators':
@@ -27,7 +27,7 @@ async function patrons(message) {
         response = await patreon.get('/campaigns/'+config.haseul_campaign_id+'/members?include=user&fields'+encodeURI('[member]')+'=full_name,patron_status,pledge_relationship_start&fields'+encodeURI('[user]')+'=social_connections');
     } catch (e) {
         console.error('Patreon error: ' + e.response.status);
-        message.channel.send('⚠ Error occurred.');
+        message.channel.send({ content: '⚠ Error occurred.' });
         return;
     }
 
@@ -35,7 +35,7 @@ async function patrons(message) {
         const members = response.data.data.filter(m => m.attributes.patron_status == 'active_patron');
         const users = response.data.included.filter(x => x.type == 'user');
         if (members.length < 1) {
-            message.channel.send('Nobody is currently supporting Haseul Bot :pensive:');
+            message.channel.send({ content: 'Nobody is currently supporting Haseul Bot :pensive:' });
             return;
         }
 
@@ -89,6 +89,6 @@ async function patrons(message) {
 
         embedPages(message, pages);
     } catch (e) {
-        message.channel.send('⚠ Unknown error occurred.');
+        message.channel.send({ content: '⚠ Unknown error occurred.' });
     }
 }

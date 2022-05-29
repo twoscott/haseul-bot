@@ -37,7 +37,7 @@ async function profileTemp(message, args) {
 
         member = await searchMembers(members, target);
         if (!member) {
-            message.channel.send('⚠ Invalid user or user ID.');
+            message.channel.send({ content: '⚠ Invalid user or user ID.' });
             return;
         } else {
             userID = member.id;
@@ -53,7 +53,7 @@ async function profileTemp(message, args) {
 
     member = member || await resolveMember(guild, userID);
     if (!member) {
-        message.channel.send('⚠ User is not in this server.');
+        message.channel.send({ content: '⚠ User is not in this server.' });
         return;
     }
     const user = member ? member.user : await resolveUser(userID);
@@ -73,5 +73,5 @@ async function profileTemp(message, args) {
         footer: { text: 'Full profiles coming soon.' },
     });
 
-    message.channel.send({ embed });
+    message.channel.send({ embeds: [embed] });
 }

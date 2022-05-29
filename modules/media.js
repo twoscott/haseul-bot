@@ -50,7 +50,7 @@ exports.ytVidQuery = async function(query) {
 
 async function ytPages(message, args) {
     if (args.length < 2) {
-        message.channel.send('⚠ Please provide a query to search for!');
+        message.channel.send({ content: '⚠ Please provide a query to search for!' });
         return;
     }
 
@@ -76,7 +76,7 @@ async function ytPages(message, args) {
             .contents;
     } catch (e) {
         console.error(e);
-        message.channel.send('⚠ Error occurred searching YouTube.');
+        message.channel.send({ content: '⚠ Error occurred searching YouTube.' });
         return;
     }
 
@@ -85,7 +85,7 @@ async function ytPages(message, args) {
         .map((result, i) => `${i + 1}. https://youtu.be/${result.videoRenderer.videoId}`);
 
     if (results.length < 1) {
-        message.channel.send('⚠ No results found for this query!');
+        message.channel.send({ content: '⚠ No results found for this query!' });
         return;
     }
 

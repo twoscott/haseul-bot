@@ -25,42 +25,42 @@ exports.onCommand = async function(message, args) {
         if (checkPermissions(member, ['BAN_MEMBERS'])) {
             withTyping(channel, banUsers, [message, args]);
         } else {
-            channel.send('⚠ You do not have permission to ban users.');
+            channel.send({ content: '⚠ You do not have permission to ban users.' });
         }
         break;
     case 'purge':
         if (checkPermissions(member, ['BAN_MEMBERS'])) {
             withTyping(channel, banUsers, [message, args, 1]);
         } else {
-            channel.send('⚠ You do not have permission to ban users.');
+            channel.send({ content: '⚠ You do not have permission to ban users.' });
         }
         break;
     case 'unban':
         if (checkPermissions(member, ['BAN_MEMBERS'])) {
             withTyping(channel, unbanUsers, [message, args]);
         } else {
-            channel.send('⚠ You do not have permission to unban users.');
+            channel.send({ content: '⚠ You do not have permission to unban users.' });
         }
         break;
     case 'kick':
         if (checkPermissions(member, ['KICK_MEMBERS'])) {
             withTyping(channel, kickUsers, [message, args]);
         } else {
-            channel.send('⚠ You do not have permission to kick users.');
+            channel.send({ content: '⚠ You do not have permission to kick users.' });
         }
         break;
     case 'mute':
         if (checkPermissions(member, ['MANAGE_ROLES'])) {
             withTyping(channel, muteUsers, [message, args]);
         } else {
-            channel.send('⚠ You do not have permission to manage roles.');
+            channel.send({ content: '⚠ You do not have permission to manage roles.' });
         }
         break;
     case 'unmute':
         if (checkPermissions(member, ['MANAGE_ROLES'])) {
             withTyping(channel, unmuteUsers, [message, args]);
         } else {
-            channel.send('⚠ You do not have permission to manage roles.');
+            channel.send({ content: '⚠ You do not have permission to manage roles.' });
         }
         break;
     case 'muterole':
@@ -69,14 +69,14 @@ exports.onCommand = async function(message, args) {
             if (checkPermissions(member, ['MANAGE_ROLES'])) {
                 withTyping(channel, setMuteRole, [message, args]);
             } else {
-                channel.send('⚠ You do not have permission to manage roles.');
+                channel.send({ content: '⚠ You do not have permission to manage roles.' });
             }
             break;
         case 'update':
             if (checkPermissions(member, ['MANAGE_ROLES'])) {
                 withTyping(channel, updateMuteRole, [message]);
             } else {
-                channel.send('⚠ You do not have permission to manage roles.');
+                channel.send({ content: '⚠ You do not have permission to manage roles.' });
             }
             break;
         }
@@ -87,7 +87,7 @@ exports.onCommand = async function(message, args) {
             if (checkPermissions(member, ['MANAGE_MESSAGES'])) {
                 withTyping(channel, toggleSpamFilter, [message]);
             } else {
-                channel.send('⚠ You do not have permission to manage messages.');
+                channel.send({ content: '⚠ You do not have permission to manage messages.' });
             }
             break;
         }
@@ -116,12 +116,12 @@ async function filterSpam(message) {
 async function banUsers(message, args, days=0) {
     const botMember = await resolveMember(message.guild, Client.user.id);
     if (!checkPermissions(botMember, ['BAN_MEMBERS'])) {
-        message.channel.send('⚠ I do not have permission to ban users.');
+        message.channel.send({ content: '⚠ I do not have permission to ban users.' });
         return;
     }
 
     if (args.length < 2) {
-        message.channel.send('⚠ No users provided to ban.');
+        message.channel.send({ content: '⚠ No users provided to ban.' });
         return;
     }
 
@@ -137,7 +137,7 @@ async function banUsers(message, args, days=0) {
 
     userIDs = new Set(userIDs);
     if (userIDs.size < 1) {
-        message.channel.send('⚠ Invalid formatting, please provide a user or multiple users to ban.');
+        message.channel.send({ content: '⚠ Invalid formatting, please provide a user or multiple users to ban.' });
         return;
     }
 
@@ -192,12 +192,12 @@ async function banUsers(message, args, days=0) {
 async function unbanUsers(message, args) {
     const botMember = await resolveMember(message.guild, Client.user.id);
     if (!checkPermissions(botMember, ['BAN_MEMBERS'])) {
-        message.channel.send('⚠ I do not have permission to unban users.');
+        message.channel.send({ content: '⚠ I do not have permission to unban users.' });
         return;
     }
 
     if (args.length < 2) {
-        message.channel.send('⚠ No users provided to unban.');
+        message.channel.send({ content: '⚠ No users provided to unban.' });
         return;
     }
 
@@ -213,7 +213,7 @@ async function unbanUsers(message, args) {
 
     userIDs = new Set(userIDs);
     if (userIDs.size < 1) {
-        message.channel.send('⚠ Invalid formatting, please provide a user or multiple users to unban.');
+        message.channel.send({ content: '⚠ Invalid formatting, please provide a user or multiple users to unban.' });
         return;
     }
 
@@ -255,12 +255,12 @@ async function unbanUsers(message, args) {
 async function kickUsers(message, args) {
     const botMember = await resolveMember(message.guild, Client.user.id);
     if (!checkPermissions(botMember, ['KICK_MEMBERS'])) {
-        message.channel.send('⚠ I do not have permission to kick users.');
+        message.channel.send({ content: '⚠ I do not have permission to kick users.' });
         return;
     }
 
     if (args.length < 2) {
-        message.channel.send('⚠ No users provided to kick.');
+        message.channel.send({ content: '⚠ No users provided to kick.' });
         return;
     }
 
@@ -276,7 +276,7 @@ async function kickUsers(message, args) {
 
     userIDs = new Set(userIDs);
     if (userIDs.size < 1) {
-        message.channel.send('⚠ Invalid formatting, please provide a user or multiple users to kick.');
+        message.channel.send({ content: '⚠ Invalid formatting, please provide a user or multiple users to kick.' });
         return;
     }
 
@@ -329,19 +329,19 @@ async function kickUsers(message, args) {
 async function muteUsers(message, args) {
     const botMember = await resolveMember(message.guild, Client.user.id);
     if (!checkPermissions(botMember, ['MANAGE_ROLES'])) {
-        message.channel.send('⚠ I do not have permission to manage roles.');
+        message.channel.send({ content: '⚠ I do not have permission to manage roles.' });
         return;
     }
 
     const muteroleID = await serverSettings.get(message.guild.id, 'muteroleID');
     if (!muteroleID) {
-        message.channel.send('⚠ No mute role has been set in this server.');
+        message.channel.send({ content: '⚠ No mute role has been set in this server.' });
         return;
     }
 
     const muterole = await message.guild.roles.fetch(muteroleID);
     if (!muterole) {
-        message.channel.send('⚠ The mute role set for this server no longer exists.');
+        message.channel.send({ content: '⚠ The mute role set for this server no longer exists.' });
         return;
     }
 
@@ -349,16 +349,16 @@ async function muteUsers(message, args) {
     const userRole = message.member.roles.highest;
     const botRole = botMember.roles.highest;
     if (!isOwner && userRole.position <= muterole.position) {
-        message.channel.send('⚠ You do not have access to the mute role.');
+        message.channel.send({ content: '⚠ You do not have access to the mute role.' });
         return;
     }
     if (botRole.position <= muterole.position) {
-        message.channel.send('⚠ I do not have access to the mute role.');
+        message.channel.send({ content: '⚠ I do not have access to the mute role.' });
         return;
     }
 
     if (args.length < 2) {
-        message.channel.send('⚠ No users provided to mute.');
+        message.channel.send({ content: '⚠ No users provided to mute.' });
         return;
     }
 
@@ -374,7 +374,7 @@ async function muteUsers(message, args) {
 
     userIDs = new Set(userIDs);
     if (userIDs.size < 1) {
-        message.channel.send('⚠ Invalid formatting, please provide a user or multiple users to mute.');
+        message.channel.send({ content: '⚠ Invalid formatting, please provide a user or multiple users to mute.' });
         return;
     }
 
@@ -424,19 +424,19 @@ async function muteUsers(message, args) {
 async function unmuteUsers(message, args) {
     const botMember = await resolveMember(message.guild, Client.user.id);
     if (!checkPermissions(botMember, ['MANAGE_ROLES'])) {
-        message.channel.send('⚠ I do not have permission to manage roles.');
+        message.channel.send({ content: '⚠ I do not have permission to manage roles.' });
         return;
     }
 
     const muteroleID = await serverSettings.get(message.guild.id, 'muteroleID');
     if (!muteroleID) {
-        message.channel.send('⚠ No mute role has been set in this server.');
+        message.channel.send({ content: '⚠ No mute role has been set in this server.' });
         return;
     }
 
     const muterole = await message.guild.roles.fetch(muteroleID);
     if (!muterole) {
-        message.channel.send('⚠ The mute role set for this server no longer exists.');
+        message.channel.send({ content: '⚠ The mute role set for this server no longer exists.' });
         return;
     }
 
@@ -444,16 +444,16 @@ async function unmuteUsers(message, args) {
     const userRole = message.member.roles.highest;
     const botRole = botMember.roles.highest;
     if (!isOwner && userRole.position <= muterole.position) {
-        message.channel.send('⚠ You do not have access to the mute role.');
+        message.channel.send({ content: '⚠ You do not have access to the mute role.' });
         return;
     }
     if (botRole.position <= muterole.position) {
-        message.channel.send('⚠ I do not have access to the mute role.');
+        message.channel.send({ content: '⚠ I do not have access to the mute role.' });
         return;
     }
 
     if (args.length < 2) {
-        message.channel.send('⚠ No users provided to mute.');
+        message.channel.send({ content: '⚠ No users provided to mute.' });
         return;
     }
 
@@ -469,7 +469,7 @@ async function unmuteUsers(message, args) {
 
     userIDs = new Set(userIDs);
     if (userIDs.size < 1) {
-        message.channel.send('⚠ Invalid formatting, please provide a user or multiple users to mute.');
+        message.channel.send({ content: '⚠ Invalid formatting, please provide a user or multiple users to mute.' });
         return;
     }
 
@@ -519,17 +519,17 @@ async function unmuteUsers(message, args) {
 async function setMuteRole(message, args) {
     const botMember = await resolveMember(message.guild, Client.user.id);
     if (!checkPermissions(botMember, ['MANAGE_ROLES'])) {
-        message.channel.send('⚠ I do not have permission to manage roles.');
+        message.channel.send({ content: '⚠ I do not have permission to manage roles.' });
         return;
     }
 
     const muteRole = args[2];
     if (!muteRole) {
-        message.channel.send('⚠ Please provide a role name or mention to set as the mute role.');
+        message.channel.send({ content: '⚠ Please provide a role name or mention to set as the mute role.' });
         return;
     }
     if (muteRole == '@everyone') {
-        message.channel.send('⚠ You cannot use the @everyone role for the mute role.');
+        message.channel.send({ content: '⚠ You cannot use the @everyone role for the mute role.' });
         return;
     }
 
@@ -539,10 +539,10 @@ async function setMuteRole(message, args) {
         const roleID = roleIDMatch[1];
         role = await resolveRole(message.guild, roleID);
         if (!role) {
-            message.channel.send('⚠ Invalid role provided.');
+            message.channel.send({ content: '⚠ Invalid role provided.' });
             return;
         } else if (role.id == message.guild.roles.everyone.id) {
-            message.channel.send('⚠ You cannot use the @everyone role as the mute role.');
+            message.channel.send({ content: '⚠ You cannot use the @everyone role as the mute role.' });
             return;
         }
     } else {
@@ -552,46 +552,46 @@ async function setMuteRole(message, args) {
                 data: { name: muteRole },
                 reason: 'Mute role created from muterole set command.',
             });
-            const channelsArray = message.guild.channels.cache.array();
+            const channelsArray = message.guild.channels.cache.values();
             setMuteRolePerms(channelsArray, role.id);
         } else if (message.member.roles.highest.position <= role.position) {
-            message.channel.send('⚠ I cannot use this role to mute users, please move the role below mine or choose another role.');
+            message.channel.send({ content: '⚠ I cannot use this role to mute users, please move the role below mine or choose another role.' });
             return;
         } else if (role.managed) {
-            message.channel.send('⚠ Please choose a role that is not managed by an external service.');
+            message.channel.send({ content: '⚠ Please choose a role that is not managed by an external service.' });
             return;
         }
     }
 
     serverSettings.set(message.guild.id, 'muteroleID', role.id);
-    message.channel.send(`Mute role set to \`${role.name}\`.`);
+    message.channel.send({ content: `Mute role set to \`${role.name}\`.` });
 }
 
 async function updateMuteRole(message) {
     const botMember = await resolveMember(message.guild, Client.user.id);
     if (!checkPermissions(botMember, ['MANAGE_ROLES'])) {
-        message.channel.send('⚠ I do not have permission to manage roles.');
+        message.channel.send({ content: '⚠ I do not have permission to manage roles.' });
         return;
     }
 
     const muteroleID = await serverSettings.get(message.guild.id, 'muteroleID');
     if (!muteroleID) {
-        message.channel.send('⚠ No mute role set.');
+        message.channel.send({ content: '⚠ No mute role set.' });
         return;
     }
 
     const role = await message.guild.roles.fetch(muteroleID);
     if (!role) {
-        message.channel.send('⚠ The mute role no longer exists on this server.');
+        message.channel.send({ content: '⚠ The mute role no longer exists on this server.' });
         return;
     }
 
-    const channelsArray = message.guild.channels.cache.array();
+    const channelsArray = message.guild.channels.cache.values();
     await setMuteRolePerms(channelsArray, role.id);
-    message.channel.send(`Updated channel permissions for the mute role: \`${role.name}\``);
+    message.channel.send({ content: `Updated channel permissions for the mute role: \`${role.name}\`` });
 }
 
 async function toggleSpamFilter(message) {
     const tog = await serverSettings.toggle(message.guild.id, 'spamFilterOn');
-    message.channel.send(`Spam filter turned ${tog ? 'on':'off'}.`);
+    message.channel.send({ content: `Spam filter turned ${tog ? 'on':'off'}.` });
 }

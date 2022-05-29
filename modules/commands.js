@@ -10,7 +10,7 @@ const { trimArgs } = require('../functions/functions.js');
 async function cmdCheck(message, commandName) {
     const cmd = await database.getCommand(message.guild.id, commandName);
     if (cmd) {
-        message.channel.send(cmd);
+        message.channel.send({ content: cmd })
     }
 }
 
@@ -76,7 +76,7 @@ exports.onCommand = async function(message, args) {
         case 'help':
         default:
             if (cmdsOn) {
-                channel.send('Help with custom commands can be found here: https://haseulbot.xyz/#custom-commands');
+                channel.send({ content: 'Help with custom commands can be found here: https://haseulbot.xyz/#custom-commands' });
             }
             break;
         }
@@ -86,29 +86,29 @@ exports.onCommand = async function(message, args) {
 
 async function addCommand(message, args) {
     if (args.length < 3) {
-        message.channel.send('⚠ Please provide a command name and text and/or file.');
+        message.channel.send({ content: '⚠ Please provide a command name and text and/or file.' });
         return;
     }
 
     const files = message.attachments.array();
     if (args.length < 4 && files.length < 1) {
-        message.channel.send('⚠ Please provide text or an uploaded file for a command response.');
+        message.channel.send({ content: '⚠ Please provide text or an uploaded file for a command response.' });
         return;
     }
 
     const commandName = args[2].toLowerCase();
     if (commandName.length > 30) {
-        message.channel.send('⚠ Command names may not exceed 20 characters in length.');
+        message.channel.send({ content: '⚠ Command names may not exceed 20 characters in length.' });
         return;
     }
 
     if (!/^[a-z0-9]+$/.test(commandName)) {
-        message.channel.send('⚠ This command name contains invalid characters, please use characters A-Z and 0-9.');
+        message.channel.send({ content: '⚠ This command name contains invalid characters, please use characters A-Z and 0-9.' });
         return;
     }
 
     if (reservedCommands.list.includes(commandName)) {
-        message.channel.send('⚠ This is a reserved command name, please use another name.');
+        message.channel.send({ content: '⚠ This is a reserved command name, please use another name.' });
         return;
     }
 
@@ -118,27 +118,27 @@ async function addCommand(message, args) {
 
     const added = await database
         .addCommand(message.guild.id, commandName, text);
-    message.channel.send(added ? `Command \`${commandName}\` was added.` : `⚠ A command with the name \`${commandName}\` already exists.`);
+    message.channel.send({ content: added ? `Command \`${commandName}\` was added.` : `⚠ A command with the name \`${commandName}\` already exists.` })
 }
 
 async function removeCommand(message, commandName) {
     if (!commandName) {
-        message.channel.send('⚠ Please provide a command name to remove.');
+        message.channel.send({ content: '⚠ Please provide a command name to remove.' });
         return;
     }
 
     const removed = await database.removeCommand(message.guild.id, commandName);
-    message.channel.send(removed ? `Command \`${commandName}\` was removed.` : `⚠ No command with the name \`${commandName}\` was found.`);
+    message.channel.send({ content: removed ? `Command \`${commandName}\` was removed.` : `⚠ No command with the name \`${commandName}\` was found.` })
 }
 
 async function renameCommand(message, args) {
     if (args.length < 3) {
-        message.channel.send('⚠ Please provide a command name and a new name for the command.');
+        message.channel.send({ content: '⚠ Please provide a command name and a new name for the command.' });
         return;
     }
 
     if (args.length < 4) {
-        message.channel.send('⚠ Please provide a new name for the command.');
+        message.channel.send({ content: '⚠ Please provide a new name for the command.' });
         return;
     }
 
@@ -146,46 +146,46 @@ async function renameCommand(message, args) {
     const newName = args[3].toLowerCase();
 
     if (!/^[a-z0-9]+$/.test(newName)) {
-        message.channel.send(`⚠ \`${newName}\` contains invalid characters \`${newName.replace(/([a-z0-9]+)/g, '')}\`, please use characters A-Z and 0-9.`);
+        message.channel.send({ content: `⚠ \`${newName}\` contains invalid characters \`${newName.replace(/([a-z0-9]+)/g, '')}\`, please use characters A-Z and 0-9.` });
         return;
     }
 
     if (reservedCommands.list.includes(newName)) {
-        message.channel.send(`⚠ \`${newName}\` is a reserved command name, please use another name.`);
+        message.channel.send({ content: `⚠ \`${newName}\` is a reserved command name, please use another name.` });
         return;
     }
 
     const command = await database.getCommand(message.guild.id, commandName);
     if (!command) {
-        message.channel.send(`⚠ \`${commandName}\` does not exist.`);
+        message.channel.send({ content: `⚠ \`${commandName}\` does not exist.` });
         return;
     }
 
     const renamed = await database
         .renameCommand(message.guild.id, commandName, newName);
-    message.channel.send(renamed ? `\`${commandName}\` was renamed to \`${newName}\`.` : `⚠ \`${newName}\` already exists.`);
+    message.channel.send({ content: renamed ? `\`${commandName}\` was renamed to \`${newName}\`.` : `⚠ \`${newName}\` already exists.` })
 }
 
 async function editCommand(message, args) {
     if (args.length < 3) {
-        message.channel.send('⚠ Please provide a command name and text and/or file.');
+        message.channel.send({ content: '⚠ Please provide a command name and text and/or file.' });
         return;
     }
 
     const files = message.attachments.array();
     if (args.length < 4 && files.length < 1) {
-        message.channel.send('⚠ Please provide text or an uploaded file for a command response.');
+        message.channel.send({ content: '⚠ Please provide text or an uploaded file for a command response.' });
         return;
     }
 
     const commandName = args[2].toLowerCase();
     if (!/^[a-z0-9]+$/.test(commandName)) {
-        message.channel.send('⚠ This command name contains invalid characters, please use characters A-Z and 0-9.');
+        message.channel.send({ content: '⚠ This command name contains invalid characters, please use characters A-Z and 0-9.' });
         return;
     }
 
     if (reservedCommands.list.includes(commandName)) {
-        message.channel.send('⚠ This is a reserved command name, please use another name.');
+        message.channel.send({ content: '⚠ This is a reserved command name, please use another name.' });
         return;
     }
 
@@ -196,7 +196,7 @@ async function editCommand(message, args) {
 
     const edited = await database
         .editCommand(message.guild.id, commandName, text);
-    message.channel.send(edited ? `Command \`${commandName}\` was edited.` : `⚠ No command with the name \`${commandName}\` was found.`);
+    message.channel.send({ content: edited ? `Command \`${commandName}\` was edited.` : `⚠ No command with the name \`${commandName}\` was found.` })
 }
 
 async function listCommands(message) {
@@ -204,7 +204,7 @@ async function listCommands(message) {
     const commands = await database.getCommands(guild.id);
     const commandNames = commands.map(x => x.command);
     if (commandNames.length < 1) {
-        message.channel.send('⚠ There are no commands added to this server.');
+        message.channel.send({ content: '⚠ There are no commands added to this server.' });
         return;
     }
     const prefix = getPrefix(message.guild.id);
@@ -255,12 +255,12 @@ async function listCommandsRaw(message) {
 
 async function searchCommands(message, query) {
     if (!query) {
-        message.channel.send('⚠ Please provide a search query.');
+        message.channel.send({ content: '⚠ Please provide a search query.' });
         return;
     }
 
     if (query.length > 30) {
-        message.channel.send('⚠ Command names may not exceed 30 characters in length.');
+        message.channel.send({ content: '⚠ Command names may not exceed 30 characters in length.' });
         return;
     }
 
@@ -269,7 +269,7 @@ async function searchCommands(message, query) {
     let commandNames = commands.map(x => x.command);
 
     if (commandNames.length < 1) {
-        message.channel.send('⚠ There are no commands added to this server.');
+        message.channel.send({ content: '⚠ There are no commands added to this server.' });
         return;
     }
 
@@ -277,7 +277,7 @@ async function searchCommands(message, query) {
         .filter(x => x.toLowerCase().includes(query.toLowerCase()));
 
     if (commandNames.length < 1) {
-        message.channel.send(`⚠ No results were found searching for "${query}".`);
+        message.channel.send({ content: `⚠ No results were found searching for "${query}".` });
         return;
     }
 
@@ -328,5 +328,5 @@ async function searchCommands(message, query) {
 
 async function toggleCommands(message) {
     const tog = await serverSettings.toggle(message.guild.id, 'commandsOn');
-    message.channel.send(`Custom commands turned ${tog ? 'on':'off'}.`);
+    message.channel.send({ content: `Custom commands turned ${tog ? 'on':'off'}.` });
 }
