@@ -41,6 +41,10 @@ Client.on('error', error => {
     console.error(error);
 });
 
+Client.on('debug', debug => {
+    console.error(debug);
+});
+
 Client.on('warn', warning => {
     console.error(warning);
 });
