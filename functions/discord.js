@@ -97,7 +97,7 @@ exports.withTyping = async function(channel, task, args) {
         const err = new Error('Invalid channel to type in');
         console.error(err);
     } else {
-        channel.sendTyping();
+        channel.sendTyping().catch(console.error);
         const rv = await task(...args).catch(console.error);
         return rv;
     }
