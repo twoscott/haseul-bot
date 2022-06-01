@@ -384,13 +384,13 @@ async function displaySetttings(message) {
     }
 
     const pages = fieldArrays.map((fieldArray, i) => ({
-        embed: {
+        embeds: [{
             title: `${guild.name} Settings`,
             fields: fieldArray,
             footer: {
                 text: `Page ${i+1} of ${fieldArrays.length}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);

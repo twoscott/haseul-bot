@@ -665,14 +665,14 @@ async function roleslist(message) {
         null;
 
     const pages = descriptions.map((desc, i) => ({
-        embed: {
+        embeds: [{
             title: `Roles List for ${guild.name}`,
             description: desc,
             color: autoroleColour || 0xf986ba,
             footer: {
                 text: `Roles: ${guildRoles.length} | Page ${i+1} of ${descriptions.length}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);

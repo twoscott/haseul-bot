@@ -314,7 +314,7 @@ async function recentListPages(message, tracks, lfUser) {
     descriptions.push(rowString);
 
     const pages = descriptions.map((desc, i) => ({
-        embed: {
+        embeds: [{
             author: {
                 name: `${lfUser+p} Recent Tracks`, icon_url: 'https://i.imgur.com/lQ3EqM6.png', url: `https://www.last.fm/user/${lfUser}/`,
             },
@@ -325,7 +325,7 @@ async function recentListPages(message, tracks, lfUser) {
             footer: {
                 text: `Page ${i+1} of ${descriptions.length}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);
@@ -437,7 +437,7 @@ async function lfTopMedia(message, args, type) {
     const p = lfUser[lfUser.length-1].toLowerCase() == 's' ? '\'' : '\'s';
 
     const pages = descriptions.map((desc, i) => ({
-        embed: {
+        embeds: [{
             author: {
                 name: `${lfUser+p} Top ${type[0].toUpperCase()+type.slice(1)}s`, icon_url: embeds[type].image, url: `https://www.last.fm/user/${lfUser}/library/${type}s?date_preset=${datePreset}`,
             },
@@ -448,7 +448,7 @@ async function lfTopMedia(message, args, type) {
             footer: {
                 text: `Page ${i+1} of ${descriptions.length}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);

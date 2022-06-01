@@ -309,7 +309,7 @@ async function twitterNotifList(message) {
     descriptions.push(notifString);
 
     const pages = descriptions.map((desc, i) => ({
-        embed: {
+        embeds: [{
             author: {
                 name: 'Twitter Notifications', icon_url: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png',
             },
@@ -318,7 +318,7 @@ async function twitterNotifList(message) {
             footer: {
                 text: `Page ${i+1} of ${descriptions.length}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);

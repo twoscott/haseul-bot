@@ -231,7 +231,7 @@ async function repboard(message, local) {
     descriptions.push(repString);
 
     const pages = descriptions.map((desc, i) => ({
-        embed: {
+        embeds: [{
             author: {
                 name: `${local ? message.guild.name : 'Global'} Repboard`, icon_url: 'https://i.imgur.com/OQLFaj9.png',
             },
@@ -240,7 +240,7 @@ async function repboard(message, local) {
             footer: {
                 text: `Entries: ${entries}  |  Total Reps: ${originalReps.reduce((acc, curr) => acc + curr.rep, 0)}  |  Page ${i+1} of ${descriptions.length}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);
@@ -299,7 +299,7 @@ async function streaks(message) {
     descriptions.push(streakString);
 
     const pages = descriptions.map((desc, i) => ({
-        embed: {
+        embeds: [{
             author: {
                 name: `${author.username}${author.username[author.username.length-1] == 's' ? '\'':'\'s'} Rep Streaks`, icon_url: 'https://i.imgur.com/WwdqYpS.png',
             },
@@ -308,7 +308,7 @@ async function streaks(message) {
             footer: {
                 text: `Page ${i+1} of ${descriptions.length}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);
@@ -378,7 +378,7 @@ async function streakboard(message, local) {
     descriptions.push(streakString);
 
     const pages = descriptions.map((desc, i) => ({
-        embed: {
+        embeds: [{
             author: {
                 name: `${local ? guild.name : 'Global'} Rep Streakboard`, icon_url: 'https://i.imgur.com/WwdqYpS.png',
             },
@@ -387,7 +387,7 @@ async function streakboard(message, local) {
             footer: {
                 text: `Entries: ${streaks.length}  |  Avg. Streak: ${Math.round(streaks.reduce((acc, curr) => acc + curr.streak, 0) / streaks.length)}  |  Page ${i+1} of ${descriptions.length}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);

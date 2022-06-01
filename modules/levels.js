@@ -97,7 +97,7 @@ async function leaderboard(message, local) {
     descriptions.push(rankString);
 
     const pages = descriptions.map((desc, i) => ({
-        embed: {
+        embeds: [{
             author: {
                 name: `${local ? guild.name : 'Global'} Leaderboard`, icon_url: 'https://i.imgur.com/qfUfBps.png',
             },
@@ -106,7 +106,7 @@ async function leaderboard(message, local) {
             footer: {
                 text: `Entries: ${entries}  |  Avg. Lvl: ${Math.round(originalRanks.reduce((acc, curr) => acc + local ? guildRank(curr.xp).lvl : globalRank(curr.xp).lvl, 0) / originalRanks.length)}  |  Page ${i+1} of ${descriptions.length}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);

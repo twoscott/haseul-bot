@@ -409,7 +409,7 @@ async function serverBoosters(message) {
     descriptions.push(boosterString);
 
     const pages = descriptions.map((desc, i) => ({
-        embed: {
+        embeds: [{
             author: {
                 name: `${guild.name} Boosters`, icon_url: 'https://i.imgur.com/x0zhlDu.png',
             },
@@ -418,7 +418,7 @@ async function serverBoosters(message) {
             footer: {
                 text: `${boosters.size} boosters; ${guild.premiumSubscriptionCount} boosts ${descriptions.length > 1 ? `| Page ${i+1} of ${descriptions.length}`:''}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);

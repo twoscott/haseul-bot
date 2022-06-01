@@ -75,7 +75,7 @@ async function patrons(message) {
         descriptions.push(memberString);
 
         const pages = descriptions.map((desc, i) => ({
-            embed: {
+            embeds: [{
                 author: {
                     name: 'Haseul Bot Patrons', icon_url: 'https://i.imgur.com/iUKnebH.png',
                 },
@@ -84,7 +84,7 @@ async function patrons(message) {
                 footer: {
                     text: `Thank you for supporting me! ${descriptions.length > 1 ? `| Page ${i+1} of ${descriptions.length}`:''}`,
                 },
-            },
+            }],
         }));
 
         embedPages(message, pages);

@@ -188,14 +188,14 @@ async function serverList(message) {
     descriptions.push(guildString);
 
     const pages = descriptions.map((desc, i) => ({
-        embed: {
+        embeds: [{
             title: 'Server List',
             description: desc,
             color: 0xffffff,
             footer: {
                 text: `Page ${i+1} of ${descriptions.length}`,
             },
-        },
+        }],
     }));
 
     embedPages(message, pages);
