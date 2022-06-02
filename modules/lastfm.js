@@ -761,5 +761,8 @@ async function lfChart(message, args, type = 'album') {
         .catch(console.error);
     const imageAttachment = new Discord.MessageAttachment(image, `${username}-${timeframe}-${new Date(Date.now()).toISOString()}.jpg`);
     const p = username[username.length-1].toLowerCase == 's' ? '\'' : '\'s';
-    message.channel.send(`**${username+p}** ${displayTime} ${functions.capitalise(type)} Collage`, imageAttachment);
+    message.channel.send({ 
+        content: `**${username+p}** ${displayTime} ${functions.capitalise(type)} Collage`, 
+        files: [imageAttachment] }
+    );
 }
