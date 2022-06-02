@@ -1,5 +1,5 @@
 exports.setMuteRolePerms = async function(channelsArray, muteRoleID) {
-    if (!channelsArray || channelsArray.length < 1 || !muteRoleID) {
+    if (!channelsArray || channelsArray.size < 1 || !muteRoleID) {
         const err = new Error('Invalid parameters given');
         console.error(err);
     } else {

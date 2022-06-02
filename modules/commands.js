@@ -172,8 +172,8 @@ async function editCommand(message, args) {
         return;
     }
 
-    const files = message.attachments.array();
-    if (args.length < 4 && files.length < 1) {
+    const files = message.attachments;
+    if (args.length < 4 && files.size < 1) {
         message.channel.send({ content: '⚠ Please provide text or an uploaded file for a command response.' });
         return;
     }

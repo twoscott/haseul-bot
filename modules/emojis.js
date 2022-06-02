@@ -39,14 +39,14 @@ exports.onMention = async function(message, args) {
 
 async function listEmojis(message) {
     const { guild } = message;
-    let emojis = guild.emojis.cache.values();
+    let emojis = guild.emojis.cache;
 
-    if (emojis.length < 1) {
+    if (emojis.size < 1) {
         message.channel.send({ content: '⚠ There are no emojis added to this server.' });
         return;
     }
 
-    emojis = emojis.filter(x => x['_roles'].length < 1);
+    emojis = emojis.filter(x => x['_roles'].size < 1);
     const staticEmojis = emojis
         .filter(x => !x.animated).sort((a, b) => a.name.localeCompare(b.name));
     const animatedEmojis = emojis
@@ -93,10 +93,9 @@ async function searchEmojis(message, query) {
 
     const { guild } = message;
     const emojis = guild.emojis.cache
-        .array()
         .filter(x => x.name.toLowerCase().includes(query.toLowerCase()));
 
-    if (emojis.length < 1) {
+    if (emojis.size < 1) {
         message.channel.send({ content: `⚠ No results were found searching for "${query}".` });
         return;
     }

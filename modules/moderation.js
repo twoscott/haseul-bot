@@ -552,7 +552,7 @@ async function setMuteRole(message, args) {
                 data: { name: muteRole },
                 reason: 'Mute role created from muterole set command.',
             });
-            const channelsArray = message.guild.channels.cache.values();
+            const channelsArray = message.guild.channels.cache;
             setMuteRolePerms(channelsArray, role.id);
         } else if (message.member.roles.highest.position <= role.position) {
             message.channel.send({ content: '⚠ I cannot use this role to mute users, please move the role below mine or choose another role.' });
@@ -586,7 +586,7 @@ async function updateMuteRole(message) {
         return;
     }
 
-    const channelsArray = message.guild.channels.cache.values();
+    const channelsArray = message.guild.channels.cache;
     await setMuteRolePerms(channelsArray, role.id);
     message.channel.send({ content: `Updated channel permissions for the mute role: \`${role.name}\`` });
 }

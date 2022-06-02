@@ -17,7 +17,6 @@ exports.getMemberNumber = async function(member) {
     } else {
         let members = await member.guild.members.fetch().catch(console.error);
         if (members) {
-            members = members.values();
             members = members
                 .sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
             const memberNumber = members.findIndex(e => e.id == member.id) + 1;
@@ -105,7 +104,6 @@ exports.withTyping = async function(channel, task, args) {
 
 exports.searchMembers = async function(members, query) {
     query = query.toLowerCase();
-    members = members.array();
 
     let memberResults = [];
     memberResults = members.filter(m => m.user.tag.toLowerCase() == query.toLowerCase().replace(/^@/, ''));

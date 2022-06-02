@@ -169,7 +169,7 @@ async function cacheStats(message) {
 }
 
 async function serverList(message) {
-    let guildString = Client.guilds.cache.values().sort((a, b) => b.memberCount - a.memberCount).map(guild => `${guild.name} (${guild.id}) (${guild.memberCount} members)`).join('\n');
+    let guildString = Client.guilds.cache.sort((a, b) => b.memberCount - a.memberCount).map(guild => `${guild.name} (${guild.id}) (${guild.memberCount} members)`).join('\n');
 
     const descriptions = [];
     while (guildString.length > 2048 || guildString.split('\n').length > 25) {

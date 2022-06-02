@@ -86,7 +86,7 @@ async function twitterNotifAdd(message, args) {
         message.channel.send({ content: '⚠ The channel provided does not exist in this server.' });
         return;
     }
-    if (channel.type !== 'text' && channel.type !== 'news') {
+    if (channel.type !== 'GUILD_TEXT' && channel.type !== 'GUILD_NEWS') {
         message.channel.send({ content: '⚠ Please provide a text channel to send notifications to.' });
         return;
     }

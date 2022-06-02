@@ -143,7 +143,7 @@ async function sendMessage(message, args) {
         return;
     }
 
-    const attachments = message.attachments.array();
+    const attachments = message.attachments;
     const files = [];
     for (i=0; i < attachments.length; i++) {
         const attachment = attachments[i];
