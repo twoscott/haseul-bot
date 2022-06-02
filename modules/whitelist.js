@@ -22,7 +22,7 @@ exports.onReady = async function() {
             // await guild.leave();
             console.log(`[DRY RUN] LEFT ${guild.name} ${guild.id}`);
         }
-    })
+    });
 };
 
 exports.newGuild = async function(guild) {

@@ -8,7 +8,7 @@ intents.add(
     Discord.Intents.FLAGS.GUILD_INVITES,
     Discord.Intents.FLAGS.GUILD_MESSAGES,
     Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-    Discord.Intents.FLAGS.GUILD_MESSAGE_TYPING
+    Discord.Intents.FLAGS.GUILD_MESSAGE_TYPING,
 );
 
 const Client = new Discord.Client({

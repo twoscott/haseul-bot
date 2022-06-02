@@ -1,5 +1,5 @@
 const { Client } = require('../haseul.js');
-const { Permissions } = require('discord.js')
+const { Permissions } = require('discord.js');
 const { checkPermissions, resolveMember } = require('../functions/discord.js');
 
 const inviteCache = new Map();
@@ -35,7 +35,7 @@ exports.newGuild = async function(guild) {
 exports.onReady = async function() {
     Client.guilds.cache.forEach(async guild => {
         await cacheGuildInvites(guild);
-    })
+    });
     console.log(`Cached invites for ${inviteCache.size} servers.`);
 };
 

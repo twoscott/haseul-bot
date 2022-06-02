@@ -188,7 +188,7 @@ async function notify(message) {
         const alert = `💬 **${author.username}** mentioned \`${keywords}\` in **\`#${channel.name}\`**`;
 
         try {
-            await member.send({content: alert, embeds: [embed]});
+            await member.send({ content: alert, embeds: [embed] });
         } catch (e) {
             if (e.code == 50007) { // Cannot send messages to this user
                 database.clearGlobalNotifs(userID);

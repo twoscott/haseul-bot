@@ -10,7 +10,7 @@ const { trimArgs } = require('../functions/functions.js');
 async function cmdCheck(message, commandName) {
     const cmd = await database.getCommand(message.guild.id, commandName);
     if (cmd) {
-        message.channel.send({ content: cmd })
+        message.channel.send({ content: cmd });
     }
 }
 
@@ -118,7 +118,7 @@ async function addCommand(message, args) {
 
     const added = await database
         .addCommand(message.guild.id, commandName, text);
-    message.channel.send({ content: added ? `Command \`${commandName}\` was added.` : `⚠ A command with the name \`${commandName}\` already exists.` })
+    message.channel.send({ content: added ? `Command \`${commandName}\` was added.` : `⚠ A command with the name \`${commandName}\` already exists.` });
 }
 
 async function removeCommand(message, commandName) {
@@ -128,7 +128,7 @@ async function removeCommand(message, commandName) {
     }
 
     const removed = await database.removeCommand(message.guild.id, commandName);
-    message.channel.send({ content: removed ? `Command \`${commandName}\` was removed.` : `⚠ No command with the name \`${commandName}\` was found.` })
+    message.channel.send({ content: removed ? `Command \`${commandName}\` was removed.` : `⚠ No command with the name \`${commandName}\` was found.` });
 }
 
 async function renameCommand(message, args) {
@@ -163,7 +163,7 @@ async function renameCommand(message, args) {
 
     const renamed = await database
         .renameCommand(message.guild.id, commandName, newName);
-    message.channel.send({ content: renamed ? `\`${commandName}\` was renamed to \`${newName}\`.` : `⚠ \`${newName}\` already exists.` })
+    message.channel.send({ content: renamed ? `\`${commandName}\` was renamed to \`${newName}\`.` : `⚠ \`${newName}\` already exists.` });
 }
 
 async function editCommand(message, args) {
@@ -196,7 +196,7 @@ async function editCommand(message, args) {
 
     const edited = await database
         .editCommand(message.guild.id, commandName, text);
-    message.channel.send({ content: edited ? `Command \`${commandName}\` was edited.` : `⚠ No command with the name \`${commandName}\` was found.` })
+    message.channel.send({ content: edited ? `Command \`${commandName}\` was edited.` : `⚠ No command with the name \`${commandName}\` was found.` });
 }
 
 async function listCommands(message) {
