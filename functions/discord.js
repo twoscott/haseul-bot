@@ -17,10 +17,13 @@ exports.getMemberNumber = async function(member) {
     } else {
         let members = await member.guild.members.fetch().catch(console.error);
         if (members) {
-            members = members
-                .sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
-            const memberNumber = members.findIndex(e => e.id == member.id) + 1;
-            return memberNumber;
+            membersArray = [];
+            for (let [ id, member ] of members.entries()) {
+                membersArray.push(member);
+            }
+
+            membersArray = membersArray.sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
+            return membersArray.findIndex(e => e.id == member.id) + 1;
         }
     }
 };

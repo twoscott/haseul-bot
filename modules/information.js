@@ -135,15 +135,14 @@ async function memberEmbed(author, member) {
     }
 
     if (member.roles.cache.size > 1) {
-        const allRoles = member.roles.cache
-            .array().sort((a, b) => b.comparePositionTo(a)).slice(0, -1);
+        const allRoles = member.roles.cache.sort((a, b) => b.comparePositionTo(a));
         let modRoles = [];
         let roles = [];
         const perms = [
             'ADMINISTRATOR', 'MANAGE_GUILD', 'MANAGE_CHANNELS', 'VIEW_AUDIT_LOG',
             'KICK_MEMBERS', 'BAN_MEMBERS',
         ];
-        for (const role of allRoles) {
+        for (const [ id, role ] of allRoles) {
             if (perms.some(p => role.permissions.has(p, false, true))) {
                 modRoles.push(role);
             } else {
