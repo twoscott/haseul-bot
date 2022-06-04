@@ -150,7 +150,10 @@ async function rep(message, args) {
     if (newStreak) embed.addField('Streak', `${newStreak} day${d} :fire:`, false);
 
     const emote = addXp > 1000 ? ':confetti_ball:' : addXp > 600 ? ':star2:' : addXp > 300 ? ':star:':'';
-    message.channel.send(`You gave **${recipient.user.username}** a reputation point and **${addXp}** XP! ${emote}`, { embed });
+    message.channel.send({
+        content: `You gave **${recipient.user.username}** a reputation point and **${addXp}** XP! ${emote}`,
+        embeds: [embed],
+    });
     return;
 }
 
