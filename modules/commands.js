@@ -250,7 +250,7 @@ async function listCommandsRaw(message) {
     const jsonFile = Buffer.from(JSON.stringify(commands, null, 4));
     const attachment = new Discord.MessageAttachment(jsonFile, `${guild.name}_custom_commands.json`);
 
-    message.channel.send(attachment);
+    message.channel.send({ files: [attachment] });
 }
 
 async function searchCommands(message, query) {
