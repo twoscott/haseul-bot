@@ -290,7 +290,7 @@ async function twitterNotifList(message) {
         message.channel.send({ content: '⚠ There are no Twitter notifications added to this server.' });
         return;
     }
-    notifString = notifs.sort((a, b) => a.screenName.localeCompare(b.screenName)).map(x => `<#${x.channelID}> - [@${x.screenName}](https://twitter.com/${x.screenName}/)${x.retweets ? ' + <:retweet:618184292820058122>':''}${x.mentionRoleID ? ` <@&${x.mentionRoleID}>`:''}`).join('\n');
+    notifString = notifs.sort((a, b) => a.screenName.localeCompare(b.screenName)).map(x => `<#${x.channelID}> - [@${x.screenName}](https://twitter.com/${x.screenName}/)${x.retweets ? ' + RT':''}${x.mentionRoleID ? ` <@&${x.mentionRoleID}>`:''}`).join('\n');
 
     const descriptions = [];
     while (notifString.length > 2048 || notifString.split('\n').length > 25) {

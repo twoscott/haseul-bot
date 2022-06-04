@@ -74,12 +74,12 @@ async function botInfo(message) {
     if (uptime.seconds) uptimeString += `${uptime.seconds}s `;
 
     const status = {
-        '0': '<:online_cb:533459049765928970>Ready',
-        '1': '<:idle_cb:533459049702752266>Connecting',
-        '2': '<:idle_cb:533459049702752266>Reconnecting',
-        '3': '<:idle_cb:533459049702752266>Idle',
-        '4': '<:idle_cb:533459049702752266>Nearly',
-        '5': '<:offline_cb:533459049648226317>Offline',
+        '0': 'Ready',
+        '1': 'Connecting',
+        '2': 'Reconnecting',
+        '3': 'Idle',
+        '4': 'Nearly',
+        '5': 'Offline',
     };
 
     const embed = new Discord.MessageEmbed({
