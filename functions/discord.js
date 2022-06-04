@@ -16,15 +16,18 @@ exports.getMemberNumber = async function(member) {
         console.error(err);
     } else {
         const members = await member.guild.members.fetch().catch(console.error);
-        if (members) {
-            membersArray = [];
-            for (const [id, member] of members.entries()) {
-                membersArray.push(member);
-            }
-
-            membersArray = membersArray.sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
-            return membersArray.findIndex(e => e.id == member.id) + 1;
+        if (!members) {
+            return null;
         }
+
+        memberNo = 1;
+        for (const compMem of members.values()) {
+            if (compMem.joinedTimestamp < member.joinedTimestamp) {
+                memberNo++;
+            }
+        }
+
+        return memberNo;
     }
 };
 
