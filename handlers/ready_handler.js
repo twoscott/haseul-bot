@@ -20,7 +20,7 @@ exports.handleTasks = async function() {
     });
 
     client.onReady();
-    inviteCache.onReady();
+    // inviteCache.onReady();
 
     console.log('Starting tasks...');
     messageSweep.tasks();
