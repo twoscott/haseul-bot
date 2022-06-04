@@ -1,6 +1,10 @@
 const sqlite = require('sqlite');
+const sqlite3 = require('sqlite3');
 const SQL = require('sql-template-strings');
-const dbopen = sqlite.open('./haseul_data/notifications.db');
+const dbopen = sqlite.open({
+    filename: './haseul_data/notifications.db',
+    driver: sqlite3.Database
+});
 
 dbopen.then(db => {
     db.run(SQL`
