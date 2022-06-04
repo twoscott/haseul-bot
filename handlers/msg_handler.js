@@ -40,7 +40,7 @@ exports.onMessage = async function(message) {
         processCommand(message, args);
     }
 
-    if (message.mentions.users.has(Client.user.id)) {
+    if (message.mentions.users.has(Client.user.id) && !message.reference) {
         const args = content.split(/\s+/);
         if (!message.member) {
             message.member = await resolveMember(guild, author.id);
