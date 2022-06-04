@@ -183,22 +183,36 @@ exports.searchMembers = async function(members, query) {
     return member;
 };
 
-exports.embedPages = async function(
-    { channel, author }, pages, lock, time=600000) {
+exports.embedPages = async function (
+    { channel, author }, pages, lock, time = 600000) {
     let page = 0;
 
     if (pages.length < 2) {
         channel.send(pages[page]);
     } else {
         const reply = await channel.send(pages[page]);
+
         await reply.react('⏮');
         await reply.react('⬅');
         await reply.react('➡');
         await reply.react('⏭');
-        const firstPageCollector = reply.createReactionCollector((reaction, user) => reaction.emoji.name == '⏮', { time });
-        const prevPageCollector = reply.createReactionCollector((reaction, user) => reaction.emoji.name == '⬅', { time });
-        const nextPageCollector = reply.createReactionCollector((reaction, user) => reaction.emoji.name == '➡', { time });
-        const lastPageCollector = reply.createReactionCollector((reaction, user) => reaction.emoji.name == '⏭', { time });
+
+        const firstPageCollector = reply.createReactionCollector({
+            filter: reaction => reaction.emoji.name == '⏮',
+            time,
+        });
+        const prevPageCollector = reply.createReactionCollector({
+            filter: reaction => reaction.emoji.name == '⬅',
+            time,
+        });
+        const nextPageCollector = reply.createReactionCollector({
+            filter: reaction => reaction.emoji.name == '➡',
+            time,
+        });
+        const lastPageCollector = reply.createReactionCollector({
+            filter: reaction => reaction.emoji.name == '⏭',
+            time,
+        });
 
         firstPageCollector.on('collect', (reaction, user) => {
             if (user.id != Client.user.id) {
@@ -210,7 +224,7 @@ exports.embedPages = async function(
                 }
                 reaction.users.remove(user.id);
             }
-        }).on('end', collection => {
+        }).on('end', () => {
             reply.reactions.removeAll();
         });
 
@@ -226,7 +240,7 @@ exports.embedPages = async function(
                 }
                 reaction.users.remove(user.id);
             }
-        }).on('end', collection => {
+        }).on('end', () => {
             reply.reactions.removeAll();
         });
 
@@ -242,7 +256,7 @@ exports.embedPages = async function(
                 }
                 reaction.users.remove(user.id);
             }
-        }).on('end', collection => {
+        }).on('end', () => {
             reply.reactions.removeAll();
         });
 
@@ -256,7 +270,7 @@ exports.embedPages = async function(
                 }
                 reaction.users.remove(user.id);
             }
-        }).on('end', collection => {
+        }).on('end', () => {
             reply.reactions.removeAll();
         });
     }
