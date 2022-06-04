@@ -135,14 +135,16 @@ async function memberEmbed(author, member) {
     }
 
     if (member.roles.cache.size > 1) {
-        const allRoles = member.roles.cache.sort((a, b) => b.comparePositionTo(a));
+        const allRoles = member.roles.cache.sort((a, b) => {
+            return b.comparePositionTo(a);
+        });
         let modRoles = [];
         let roles = [];
         const perms = [
             'ADMINISTRATOR', 'MANAGE_GUILD', 'MANAGE_CHANNELS', 'VIEW_AUDIT_LOG',
             'KICK_MEMBERS', 'BAN_MEMBERS',
         ];
-        for (const [ id, role ] of allRoles) {
+        for (const [, role] of allRoles) {
             if (perms.some(p => role.permissions.has(p, false, true))) {
                 modRoles.push(role);
             } else {
@@ -153,8 +155,8 @@ async function memberEmbed(author, member) {
             modRoles = modRoles.join(' ');
             if (modRoles.length > 1024) {
                 modRoles = modRoles.substring(0, 1024);
-                modRoles = modRoles.substring(0, modRoles.lastIndexOf('>')+1);
-                modRoles += '.'.repeat(modRoles.length > 1021 ? 1024-roles.length : 3);
+                modRoles = modRoles.substring(0, modRoles.lastIndexOf('>') + 1);
+                modRoles += '.'.repeat(modRoles.length > 1021 ? 1024 - roles.length : 3);
             }
             embed.addField('Mod Roles', modRoles, false);
         }
@@ -162,8 +164,8 @@ async function memberEmbed(author, member) {
             roles = roles.join(' ');
             if (roles.length > 1024) {
                 roles = roles.substring(0, 1024);
-                roles = roles.substring(0, roles.lastIndexOf('>')+1);
-                roles += '.'.repeat(roles.length > 1021 ? 1024-roles.length : 3);
+                roles = roles.substring(0, roles.lastIndexOf('>') + 1);
+                roles += '.'.repeat(roles.length > 1021 ? 1024 - roles.length : 3);
             }
             embed.addField('Roles', roles, false);
         }
@@ -256,7 +258,7 @@ async function userAvatar(message, args) {
         return;
     }
 
-    const imgSize = Math.max(Math.round(res.headers['content-length']/10000)/100, 1/100);
+    const imgSize = Math.max(Math.round(res.headers['content-length'] / 10000) / 100, 1 / 100);
     const imgType = res.headers['content-type'].split('/')[1];
     const timestamp = new Date(res.headers['last-modified']);
 
@@ -266,7 +268,7 @@ async function userAvatar(message, args) {
     const p = username.toLowerCase().endsWith('s') ? '\'' : '\'s';
 
     const embed = new Discord.MessageEmbed({
-        title: `${username+p} Avatar`,
+        title: `${username + p} Avatar`,
         color: member ? member.displayColor || 0xffffff : 0xffffff,
     });
 
@@ -275,7 +277,7 @@ async function userAvatar(message, args) {
         embed.description = `Type: ${imgType.toUpperCase()}\nSize: ${imgSize}MB\nDimensions: ${dims.join('x')}\nUploaded: ${timestamp.toLocaleString('en-GB', { timeZone: 'UTC' }).split(',')[0]}`;
     } else {
         embed.image = { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 2048 }) };
-        embed.footer = { text: `Type: ${imgType.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ':''}${imgSize}MB` };
+        embed.footer = { text: `Type: ${imgType.toUpperCase()}  |  Size: ${dims ? dims.join('x') + ' - ' : ''}${imgSize}MB` };
         embed.timestamp = timestamp;
     }
 
@@ -363,7 +365,7 @@ async function serverEmbed(guild) {
             { name: 'Voice Channels', value: guild.channels.cache.filter(c => c.type == 'voice').size, inline: true },
             { name: 'Created On', value: guild.createdAt.toUTCString().replace(/^.*?\s/, '').replace(' GMT', ' UTC'), inline: false },
             { name: 'Region', value: regions[guild.region] || guild.region, inline: true },
-            { name: 'Emojis', value: `${guild.emojis.cache.size} (${guild.emojis.cache.filter(e=>e.animated).size} animated)`, inline: true },
+            { name: 'Emojis', value: `${guild.emojis.cache.size} (${guild.emojis.cache.filter(e => e.animated).size} animated)`, inline: true },
             { name: 'Statuses', value: statuses, inline: false },
             { name: 'Level', value: `${boostLvlEmojis[guild.premiumTier]} ${guild.premiumTier}`, inline: true },
             { name: 'Boosters', value: `<:nitroboost:595699920422436894> ${guild.premiumSubscriptionCount}`, inline: true },
@@ -415,7 +417,7 @@ async function serverBoosters(message) {
             description: desc,
             color: 0xf47fff,
             footer: {
-                text: `${boosters.size} boosters; ${guild.premiumSubscriptionCount} boosts ${descriptions.length > 1 ? `| Page ${i+1} of ${descriptions.length}`:''}`,
+                text: `${boosters.size} boosters; ${guild.premiumSubscriptionCount} boosts ${descriptions.length > 1 ? `| Page ${i + 1} of ${descriptions.length}` : ''}`,
             },
         }],
     }));

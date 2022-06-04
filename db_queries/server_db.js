@@ -3,7 +3,7 @@ const sqlite3 = require('sqlite3');
 const SQL = require('sql-template-strings');
 const dbopen = sqlite.open({
     filename: './haseul_data/servers.db',
-    driver: sqlite3.Database
+    driver: sqlite3.Database,
 });
 
 dbopen.then(db => {

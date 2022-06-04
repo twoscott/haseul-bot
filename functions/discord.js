@@ -185,7 +185,7 @@ exports.searchMembers = async function(members, query) {
     return memberResults.first();
 };
 
-exports.embedPages = async function (
+exports.embedPages = async function(
     { channel, author }, pages, lock, time = 600000) {
     let page = 0;
 
