@@ -90,8 +90,8 @@ async function addCommand(message, args) {
         return;
     }
 
-    const files = message.attachments.array();
-    if (args.length < 4 && files.length < 1) {
+    const files = message.attachments;
+    if (args.length < 4 && files.size < 1) {
         message.channel.send({ content: '⚠ Please provide text or an uploaded file for a command response.' });
         return;
     }
@@ -113,8 +113,9 @@ async function addCommand(message, args) {
     }
 
     let text = trimArgs(args, 3, message.content);
-    const fileUrl = files[0] ? files[0].url : '';
-    if (fileUrl) text = [text, fileUrl].join('\n');
+    if (files.size > 0) {
+        text = text + '\n' + files.first().url;
+    }
 
     const added = await database
         .addCommand(message.guild.id, commandName, text);
