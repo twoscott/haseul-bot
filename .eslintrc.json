@@ -30,7 +30,6 @@
             "skipStrings": true,
             "skipTemplates": true
         }],
-        "object-shorthand": ["error", "always"],
-        "linebreak-style": ["error", "windows"]
+        "object-shorthand": ["error", "always"]
     }
 }

@@ -3,7 +3,7 @@ const whitelist = require('../modules/whitelist.js');
 
 const clientSettings = require('../utils/client_settings.js');
 const serverSettings = require('../utils/server_settings.js');
-const inviteCache = require('../utils/invite_cache.js');
+// const inviteCache = require('../utils/invite_cache.js');
 
 const messageSweep = require('../tasks/sweep_messages.js');
 const moderation = require('../tasks/moderation.js');
@@ -20,7 +20,7 @@ exports.handleTasks = async function() {
     });
 
     client.onReady();
-    inviteCache.onReady();
+    // inviteCache.onReady();
 
     console.log('Starting tasks...');
     messageSweep.tasks();

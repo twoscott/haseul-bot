@@ -1,6 +1,10 @@
 const sqlite = require('sqlite');
+const sqlite3 = require('sqlite3');
 const SQL = require('sql-template-strings');
-const dbopen = sqlite.open('./haseul_data/reps.db');
+const dbopen = sqlite.open({
+    filename: './haseul_data/reps.db',
+    driver: sqlite3.Database,
+});
 
 function streakHash(IDarray) {
     IDarray = IDarray.sort();

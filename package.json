@@ -9,7 +9,9 @@
     "get-image-colors": "^2.0.1",
     "hashset": "0.0.6",
     "jsdom": "^16.7.0",
-    "sqlite": "^3.0.6"
+    "sql-template-strings": "^2.2.2",
+    "sqlite": "^4.1.1",
+    "sqlite3": "^5.0.8"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
