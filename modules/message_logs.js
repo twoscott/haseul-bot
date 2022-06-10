@@ -81,7 +81,7 @@ async function logDeletedMessage(message) {
     }
 
     if (message.attachments.size > 0) {
-        embed.addField('Attachments', message.attachments.array().map(file => file.url), false);
+        embed.addField('Attachments', message.attachments.map(file => file.url).join('\n'), false);
     }
 
     embed.addField('Message Area', `[Go To Area](${proximityMessage.url})`, false);
