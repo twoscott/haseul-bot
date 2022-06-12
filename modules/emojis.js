@@ -162,7 +162,7 @@ async function largeEmoji(message, args) {
         return;
     }
 
-    message.channel.startTyping();
+    message.channel.sendTyping();
     const animated = emojiMatch[1];
     const emojiName = emojiMatch[2];
     const emojiID = emojiMatch[3];
@@ -179,5 +179,4 @@ async function largeEmoji(message, args) {
     });
 
     message.channel.send({ embeds: [embed] });
-    message.channel.stopTyping();
 }

@@ -156,10 +156,9 @@ async function sendMessage(message, args) {
         return;
     }
 
-    channel.startTyping();
+    channel.sendTyping();
     const content = trimArgs(args, 3, message.content);
     await channel.send({ content, files });
-    channel.stopTyping();
     message.channel.send({ content: `Message sent to <#${channelID}>.` });
 }
 
