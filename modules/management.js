@@ -143,22 +143,26 @@ async function sendMessage(message, args) {
         return;
     }
 
-    const attachments = message.attachments;
     const files = [];
-    for (i=0; i < attachments.length; i++) {
-        const attachment = attachments[i];
-        const file = { attachment: attachment.url, name: attachment.name };
-        files.push(file);
-    }
+    message.attachments.forEach(attachment => {
+        files.push({
+            attachment: attachment.url,
+            name: attachment.name,
+        });
+    });
 
-    if (args.length < 3 && files.length < 1) {
+    if (args.length < 4 && files.length < 1) {
         message.channel.send({ content: '⚠ No message provided to be sent.' });
         return;
     }
 
     channel.sendTyping();
     const content = trimArgs(args, 3, message.content);
-    await channel.send({ content, files });
+    if (content) {
+        await channel.send({ content, files });
+    } else {
+        await channel.send({ files });
+    }
     message.channel.send({ content: `Message sent to <#${channelID}>.` });
 }
 
