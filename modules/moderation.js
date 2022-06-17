@@ -143,7 +143,7 @@ async function banUsers(message, args, days=0) {
 
     const isOwner = message.member.id == message.guild.ownerID;
     const reason = banString.slice(userIDEnd) || `User was banned by ${message.author.tag}`;
-    const bans = await message.guild.fetchBans();
+    const bans = await message.guild.bans.fetch();
 
     let banCount = 0;
     const bannedUsers = []; // users that have been banned
@@ -218,7 +218,7 @@ async function unbanUsers(message, args) {
     }
 
     const reason = banString.slice(userIDEnd) || `User was unbanned by ${message.author.tag}`;
-    const bans = await message.guild.fetchBans();
+    const bans = await message.guild.bans.fetch();
 
     let unbanCount = 0;
     const unbannedUsers = []; // users that have been unbanned
