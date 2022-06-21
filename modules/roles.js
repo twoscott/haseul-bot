@@ -524,7 +524,7 @@ async function updateRolesChannel(message) {
 
     const oldMessage = await channel.messages.fetch(messageId);
     oldMessage.delete();
-    const msg = await channel.send(content, { embed });
+    const msg = await channel.send({ content, embeds: [embed] });
     await database.setMsgId(message.guild.id, msg.id);
     message.channel.send({ content: 'Roles channel message updated.' });
 }
