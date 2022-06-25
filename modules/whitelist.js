@@ -43,12 +43,12 @@ exports.newGuild = async function(guild) {
         try {
             console.log(JSON.stringify(response.data));
             const patreonMembers = response.data.data;
-            const patreonUsers = response.data.included.filter(x => x.type == 'user' && x.attributes.social_connections.discord);
+            const patreonUsers = response.data.included.filter(x => x.type == 'user' && x.attributes.social_connections?.discord);
 
             console.log('Checking if guild owner is Patreon...');
             for (let i = 0; i < patreonUsers.length && !ownerPatronT3; i++) {
                 const user = patreonUsers[i];
-                const userDiscord = user.attributes.social_connections.discord;
+                const userDiscord = user.attributes.social_connections?.discord;
                 const userDiscordID = userDiscord ? userDiscord.user_id : null;
 
                 if (userDiscordID == guild.ownerID) {
