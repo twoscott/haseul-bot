@@ -63,7 +63,7 @@ async function profileTemp(message, args) {
         author: { name: `Temp Profile for ${user.username}`, icon_url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 32 }) },
         color: colour,
         fields: [
-            { name: 'Rep', value: userReps ? userReps.rep.toString() : 0, inline: false },
+            { name: 'Rep', value: userReps ? userReps.rep.toString() : '0', inline: false },
             { name: 'Global Level', value: `Level ${userGlobXp ? userGlobRank.lvl: 1}`, inline: true },
             { name: 'Global XP', value: `${userGlobXp ? (userGlobXp - userGlobRank.baseXp) : 0}/${userGlobRank.nextXp - userGlobRank.baseXp}`, inline: true },
             { name: 'Server Level', value: `Level ${userGuildXp ? userGuildRank.lvl: 1}`, inline: true },
