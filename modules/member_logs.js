@@ -6,7 +6,7 @@ const {
 const { Client } = require('../haseul.js');
 
 const serverSettings = require('../utils/server_settings.js');
-const { resolveUsedInvite } = require('../utils/invite_cache.js');
+// const { resolveUsedInvite } = require('../utils/invite_cache.js');
 const { parseChannelID, trimArgs } = require('../functions/functions.js');
 const { colours, getImgColours } = require('../functions/colours.js');
 
@@ -129,7 +129,7 @@ async function logJoin(member, welcomeMsgPromise) {
     const channel = Client.channels.cache.get(logChannelID);
     if (!channel) return;
 
-    const usedInvite = await resolveUsedInvite(guild);
+    // const usedInvite = await resolveUsedInvite(guild);
     const embed = new Discord.MessageEmbed({
         title: 'Member Joined',
         thumbnail: { url: user.displayAvatarURL({ format: 'png', dynamic: true, size: 256 }) },
@@ -142,13 +142,13 @@ async function logJoin(member, welcomeMsgPromise) {
         footer: { text: `Member #${guild.memberCount}` },
     });
 
-    if (usedInvite) {
-        embed.addField('Invite Used', `${usedInvite.url}${usedInvite.uses ? ` (${usedInvite.uses.toLocaleString()} uses)` : ''}${usedInvite.inviter ? `\nCreated by ${usedInvite.inviter.tag} (<@${usedInvite.inviter.id}>)` : ''}`, false);
-    }
+    // if (usedInvite) {
+    //     embed.addField('Invite Used', `${usedInvite.url}${usedInvite.uses ? ` (${usedInvite.uses.toLocaleString()} uses)` : ''}${usedInvite.inviter ? `\nCreated by ${usedInvite.inviter.tag} (<@${usedInvite.inviter.id}>)` : ''}`, false);
+    // }
 
     const welcomeMsgUrl = await welcomeMsgPromise;
     if (welcomeMsgUrl) {
-        embed.addField('Welcome Message', `[View Message](${welcomeMsgUrl})`, !!usedInvite);
+        embed.addField('Welcome Message', `[View Message](${welcomeMsgUrl})`, false);
     }
 
     embed.addField('User ID', user.id, !!welcomeMsgUrl);
