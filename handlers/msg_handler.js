@@ -1,3 +1,4 @@
+const Discord = require('discord.js');
 const { resolveMember } = require('../functions/discord.js');
 const { Client } = require('../haseul.js');
 const { getPrefix } = require('../functions/bot.js');
@@ -27,7 +28,7 @@ const whitelist = require('../modules/whitelist.js');
 exports.onMessage = async function(message) {
     if (message.system) return;
     if (message.author.bot) return;
-    if (message.channel.type === 'dm') return;
+    if (message.channel.type === Discord.Constants.ChannelTypes.DM) return;
 
     const { author, content, guild } = message;
     const prefix = getPrefix(guild.id);
@@ -54,7 +55,7 @@ exports.onMessage = async function(message) {
 exports.onMessageDelete = async function(message) {
     if (message.system) return;
     if (message.author.bot) return;
-    if (message.channel.type === 'dm') return;
+    if (message.channel.type === Discord.Constants.ChannelTypes.DM) return;
     message.deletedTimestamp = Date.now();
     message.deletedAt = new Date(message.deletedTimestamp);
 
@@ -64,7 +65,10 @@ exports.onMessageDelete = async function(message) {
 exports.onMessageEdit = async function(oldMessage, newMessage) {
     if (oldMessage.system || newMessage.system) return;
     if (oldMessage.author.bot || newMessage.author.bot) return;
-    if (oldMessage.channel.type === 'dm' || newMessage.channel.type === 'dm') return;
+    if (oldMessage.channel.type === Discord.Constants.ChannelTypes.DM ||
+        newMessage.channel.type === Discord.Constants.ChannelTypes.DM) {
+        return;
+    }
 
     processMessageEdit(oldMessage, newMessage);
 };

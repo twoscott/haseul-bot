@@ -3,6 +3,7 @@ const { resolveMember, withTyping } = require('../functions/discord.js');
 
 const database = require('../db_queries/notifications_db.js');
 const { trimArgs } = require('../functions/functions.js');
+const { isTextChannel } = require('../functions/discord.js');
 
 const HashSet = require('hashset');
 
@@ -350,7 +351,7 @@ async function ignoreChannel(message, args) {
         message.channel.send({ content: '⚠ Channel doesn\'t exist in this server.' });
         return;
     }
-    if (channel.type !== 'text' && channel.type !== 'news') {
+    if (!isTextChannel(channel)) {
         message.channel.send({ content: '⚠ Channel must be a text channel.' });
         return;
     }

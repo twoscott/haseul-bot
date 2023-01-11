@@ -1,4 +1,4 @@
-const { checkPermissions, embedPages, withTyping } = require('../functions/discord.js');
+const { checkPermissions, isTextChannel, embedPages, withTyping } = require('../functions/discord.js');
 const { Client } = require('../haseul.js');
 
 const axios = require('axios');
@@ -86,7 +86,7 @@ async function twitterNotifAdd(message, args) {
         message.channel.send({ content: '⚠ The channel provided does not exist in this server.' });
         return;
     }
-    if (channel.type !== 'GUILD_TEXT' && channel.type !== 'GUILD_NEWS') {
+    if (!isTextChannel(channel)) {
         message.channel.send({ content: '⚠ Please provide a text channel to send notifications to.' });
         return;
     }

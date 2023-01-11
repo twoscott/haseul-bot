@@ -1,3 +1,4 @@
+const Discord = require('discord.js');
 const { Client } = require('../haseul.js');
 const { getAllGuildXp } = require('../db_queries/levels_db.js');
 
@@ -8,6 +9,14 @@ exports.checkPermissions = function(member, permissions, checkAdmin = true) {
     } else {
         return member.permissions.any(permissions, checkAdmin);
     }
+};
+
+exports.isTextChannel = function(channel) {
+    if (!channel || !channel.type) {
+        return false;
+    }
+
+    return Discord.Constants.TextBasedChannelTypes.includes(channel.type);
 };
 
 exports.getMemberNumber = async function(member) {
@@ -98,7 +107,7 @@ exports.sendAndDelete = async function(channel, options, timeout = 1000) {
 };
 
 exports.withTyping = async function(channel, task, args) {
-    if (!channel || (channel.type !== 'GUILD_TEXT' && channel.type !== 'GUILD_NEWS')) {
+    if (!channel || !exports.isTextChannel(channel)) {
         const err = new Error('Invalid channel to type in');
         console.error(err);
     } else {

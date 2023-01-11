@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const { Client } = require('../haseul.js');
-const { embedPages, resolveMember, withTyping } = require('../functions/discord.js');
+const { embedPages, isTextChannel, resolveMember, withTyping } = require('../functions/discord.js');
 const { getPrefix } = require('../functions/bot.js');
 const { getDelta } = require('../functions/functions.js');
 
@@ -142,7 +142,7 @@ async function cacheStats(message) {
         cachedMembers += guild.members.cache.size;
         cachedRoles += guild.roles.cache.size;
         for (const channel of guild.channels.cache.values()) {
-            if (channel.type == 'text' || channel.type == 'news') {
+            if (isTextChannel(channel)) {
                 cachedMessageCount += channel.messages.cache.size;
             }
         }
