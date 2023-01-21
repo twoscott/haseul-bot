@@ -302,7 +302,7 @@ async function serverEmbed(guild) {
         iconColours[1].saturate().hex() :
         colours.embedColour;
 
-    const embed = {
+    const embed = new Discord.MessageEmbed({
         author: { name: guild.name, icon_url: guild.iconURL({ format: 'png', dynamic: true, size: 32 }) },
         thumbnail: { url: guild.iconURL({ format: 'png', dynamic: true, size: 512 }) },
         color: iconColour,
@@ -319,7 +319,7 @@ async function serverEmbed(guild) {
             { name: 'Boosters', value: guild.premiumSubscriptionCount.toString(), inline: true },
         ],
         footer: { text: `ID #${guild.id}` },
-    };
+    });
 
     const bannerURL = guild.bannerURL({ format: 'png', dynamic: true, size: 2048 });
     if (bannerURL) {
