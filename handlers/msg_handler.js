@@ -21,7 +21,6 @@ const profiles = require('../modules/profiles.js');
 const reminders = require('../modules/reminders.js');
 const reps = require('../modules/reps.js');
 const roles = require('../modules/roles.js');
-const twitter = require('../modules/twitter.js');
 const utility = require('../modules/utility.js');
 const whitelist = require('../modules/whitelist.js');
 
@@ -92,7 +91,6 @@ async function processCommand(message, args) {
     reminders.onCommand(message, args);
     reps.onCommand(message, args);
     roles.onCommand(message, args);
-    twitter.onCommand(message, args);
     utility.onCommand(message, args);
     whitelist.onCommand(message, args);
 }

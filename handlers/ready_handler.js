@@ -8,7 +8,6 @@ const serverSettings = require('../utils/server_settings.js');
 const messageSweep = require('../tasks/sweep_messages.js');
 const moderation = require('../tasks/moderation.js');
 const reminders = require('../tasks/reminders.js');
-const twitter = require('../tasks/twitter.js');
 
 exports.handleTasks = async function() {
     console.log('Initialising modules...');
@@ -26,5 +25,4 @@ exports.handleTasks = async function() {
     messageSweep.tasks();
     moderation.tasks();
     reminders.tasks();
-    twitter.tasks();
 };
